@@ -1,8 +1,11 @@
+import { safeNextPath } from "@/lib/safe-next";
 import { LoginPanel } from "./login-panel";
 
 export const metadata = { title: "로그인 · 온기로" };
 
-export default function LoginPage() {
+export default async function LoginPage(props: PageProps<"/login">) {
+  const { next } = await props.searchParams;
+  const nextPath = typeof next === "string" ? safeNextPath(next) : null;
   return (
     <main className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center gap-6 px-4 py-16">
       <div className="flex flex-col gap-2 text-center">
@@ -11,7 +14,7 @@ export default function LoginPage() {
           진단 결과를 저장하고 상담을 신청하려면 로그인하세요.
         </p>
       </div>
-      <LoginPanel />
+      <LoginPanel next={nextPath} />
     </main>
   );
 }

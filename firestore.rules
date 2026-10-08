@@ -1,8 +1,41 @@
 rules_version = '2';
 
-// Phase 1 초안: 모든 접근을 막는다. 역할별 규칙은 task.md 2.4에서 작성한다.
+// task.md 2.2 단계 규칙: 회원 본인 문서와 동의 기록만 연다. 나머지는 모두 막는다.
+// 운영팀·관리자 역할별 규칙은 task.md 2.4에서 추가한다.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSelf(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // 회원 문서: 본인은 role이 member인 문서만 만들 수 있다. 권한 필드는 관리자 함수만 쓴다.
+    match /users/{uid} {
+      allow read: if isSelf(uid);
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasOnly(['name', 'role', 'createdAt'])
+        && request.resource.data.role == 'member'
+        && (request.resource.data.name == null || request.resource.data.name is string)
+        && request.resource.data.createdAt == request.time;
+      allow update: if isSelf(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone'])
+        && (request.resource.data.name == null || request.resource.data.name is string)
+        && (!('phone' in request.resource.data) || request.resource.data.phone is string);
+      allow delete: if false;
+
+      // 동의 기록: 추가만 한다 (prd.md COM-04, 6.7 약관 개정).
+      match /consents/{consentId} {
+        allow read: if isSelf(uid);
+        allow create: if isSelf(uid)
+          && request.resource.data.keys().hasOnly(['type', 'version', 'agreed', 'agreedAt'])
+          && request.resource.data.type in ['terms', 'privacy', 'estimateDisclaimer', 'photoReview', 'photoModel']
+          && request.resource.data.version is string
+          && request.resource.data.agreed is bool
+          && request.resource.data.agreedAt == request.time;
+        allow update, delete: if false;
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
