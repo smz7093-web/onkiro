@@ -163,6 +163,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 - **완료 기준**: 콘솔에서 Firestore(서울), Storage, Functions, App Hosting이 사용 가능 상태.
 - **주의**: Firestore 리전은 생성 후 바꿀 수 없다.
 - **진행 메모**: 2026-10-06: 저장소 쪽 설정만 완료(`firebase.json`에 Firestore location asia-northeast3, 전체 거부 `firestore.rules`·`storage.rules`). Firebase CLI는 전역 설치 없이 루트 devDependency(`npx firebase`, 15.32.1). **남은 일(사용자 계정 필요)**: `npx firebase login` → 콘솔에서 프로젝트 생성·Blaze 전환·예산 알림·Identity Platform 활성화 → `npx firebase use --add`로 `.firebaserc` 생성.
+  - 2026-10-08: 프로젝트 ID는 **`onkiro-2fe12`**(표시 이름 onkiro), `.firebaserc`의 default로 연결. Blaze 전환(Google Cloud 무료 체험판 결제 계정). Firestore `(default)`를 asia-northeast3 Native 모드로 생성하고 규칙·인덱스 배포. Storage 기본 버킷 생성(콘솔) 후 규칙 배포. Cloud Functions `ping`을 asia-northeast3에 배포해 응답 확인, Artifact Registry 정리 정책(1일) 설정. **남은 일**: 예산 알림(월 5만 원) 설정 여부 확인, Identity Platform 활성화(2.1 전에 필요).
 
 #### 1.3 에뮬레이터·미리보기 배포
 - **할 일**: `firebase.json`에 Auth·Firestore·Storage·Functions 에뮬레이터를 설정한다. App Hosting 백엔드 1개를 GitHub 저장소의 `main` 브랜치에 연결해, `main`에 푸시하면 자동 배포되는 **팀 공용 검토 URL 1개**를 만든다. 브랜치·PR별 미리보기는 두지 않는다(1인 개발이라 불필요). 팀원 검토는 이 URL로 주 2회 한다.
@@ -471,6 +472,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 
 #### 8.3 `[주연]` D8 (10/21)
 - 약관, 개인정보 처리방침, 견적 면책 문구, 진단 사진 보관 기간·삭제 절차. 받으면 2.2 동의 문구·8.1 면책 문구 교체.
+- 개인정보 처리방침에 이용 분석 도구(Google Analytics for Firebase) 사용과 수집 항목을 넣어야 한다(Firebase 프로젝트에서 Analytics를 켬).
 - **진행 메모**:
 
 ---
@@ -541,6 +543,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 #### 11.1 베타 오픈일·작업별 마감 확정 (11/10)
 - PRD는 베타를 "2027 Q1"로만 정해 두었다. 시연 결과를 반영해 PM이 베타 오픈일을 정하고, 11.2~11.8 각 작업의 마감일을 이 목록 체크리스트 옆에 적는다.
 - 순서 권장: 11.3(보안) → 11.2(사진 정책) → 11.4·11.5(데이터 수집) → 11.6 → 11.7 → 11.8.
+- **결제 계정 확인**: Firebase 프로젝트(`onkiro-2fe12`)는 Google Cloud 무료 체험판 결제 계정(2026-10-08 가입, 크레딧 300달러, 90일)에 연결했다. 체험판은 2027년 1월 초에 끝나므로, 그 전에 결제 계정을 유료로 업그레이드해야 함수·저장소가 멈추지 않는다. 베타 오픈일을 정할 때 함께 처리한다.
 - **진행 메모**:
 
 #### 11.2 사진 정책 반영·사진 업로드 개방
