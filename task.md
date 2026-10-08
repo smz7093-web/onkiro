@@ -36,10 +36,10 @@
   - [ ] 4.5 TourAPI 주변 관광지·직선거리 (SIM-04 시연판)
   - [ ] 4.6 시연용 대표 주소 2곳 조회 결과 저장
 - [ ] **Phase 5. 기준값 관리** (10/13–10/17)
-  - [ ] 5.1 단가 DB 버전 관리 화면 (ADM-01)
-  - [ ] 5.2 가정값 버전 관리 화면·검증 사례 재계산 (ADM-02)
-  - [ ] 5.3 적용 버전 수정 금지 보안 규칙
-  - [ ] 5.4 초기 버전 입력 (단가 v2026.10-1, 가정값 v0.3)
+  - [x] 5.1 단가 DB 버전 관리 화면 (ADM-01)
+  - [x] 5.2 가정값 버전 관리 화면·검증 사례 재계산 (ADM-02)
+  - [x] 5.3 적용 버전 수정 금지 보안 규칙
+  - [x] 5.4 초기 버전 입력 (단가 v2026.10-1, 가정값 v0.3)
   - [ ] 5.5 `[원일]` D6 수익 가정값·3안 편차 확정 (10/17)
   - [ ] 5.6 최종 기준값 전환·재검증·승인 (D5·D6 도착 후, 10/19)
 - [ ] **Phase 6. 진단 입력 흐름** (10/13–10/19)
@@ -360,21 +360,21 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 - **컬렉션**: `priceVersions/{version}` = {effectiveFrom, status(draft/active/retired), data, createdBy, approvedBy}.
 - **흐름**: 석원이 "새 버전 만들기"(현재 active 복사 → draft) → 값 수정 → PM이 검토 후 적용(active, 이전 버전 retired). 두 사람 확인 원칙.
 - **참고 화면**: 목업 `adm-price-db`.
-- **진행 메모**:
+- **진행 메모**: 2026-10-09 완료. `/admin/prices`(목록·새 초안), `/admin/prices/[version]`(편집기 `components/admin/price-editor.tsx`, 대표 예시 검증 사례). 공통 틀 `version-shell.tsx`(저장·삭제·적용, 미저장 경고), 운영팀 보호 `staff-context.tsx`. 적용은 callable `activateVersion`(functions/src/versions.ts 검증 → 기존 active를 retired, 새 버전 active, auditLogs). 문서 필드: status, data(PriceTable), note, basedOn, createdBy/Name/At, updatedBy/Name/At, approvedBy/Name/At, effectiveFrom, retiredAt.
 
 #### 5.2 가정값 화면 (ADM-02)
 - **컬렉션**: `assumptionVersions/{version}`. 평일가·주말가, 연평균 가동률(계산용), 성수기·비수기 가동률(근거 표시용), 운영비 기본값(변동/고정 구분), 3안 편차.
 - **검증 사례**: 저장할 때 3.4 수익 검증표 조건으로 엔진을 돌려 결과를 화면에 표시(기준값과 다르면 경고).
 - **참고 화면**: 목업 `adm-assume`.
-- **진행 메모**:
+- **진행 메모**: 2026-10-09 완료. `/admin/assumptions`, 편집기 `assumption-editor.tsx`(13개 기본값, 3안 편차, 가동률 범위, 성수기·비수기는 근거 표시용), 수익 검증표 15개 항목 자동 비교. 서버 검증이 '하한+보수 편차 ≥ 10%, 상한+낙관 편차 ≤ 95%'를 막는다.
 
 #### 5.3 수정 금지 규칙
 - status가 active·retired인 버전 문서는 update·delete 금지. draft만 수정 가능. 단가는 `canEditPrices`, 가정값은 `canEditAssumptions` 권한자만 draft 생성.
-- **진행 메모**:
+- **진행 메모**: 2026-10-09 완료(배포). `firestore.rules`의 priceVersions·assumptionVersions: 회원은 active만 읽기, 운영팀은 전체 읽기, 편집 권한자만 draft 생성·수정·삭제, status 변경과 active·retired 수정은 불가(함수만). 규칙 테스트 `tests/rules/versions.rules.test.ts` 7개는 Java 설치 후 실행.
 
 #### 5.4 초기 버전 입력
 - `seed/price-v2026.10-1.json`, `seed/assumption-v0.3.json`을 만들고 시드 스크립트로 입력. 값은 3.2 표·3.4 기본값, D5·D6 도착 시 교체.
-- **진행 메모**:
+- **진행 메모**: 2026-10-09 완료. 시드 스크립트 대신 관리 화면에서 '임시 기준값'으로 초안을 만들어 적용했다. 단가 **v2026.10-1** 적용 중, 가정값 **v0.3** 적용 중(처음에 제안 이름 v0.1로 만들어 적용한 뒤 같은 값으로 v0.3을 만들어 다시 적용, v0.1은 이전 버전). 두 버전 모두 검증 사례 일치 확인. **버전 이름은 '새 초안 만들기'의 버전 이름 칸에서 만들 때만 정할 수 있다.**
 
 #### 5.5 `[원일]` D6 (10/17)
 - 수익 가정값(가동률·객실가·운영비) 확정, 3안 편차(−15%p/+10%p) 유지 여부, 객실가 변동 포함 여부(prd.md 14절).
