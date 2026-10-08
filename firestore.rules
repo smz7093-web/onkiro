@@ -77,6 +77,52 @@ service cloud.firestore {
       }
     }
 
+    // 단가 DB·가정값 버전 (ADM-01·02, task.md 5.3).
+    // 초안(draft)만 편집 권한자가 만들고 고친다. status는 activateVersion 함수만 바꾼다.
+    // 적용(active)·이전(retired) 버전은 아무도 고치지 못한다. 회원은 적용 버전만 읽는다(시뮬레이터 계산용).
+    function versionDocValid(version, editorUid) {
+      return request.resource.data.status == 'draft'
+        && request.resource.data.data is map
+        && request.resource.data.data.version == version
+        && request.resource.data.updatedBy == editorUid
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function versionCreateKeys() {
+      return ['status', 'data', 'note', 'basedOn', 'createdBy', 'createdByName', 'createdAt',
+              'updatedBy', 'updatedByName', 'updatedAt'];
+    }
+
+    match /priceVersions/{version} {
+      allow read: if isStaff() || (signedIn() && resource.data.status == 'active');
+      allow create: if hasPerm('canEditPrices')
+        && request.resource.data.keys().hasOnly(versionCreateKeys())
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && versionDocValid(version, request.auth.uid);
+      allow update: if hasPerm('canEditPrices')
+        && resource.data.status == 'draft'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['data', 'note', 'updatedBy', 'updatedByName', 'updatedAt'])
+        && versionDocValid(version, request.auth.uid);
+      allow delete: if hasPerm('canEditPrices') && resource.data.status == 'draft';
+    }
+
+    match /assumptionVersions/{version} {
+      allow read: if isStaff() || (signedIn() && resource.data.status == 'active');
+      allow create: if hasPerm('canEditAssumptions')
+        && request.resource.data.keys().hasOnly(versionCreateKeys())
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && versionDocValid(version, request.auth.uid);
+      allow update: if hasPerm('canEditAssumptions')
+        && resource.data.status == 'draft'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['data', 'note', 'updatedBy', 'updatedByName', 'updatedAt'])
+        && versionDocValid(version, request.auth.uid);
+      allow delete: if hasPerm('canEditAssumptions') && resource.data.status == 'draft';
+    }
+
     // 변경 이력: 서버 함수만 쓰고 관리자만 읽는다.
     match /auditLogs/{logId} {
       allow read: if isAdmin();

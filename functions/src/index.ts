@@ -11,6 +11,13 @@ import {
   permissionsFromDoc,
   sameClaims,
 } from "./permissions.js";
+import {
+  canApprove,
+  COLLECTION_OF,
+  VERSION_KINDS,
+  validateVersion,
+  type VersionKind,
+} from "./versions.js";
 
 initializeApp();
 
@@ -85,4 +92,62 @@ export const setUserPermissions = onCall(async (request) => {
     });
   });
   return { ok: true };
+});
+
+// 단가 DB·가정값 초안을 적용한다 (ADM-01·02, task.md 5.1~5.3).
+// 초안을 검증한 뒤, 기존 적용 버전을 retired로 바꾸고 이 버전을 active로 만든다. 적용 버전은 하나뿐이다.
+// 클라이언트는 보안 규칙상 status를 바꿀 수 없고 이 함수만 바꾼다.
+export const activateVersion = onCall(async (request) => {
+  const token = request.auth?.token as Record<string, unknown> | undefined;
+  if (!request.auth || !canApprove(token)) {
+    throw new HttpsError("permission-denied", "적용 권한(canApproveVersions)이 없습니다");
+  }
+  const { kind, version } = (request.data ?? {}) as Record<string, unknown>;
+  if (!VERSION_KINDS.includes(kind as VersionKind)) {
+    throw new HttpsError("invalid-argument", "kind는 price 또는 assumption이어야 합니다");
+  }
+  if (typeof version !== "string" || version.length === 0) {
+    throw new HttpsError("invalid-argument", "version이 필요합니다");
+  }
+
+  const db = getFirestore();
+  const col = db.collection(COLLECTION_OF[kind as VersionKind]);
+  const ref = col.doc(version);
+  const actorUid = request.auth.uid;
+  const actor = await db.collection("users").doc(actorUid).get();
+  const actorName = (actor.get("name") as string | null) ?? null;
+
+  const retired = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError("not-found", "버전이 없습니다");
+    if (snap.get("status") !== "draft") {
+      throw new HttpsError("failed-precondition", "초안(draft)만 적용할 수 있습니다");
+    }
+    const errors = validateVersion(kind as VersionKind, snap.get("data"), version);
+    if (errors.length > 0) {
+      throw new HttpsError("invalid-argument", `검증 실패: ${errors.join(" / ")}`);
+    }
+    const actives = await tx.get(col.where("status", "==", "active"));
+    const now = FieldValue.serverTimestamp();
+    for (const a of actives.docs) {
+      tx.update(a.ref, { status: "retired", retiredAt: now });
+    }
+    tx.update(ref, {
+      status: "active",
+      effectiveFrom: now,
+      approvedBy: actorUid,
+      approvedByName: actorName,
+      approvedAt: now,
+    });
+    tx.create(db.collection("auditLogs").doc(), {
+      path: ref.path,
+      actorUid,
+      action: "activateVersion",
+      before: { status: "draft", retired: actives.docs.map((d) => d.id) },
+      after: { status: "active" },
+      at: now,
+    });
+    return actives.docs.map((d) => d.id);
+  });
+  return { ok: true, version, retired };
 });

@@ -1,6 +1,7 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
 import { firebaseConfig } from "./config";
 
 // 브라우저에서만 쓴다. 개발 서버의 빠른 새로고침에서도 앱을 한 번만 만든다.
@@ -10,3 +11,5 @@ export const firebaseApp = getApps().length
 
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
+// Cloud Functions는 서울 리전에 있다 (functions/src/index.ts)
+export const functions = getFunctions(firebaseApp, "asia-northeast3");
