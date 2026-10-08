@@ -4,6 +4,7 @@ import { FirebaseError } from "firebase/app";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthUser } from "@/lib/auth/use-auth-user";
+import { usePermissions } from "@/lib/auth/use-permissions";
 import { loadConsentStatus } from "@/lib/consent/store";
 import { signInWithKakao, signOutUser } from "@/lib/firebase/kakao";
 import { ensureMemberDoc } from "@/lib/users";
@@ -11,6 +12,7 @@ import { ensureMemberDoc } from "@/lib/users";
 // 로그인 → 회원 문서 확인 → 필수 동의가 없으면 동의 화면으로 보낸다 (COM-02, COM-04).
 export function LoginPanel({ next }: { next: string | null }) {
   const user = useAuthUser();
+  const { permissions, refresh } = usePermissions(user);
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -77,9 +79,24 @@ export function LoginPanel({ next }: { next: string | null }) {
           <dd>{user.email ?? kakao?.email ?? "(동의 안 함)"}</dd>
           <dt className="text-zinc-600">로그인 방법</dt>
           <dd>{kakao?.providerId}</dd>
+          <dt className="text-zinc-600">역할</dt>
+          <dd>{permissions?.role ?? "확인 중"}</dd>
+          <dt className="text-zinc-600">권한</dt>
+          <dd className="text-sm">
+            {permissions && permissions.role !== "member"
+              ? `사진 ${permissions.photoAccess} · 상담 ${permissions.consultAccess} · ${permissions.perms.join(", ") || "추가 권한 없음"}`
+              : "일반 회원"}
+          </dd>
           <dt className="text-zinc-600">Firebase uid</dt>
           <dd className="break-all font-mono text-sm">{user.uid}</dd>
         </dl>
+        <button
+          type="button"
+          onClick={() => refresh()}
+          className="h-12 rounded-lg border border-zinc-300 text-base"
+        >
+          권한 새로고침
+        </button>
         <button
           type="button"
           onClick={() => signOutUser()}

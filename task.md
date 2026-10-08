@@ -18,7 +18,7 @@
 - [ ] **Phase 2. 인증·권한** (10/7–10/10)
   - [x] 2.1 카카오 로그인 연동 (Identity Platform OIDC, 막히면 커스텀 토큰)
   - [x] 2.2 약관·동의 화면과 동의 기록 (COM-02, COM-04)
-  - [ ] 2.3 역할·권한 모델 (커스텀 클레임, `users` 문서)
+  - [x] 2.3 역할·권한 모델 (커스텀 클레임, `users` 문서)
   - [ ] 2.4 Firestore·Storage 보안 규칙 1차
   - [ ] 2.5 회원·권한 관리 화면, 초기 계정 5개 생성 (ADM-05)
 - [ ] **Phase 3. 계산 엔진** (10/8–10/14)
@@ -216,7 +216,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 
 - **할 일**: 권한을 Auth 커스텀 클레임과 `users/{uid}` 문서 양쪽에 저장. 클레임 설정은 관리자 전용 Cloud Function(callable)으로.
 - **확인 위치**: 같은 권한을 ① Firestore·Storage 보안 규칙(데이터 접근) ② 관리자 화면 메뉴·버튼 노출(화면 접근) 두 곳에서 확인한다. 화면에서 숨기는 것만으로는 막지 않는다.
-- **진행 메모**:
+- **진행 메모**: 2026-10-08 완료. 원본은 `users/{uid}`의 권한 필드, Firestore 트리거 `syncUserClaims`가 커스텀 클레임 `{role, photoAccess, consultAccess, perms[]}`로 옮긴다(같으면 다시 쓰지 않음). admin은 필드와 무관하게 전체 권한, member는 권한 없음, 잘못된 값은 가장 좁은 권한. 관리자 전용 callable `setUserPermissions`(입력 검증, 본인 관리자 해제 금지, `auditLogs` 기록)는 배포만 했고 2.5 화면에서 검증한다. 계산 로직 `functions/src/permissions.ts`(테스트 9개), 웹 `src/lib/permissions.ts`·`auth/use-permissions.ts`(테스트 3개) — 두 파일의 키 이름을 같게 유지할 것. **첫 관리자 지정**: Firebase 콘솔에서 본인 `users` 문서의 role을 admin으로 바꾸면 트리거가 반영(PM 계정 완료, 로그인 화면의 '권한 새로고침'으로 확인). 2세대 함수 첫 배포 때 Eventarc 권한 전파로 트리거 배포가 한 번 실패했다가 2분 뒤 재시도로 성공.
 
 #### 2.4 보안 규칙 1차
 - **원칙**: 회원은 자기 진단·상담만 읽고 쓴다. staff는 2.3 권한표대로 접근. 진단 사진은 `photoAccess`가 all이거나, assigned이면서 `assessments.assigneeUid == uid`일 때만 읽기. 상담은 `consultAccess` 기준. 스냅샷과 active 버전 문서는 update 금지.
