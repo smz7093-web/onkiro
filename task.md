@@ -7,6 +7,34 @@
 
 ---
 
+## 진행 현황 (2026-10-09 마감 기준)
+
+**끝난 것**: 1.1·1.4 저장소·품질 도구 / Firebase 프로젝트·Blaze·Firestore·Storage(서울) / 2.1 카카오 로그인 / 2.2 약관 동의 / 2.3 권한 모델(PM = admin) / 2.4 보안 규칙 뼈대 / 3.1~3.4 계산 엔진(임시 기준값) / 5.1~5.4 기준값 관리 화면(단가 v2026.10-1, 가정값 v0.3 적용 중). 최신 커밋은 GitHub `main`.
+
+**다음에 할 일 (권장 순서)**
+1. App Hosting 연결 → 팀 검토 URL 확보 (사용자 콘솔 작업, 1.3)
+2. 2.5 회원·권한 관리 화면 → 팀원 4명이 검토 URL로 카카오 로그인 1회 → 권한 부여 (석원·원일이 D5·D6를 관리 화면에 직접 넣으려면 10/14 전 필요)
+3. 2.1 후속: 배포 주소가 생기면 `/__/auth` 프록시 + 리다이렉트 로그인 전환 (2.1 진행 메모)
+4. Phase 4 외부 API (주연 D1 API 키 필요) 또는 Phase 6 진단 입력 화면 (외부 의존 없음)
+
+**사용자가 해야 할 일 (대기 중)**
+- [ ] App Hosting 백엔드 생성: GitHub `smz7093-web/onkiro`, 루트 디렉터리 `web`, 브랜치 `main`
+- [ ] Java(JDK 21) 설치 → `npm run test:rules`(규칙 테스트 20개) 실행 가능
+- [ ] 예산 알림(월 5만 원) 설정 여부 확인 (Blaze 전환과 별개)
+- [ ] 팀원 GitHub 초대, 주연에게 D1(API 키) 확인
+
+**팀원 산출물 대기**: D1(주연, 10/8 지남) · D2~D4(석원·해순, 10/10) · D5(석원, 10/14: 단가·철거 조건·병행 공정·'모름' 가산) · D6(원일, 10/17) · D7·D9(10/14) · D8(주연, 10/21, Analytics 고지 포함)
+
+**환경·작업 메모**
+- Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`.
+- 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/diagnose`(동의 보호 확인용 임시), `/admin`(관리자).
+- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(36개), `functions`에서 `npm test`(17개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
+- Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
+- Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
+- Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
+
+---
+
 ## 작업 목록
 
 - [ ] **Phase 1. 프로젝트 기반** (10/6–10/8)
@@ -221,7 +249,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 #### 2.4 보안 규칙 1차
 - **원칙**: 회원은 자기 진단·상담만 읽고 쓴다. staff는 2.3 권한표대로 접근. 진단 사진은 `photoAccess`가 all이거나, assigned이면서 `assessments.assigneeUid == uid`일 때만 읽기. 상담은 `consultAccess` 기준. 스냅샷과 active 버전 문서는 update 금지.
 - **완료 기준**: 에뮬레이터에서 기본 허용/거부 테스트 몇 개 통과(전체 테스트는 10.1).
-- **진행 메모**: 2026-10-08 뼈대 완료(체크는 데이터별 규칙이 모두 들어간 뒤). `firestore.rules`에 권한 함수 `role()`, `isAdmin()`, `isStaff()`, `hasPerm(flag)`, `canSeePhotos(assigneeUid)`, `canHandleConsult(assigneeUid)` 추가, 관리자의 회원 문서·동의 기록·`auditLogs` 읽기 허용, 나머지 경로는 계속 거부. `storage.rules`에 `canSeePhotos` 뼈대(모든 경로 거부 유지). 두 규칙 배포 완료. **데이터별 규칙은 해당 작업에서 이 함수로 추가**: 단가·가정값 5.3, 진단·사진 6.x, 스냅샷 7.4, 상담 9.1·9.2, 숙소 9.3. 규칙 테스트 `tests/rules/firestore.rules.test.ts`(14개)와 루트 `npm run test:rules`(에뮬레이터 + vitest)는 작성만 했고 **Java 21 설치 후 실행**해야 한다. 루트 테스트 도구는 `@firebase/rules-unit-testing` 5.x(Firebase SDK 12와 맞춤, SDK 13은 아직 올리지 않음).
+- **진행 메모**: 2026-10-08 뼈대 완료(체크는 데이터별 규칙이 모두 들어간 뒤). `firestore.rules`에 권한 함수 `role()`, `isAdmin()`, `isStaff()`, `hasPerm(flag)`, `canSeePhotos(assigneeUid)`, `canHandleConsult(assigneeUid)` 추가, 관리자의 회원 문서·동의 기록·`auditLogs` 읽기 허용, 나머지 경로는 계속 거부. `storage.rules`에 `canSeePhotos` 뼈대(모든 경로 거부 유지). 두 규칙 배포 완료. **데이터별 규칙은 해당 작업에서 이 함수로 추가**: 단가·가정값 5.3, 진단·사진 6.x, 스냅샷 7.4, 상담 9.1·9.2, 숙소 9.3. 규칙 테스트 `tests/rules/firestore.rules.test.ts`(13개)와 루트 `npm run test:rules`(에뮬레이터 + vitest)는 작성만 했고 **Java 21 설치 후 실행**해야 한다. 루트 테스트 도구는 `@firebase/rules-unit-testing` 5.x(Firebase SDK 12와 맞춤, SDK 13은 아직 올리지 않음).
 
 #### 2.5 회원·권한 관리 (ADM-05)
 - **초기 계정 5개** (prd.md 2·3절 기준, 2.3의 권한 키):
