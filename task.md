@@ -221,7 +221,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 #### 2.4 보안 규칙 1차
 - **원칙**: 회원은 자기 진단·상담만 읽고 쓴다. staff는 2.3 권한표대로 접근. 진단 사진은 `photoAccess`가 all이거나, assigned이면서 `assessments.assigneeUid == uid`일 때만 읽기. 상담은 `consultAccess` 기준. 스냅샷과 active 버전 문서는 update 금지.
 - **완료 기준**: 에뮬레이터에서 기본 허용/거부 테스트 몇 개 통과(전체 테스트는 10.1).
-- **진행 메모**:
+- **진행 메모**: 2026-10-08 뼈대 완료(체크는 데이터별 규칙이 모두 들어간 뒤). `firestore.rules`에 권한 함수 `role()`, `isAdmin()`, `isStaff()`, `hasPerm(flag)`, `canSeePhotos(assigneeUid)`, `canHandleConsult(assigneeUid)` 추가, 관리자의 회원 문서·동의 기록·`auditLogs` 읽기 허용, 나머지 경로는 계속 거부. `storage.rules`에 `canSeePhotos` 뼈대(모든 경로 거부 유지). 두 규칙 배포 완료. **데이터별 규칙은 해당 작업에서 이 함수로 추가**: 단가·가정값 5.3, 진단·사진 6.x, 스냅샷 7.4, 상담 9.1·9.2, 숙소 9.3. 규칙 테스트 `tests/rules/firestore.rules.test.ts`(14개)와 루트 `npm run test:rules`(에뮬레이터 + vitest)는 작성만 했고 **Java 21 설치 후 실행**해야 한다. 루트 테스트 도구는 `@firebase/rules-unit-testing` 5.x(Firebase SDK 12와 맞춤, SDK 13은 아직 올리지 않음).
 
 #### 2.5 회원·권한 관리 (ADM-05)
 - **초기 계정 5개** (prd.md 2·3절 기준, 2.3의 권한 키):

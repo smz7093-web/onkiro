@@ -1,17 +1,58 @@
 rules_version = '2';
 
-// task.md 2.2 단계 규칙: 회원 본인 문서와 동의 기록만 연다. 나머지는 모두 막는다.
-// 운영팀·관리자 역할별 규칙은 task.md 2.4에서 추가한다.
+// task.md 2.4 뼈대: 권한 확인 함수 + 회원 문서·동의 기록·변경 이력 규칙.
+// 진단·상담·단가 등 데이터별 규칙은 해당 화면을 만들 때 아래 함수로 추가한다 (task.md Phase 5~9).
+// 권한은 로그인 토큰의 커스텀 클레임에서 읽는다 (functions/src/permissions.ts, syncUserClaims).
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function signedIn() {
+      return request.auth != null;
+    }
+
     function isSelf(uid) {
-      return request.auth != null && request.auth.uid == uid;
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // 클레임이 없으면 일반 회원
+    function role() {
+      return signedIn() ? request.auth.token.get('role', 'member') : 'anonymous';
+    }
+
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    function isStaff() {
+      return role() in ['staff', 'admin'];
+    }
+
+    // prd.md 4절 권한표의 예/아니오 권한 (canEditPrices 등)
+    function hasPerm(flag) {
+      return isAdmin() || (role() == 'staff' && flag in request.auth.token.get('perms', []));
+    }
+
+    // all이면 전체, assigned면 담당자 본인 건만
+    function levelAllows(level, assigneeUid) {
+      return level == 'all' || (level == 'assigned' && assigneeUid == request.auth.uid);
+    }
+
+    // 진단 사진 접근 (photoAccess). assigneeUid는 assessments.assigneeUid
+    function canSeePhotos(assigneeUid) {
+      return isAdmin()
+        || (role() == 'staff' && levelAllows(request.auth.token.get('photoAccess', 'none'), assigneeUid));
+    }
+
+    // 상담 접근 (consultAccess). assigneeUid는 consultations.assigneeUid
+    function canHandleConsult(assigneeUid) {
+      return isAdmin()
+        || (role() == 'staff' && levelAllows(request.auth.token.get('consultAccess', 'none'), assigneeUid));
     }
 
     // 회원 문서: 본인은 role이 member인 문서만 만들 수 있다. 권한 필드는 관리자 함수만 쓴다.
+    // 관리자는 회원·권한 관리 화면(ADM-05)을 위해 모든 회원 문서를 읽는다.
     match /users/{uid} {
-      allow read: if isSelf(uid);
+      allow read: if isSelf(uid) || isAdmin();
       allow create: if isSelf(uid)
         && request.resource.data.keys().hasOnly(['name', 'role', 'createdAt'])
         && request.resource.data.role == 'member'
@@ -25,7 +66,7 @@ service cloud.firestore {
 
       // 동의 기록: 추가만 한다 (prd.md COM-04, 6.7 약관 개정).
       match /consents/{consentId} {
-        allow read: if isSelf(uid);
+        allow read: if isSelf(uid) || isAdmin();
         allow create: if isSelf(uid)
           && request.resource.data.keys().hasOnly(['type', 'version', 'agreed', 'agreedAt'])
           && request.resource.data.type in ['terms', 'privacy', 'estimateDisclaimer', 'photoReview', 'photoModel']
@@ -34,6 +75,12 @@ service cloud.firestore {
           && request.resource.data.agreedAt == request.time;
         allow update, delete: if false;
       }
+    }
+
+    // 변경 이력: 서버 함수만 쓰고 관리자만 읽는다.
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /{document=**} {

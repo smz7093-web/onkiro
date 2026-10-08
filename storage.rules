@@ -1,8 +1,30 @@
 rules_version = '2';
 
-// Phase 1 초안: 모든 접근을 막는다. 진단 사진 규칙은 task.md 2.4에서 작성한다.
+// task.md 2.4 뼈대: 권한 확인 함수만 두고 모든 경로를 막는다.
+// 진단 사진 경로(assessments/{id}/photos/...) 규칙은 사진 업로드(task.md 6.4)를 만들 때 추가한다.
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return signedIn() ? request.auth.token.get('role', 'member') : 'anonymous';
+    }
+
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    // 진단 사진 접근 (photoAccess). assigneeUid는 Firestore assessments.assigneeUid에서 읽어 넘긴다.
+    function canSeePhotos(assigneeUid) {
+      return isAdmin()
+        || (role() == 'staff'
+          && (request.auth.token.get('photoAccess', 'none') == 'all'
+            || (request.auth.token.get('photoAccess', 'none') == 'assigned' && assigneeUid == request.auth.uid)));
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
