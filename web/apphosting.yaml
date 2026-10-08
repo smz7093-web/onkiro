@@ -1,0 +1,5 @@
+# Firebase App Hosting 설정 (백엔드 루트 디렉터리: web/)
+# 시연 전까지는 비용을 줄이기 위해 인스턴스를 작게 유지한다.
+runConfig:
+  minInstances: 0
+  maxInstances: 2

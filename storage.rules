@@ -1,0 +1,10 @@
+rules_version = '2';
+
+// Phase 1 초안: 모든 접근을 막는다. 진단 사진 규칙은 task.md 2.4에서 작성한다.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

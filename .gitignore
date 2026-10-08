@@ -1,0 +1,19 @@
+node_modules/
+
+# Firebase
+.firebase/
+*-debug.log
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+database-debug.log*
+pubsub-debug.log*
+
+# 비밀 값은 저장소에 넣지 않는다 (API 키는 Secret Manager)
+.env*
+*.pem
+service-account*.json
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,11 @@
+{
+  "name": "onkiro",
+  "private": true,
+  "scripts": {
+    "emulators": "firebase emulators:start --project demo-onkiro",
+    "firebase": "firebase"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.32.1"
+  }
+}

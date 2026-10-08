@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>온기로 화면 목업</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="shell" id="shell">
+  <aside class="side" aria-label="화면 목록">
+    <div class="side-head">
+      <div class="brand">
+        <div class="brand-mark">온</div>
+        <div><div class="brand-name">온기로 화면 목업</div><div class="brand-sub">시나리오 v0.3 · 명세 v0.3</div></div>
+      </div>
+      <input id="q" class="side-search" type="search" placeholder="화면 이름, 기능 ID 검색" aria-label="화면 검색">
+      <div class="side-filter" role="group" aria-label="우선순위 필터">
+        <button type="button" data-f="all" aria-pressed="true">전체</button>
+        <button type="button" data-f="mvp" aria-pressed="false">MVP만</button>
+        <button type="button" data-f="p1" aria-pressed="false">P1까지</button>
+      </div>
+    </div>
+    <nav class="side-nav" id="nav"></nav>
+    <div class="side-foot"><span id="count"></span><button type="button" class="theme-btn" id="theme">테마: 시스템</button></div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+  <main class="main">
+    <header class="topbar">
+      <button type="button" class="menu-btn" id="menu" aria-label="화면 목록 열기">☰</button>
+      <div class="tb-text">
+        <div class="crumb" id="crumb"></div>
+        <h1 class="tb-title" id="title"></h1>
+        <p class="tb-desc" id="desc"></p>
+      </div>
+      <div class="tb-meta" id="meta"></div>
+    </header>
+    <div class="stage" id="stage"><div class="stage-inner"><div id="screen"></div><div class="pager" id="pager"></div></div></div>
+  </main>
+</div>
+
+<script src="assets/kit.js"></script>
+<script src="assets/screens-user.js"></script>
+<script src="assets/screens-guest.js"></script>
+<script src="assets/screens-admin.js"></script>
+<script>
+(function () {
+  const GROUP_ORDER = ['공통', '빈집 진단 (M1)', '상담·재생 (M2)', '스테이·예약 (M3)', '시뮬레이터·상담', '운영 데이터', '시스템', '무인 운영 (M4) · 예정', '지자체 (B2G)'];
+  const S = ONK.screens.map((s, i) => [s, i]).sort((a, b) => (GROUP_ORDER.indexOf(a[0].group) - GROUP_ORDER.indexOf(b[0].group)) || a[1] - b[1]).map(x => x[0]);
+  const ROLE_LABEL = { '사용자': '사용자 · 창업자·소유주', '게스트': '게스트', '관리자': '관리자 · 운영팀', '지자체': '지자체' };
+  const PH_LABEL = { P0: 'MVP', P1: 'P1', P2: 'P2', P3: 'P3', EXP: '실험' };
+  const PH_DESC = { P0: 'MVP 필수 (P0)', P1: 'MVP 가능 시 (P1)', P2: 'Phase 2 이후', P3: 'Phase 3', EXP: '별도 실험' };
+  let filter = 'all', query = '';
+
+  const $ = id => document.getElementById(id);
+  const visible = s => {
+    if (filter === 'mvp' && s.ph !== 'P0') return false;
+    if (filter === 'p1' && !['P0', 'P1'].includes(s.ph)) return false;
+    if (query) {
+      const hay = (s.title + ' ' + s.fn + ' ' + s.group + ' ' + s.sc).toLowerCase();
+      if (!hay.includes(query)) return false;
+    }
+    return true;
+  };
+
+  function buildNav() {
+    const cur = currentId();
+    let html = '', role = '', group = '', n = 0;
+    S.filter(visible).forEach(s => {
+      if (s.role !== role) { role = s.role; group = ''; html += `<div class="nav-role">${ROLE_LABEL[role] || role}</div>`; }
+      if (s.group !== group) { group = s.group; html += `<div class="nav-group"><span>${group}</span></div>`; }
+      html += `<a class="nav-item" href="#${s.id}" ${s.id === cur ? 'aria-current="page"' : ''}><span class="t">${s.title}</span>${s.dev === '모바일' ? '<span class="dev">M</span>' : ''}<span class="ph ph-${s.ph}">${PH_LABEL[s.ph]}</span></a>`;
+      n++;
+    });
+    const cs = S.find(s => s.id === cur);
+    const note = n && !visible(cs) ? `<div class="nav-group"><span>지금 보는 ‘${cs.title}’은 필터 밖 화면입니다</span></div>` : '';
+    $('nav').innerHTML = note + (html || '<div class="nav-group">찾는 화면이 없습니다</div>');
+    $('count').textContent = `화면 ${n} / ${S.length}`;
+    buildPager();
+  }
+
+  /* 이전·다음: 현재 필터·검색 결과 안에서 이동. 현재 화면이 필터 밖이면 전체 순서상 가장 가까운 결과로 */
+  function neighbors() {
+    const i = S.findIndex(s => s.id === currentId());
+    let prev = null, next = null;
+    for (let k = i - 1; k >= 0; k--) if (visible(S[k])) { prev = S[k]; break; }
+    for (let k = i + 1; k < S.length; k++) if (visible(S[k])) { next = S[k]; break; }
+    return { prev, next };
+  }
+  function buildPager() {
+    const { prev, next } = neighbors();
+    $('pager').innerHTML = (prev ? `<a href="#${prev.id}">← ${prev.title}</a>` : '<span></span>') + (next ? `<a href="#${next.id}">${next.title} →</a>` : '<span></span>');
+  }
+
+  function currentId() {
+    const h = location.hash.replace('#', '');
+    return S.some(s => s.id === h) ? h : S[0].id;
+  }
+
+  function render() {
+    const id = currentId();
+    const i = S.findIndex(s => s.id === id);
+    const s = S[i];
+    $('crumb').textContent = `${ROLE_LABEL[s.role] || s.role}  /  ${s.group}`;
+    $('title').textContent = s.title;
+    $('desc').textContent = s.desc;
+    const pc = s.ph === 'P0' ? 'p0' : s.ph === 'P1' ? 'p1' : 'p2';
+    $('meta').innerHTML =
+      `<span class="meta-chip ${pc}">${PH_DESC[s.ph]}</span>` +
+      `<span class="meta-chip">시나리오 ${s.sc}</span>` +
+      (s.fn && s.fn !== '–' ? `<span class="meta-chip mono">${s.fn}</span>` : '') +
+      `<span class="meta-chip">${s.dev}</span>`;
+    $('screen').innerHTML = s.html();
+    $('stage').scrollTop = 0;
+    document.title = `${s.title} · 온기로 화면 목업`;
+    buildNav();
+    closeMenu();
+  }
+
+  /* 필터·검색 */
+  document.querySelectorAll('.side-filter button').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('.side-filter button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    buildNav();
+  }));
+  $('q').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); buildNav(); });
+
+  /* 모바일 메뉴 */
+  function closeMenu() { $('shell').classList.remove('open'); $('scrim').hidden = true; }
+  $('menu').addEventListener('click', () => { $('shell').classList.add('open'); $('scrim').hidden = false; });
+  $('scrim').addEventListener('click', closeMenu);
+
+  /* 테마: 시스템 → 라이트 → 다크 */
+  const modes = ['system', 'light', 'dark'], names = { system: '시스템', light: '라이트', dark: '다크' };
+  let mode = 'system';
+  try { mode = localStorage.getItem('onk-theme') || 'system'; } catch (e) {}
+  function applyTheme() {
+    if (mode === 'system') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', mode);
+    $('theme').textContent = '테마: ' + names[mode];
+  }
+  $('theme').addEventListener('click', () => {
+    mode = modes[(modes.indexOf(mode) + 1) % 3];
+    try { localStorage.setItem('onk-theme', mode); } catch (e) {}
+    applyTheme();
+  });
+
+  /* 키보드 ←/→ 로 이전·다음 화면 (필터 결과 기준) */
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input, textarea, select')) return;
+    const { prev, next } = neighbors();
+    if (e.key === 'ArrowRight' && next) location.hash = next.id;
+    if (e.key === 'ArrowLeft' && prev) location.hash = prev.id;
+  });
+
+  window.addEventListener('hashchange', render);
+  applyTheme();
+  render();
+})();
+</script>
+</body>
+</html>
