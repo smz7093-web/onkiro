@@ -34,7 +34,7 @@
 **환경·작업 메모**
 - Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`.
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/diagnose`(동의 보호 확인용 임시), `/admin`(관리자), `/admin/users`(회원·권한), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
-- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(74개 + todo 6개), `functions`에서 `npm test`(17개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
+- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(81개 + todo 6개), `functions`에서 `npm test`(17개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
 - Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
@@ -508,31 +508,31 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 
 #### 7.1 견적 결과 (SIM-08, 15)
 - 목업 `sim-estimate`. 합계·범위·공기, 공정별 구분(기본 공사/상태별 보수)·판정·금액·근거. 모든 수치 옆 ⓘ → 출처·조회 시점·가정값·단가 버전. IoT 행에 "설치비만 추정, 자동 연동·관제는 Phase 2 이후". 면책 문구 상시 표시.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 화면 완료, 실제 계정 확인 대기. `components/diagnose/estimate-step.tsx`: 합계·범위·공기, 'ⓘ 범위 이유'(기본·사진 누락·대장 없음·모름), 모듈 A/B/C·철거 포함 선택(즉시 재계산), 공정별 구분·판정·금액·ⓘ 근거(기준수량·단가·상태계수·작업일·단가 버전, IoT 문구), 소계·예비비·합계, 단가 없는 공정·사진 없는 부위 '현장 확인 필요', 면책·계산 기준일·버전. 계산은 `lib/diagnosis/compute.ts`(테스트 7개). **주의**: 체크리스트 판정(3.7)이 욕실·주방만 채워져 있어 지금 견적에는 지붕·구조 보수가 빠진다(석원 작업 후 반영).
 
 #### 7.2 위험 신호·인허가 (SIM-10, 11)
 - 위험 신호(큰 균열 "손가락 들어갈 정도", 기울어짐 "많이", 지붕 붕괴 — D4로 확정) → 수익 화면 대신 "전문가 진단 필수" + 현장진단 신청 버튼을 먼저 노출, 진단 status=expertRequired.
 - 인허가: D7 항목별 상태(`확인 필요` / `주의 신호 없음` / `확인됨`)와 다음 행동. "가능" 표시 금지, "법적 판정 아님" 상시.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 화면 완료. 위험 신호가 있으면 견적 위에 '전문가 진단 필수' + 현장진단 신청 버튼, 수익 버튼은 보조('그래도 수익 시뮬레이션 보기'), 스냅샷 저장 시 status=expertRequired. 위험 신호 판정 자체는 3.7(석원)이 채운다. 인허가는 `lib/diagnosis/permits.ts` 임시 항목 3개(+대장 없음 리스크), 모두 '확인 필요', '법적 판정 아님' 상시. D7(원일) 오면 항목 교체.
 
 #### 7.3 수익 시뮬레이션·3안 (SIM-12, 13, 14)
 - 목업 `sim-revenue`. 슬라이더 5개 + "운영비 가정 더 보기" 8개. "지역 기본값으로" 버튼. 값을 바꾸는 즉시 3안 재계산. 포함 비용·제외 비용(세금·금융비용·대규모 수선비), "세후 순이익 아님" 상시 표시.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 화면 완료. 슬라이더 5개(평일·주말 요금, 가동률 25~85%, OTA 수수료율, 판매 불가일) + '운영비 가정 더 보기' 8개, '지역 기본값으로', 3안 표(가동률·매출·운영비·차감 후 추정액·회수 기간·손익분기 가동률) 즉시 재계산, 포함·제외 비용과 '세후 순이익 아님' 상시. 위험 신호가 있으면 상단에 참고용 안내.
 
 #### 7.4 계산 스냅샷 (SIM-20)
 - **생성 시점(단일 규칙)**: ① 견적 결과 화면에 처음 도달할 때 ② "저장"·"PDF 받기"·상담 신청 버튼을 누를 때, 현재 입력이 마지막 스냅샷과 다르면 새로 만든다. 슬라이더 조작 중에는 저장하지 않는다.
 - **내용**: `assessments/{id}/snapshots/{id}` = inputs, priceVersion, assumptionVersion, formulaVersion, result(반올림 전 계산값), createdBy. 생성 후 `assessments.latestSnapshotId`, `latestSummary`(합계·월 추정액) 갱신.
 - **참조**: PDF와 상담은 버튼을 누른 시점의 스냅샷 ID를 저장해, 나중에 입력이 바뀌어도 당시 결과를 가리킨다.
 - **완료 기준**: 같은 입력·버전으로 다시 계산하면 같은 결과. 슬라이더를 여러 번 움직이고 "저장"을 누르면 스냅샷이 1개만 생긴다.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 코드 완료. `lib/diagnosis/snapshot-store.ts` `ensureSnapshot`: 입력(견적 입력·체크리스트·수익 입력·버전 3종)의 지문(`inputsKey`, FNV-1a)이 `assessments.latestInputsKey`와 같으면 만들지 않고 마지막 id를 돌려준다. 만들 때 진단의 `latestSnapshotId`·`latestSummary`·`estimateOptions`·`revenueInput`·status(saved/expertRequired, consult는 유지)를 같은 배치로 갱신. 규칙: 스냅샷은 추가만, 진단 status는 회원이 saved/expertRequired로만, 연결 스냅샷은 같은 배치의 본인 스냅샷이어야 함(규칙 테스트 3개 추가, Java 설치 후 실행). 슬라이더는 저장하지 않으므로 여러 번 움직이고 '저장'하면 1개만 생긴다.
 
 #### 7.5 다음 행동 버튼 (SIM-17)
 - 현장진단 신청 / 턴키 PM 상담 / PDF 받기 / 저장. 상담 버튼은 진단 ID를 넘겨 9.1 폼에 자동 연결.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 버튼 완료. 현장진단·턴키 PM → 스냅샷 확보 후 `/consult?assessment=&type=&snapshot=`(9.1 전까지 자리 화면), PDF → `/diagnose/[id]/report?snapshot=`(8.1 전까지 자리 화면), 저장 → '저장했습니다'/'이미 저장된 내용입니다'.
 
 #### 7.6 응답 성능 (SIM-19)
 - 체크리스트 완료 → 결과 표시 3초 이내(외부 API 시간 제외). 계산은 브라우저에서 즉시 하고, 7.4의 스냅샷 저장은 화면 표시를 기다리게 하지 않는다(저장이 끝나기 전에도 결과를 먼저 보여준다).
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 구조 반영. 계산은 브라우저에서 즉시(useMemo), 첫 도달 스냅샷은 결과 표시 뒤 배경에서 저장. 기준값(적용 버전 2건)·사진 목록 읽기만 기다린다. **남은 일**: 실제 기기에서 체크리스트 완료 → 결과 표시 시간 측정.
 
 ---
 
