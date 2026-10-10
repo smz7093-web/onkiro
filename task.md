@@ -14,14 +14,15 @@
 **끝난 것**: 1.1·1.4 저장소·품질 도구 / Firebase 프로젝트·Blaze·Firestore·Storage(서울) / 2.1 카카오 로그인 / 2.2 약관 동의 / 2.3 권한 모델(PM = admin) / 2.4 보안 규칙 뼈대 / 3.1~3.4 계산 엔진(임시 기준값) / 5.1~5.4 기준값 관리 화면(단가 v2026.10-1, 가정값 v0.3 적용 중). 최신 커밋은 GitHub `main`.
 
 **다음에 할 일 (권장 순서)**
-1. App Hosting 연결 → 팀 검토 URL 확보 (사용자 콘솔 작업, 1.3)
+1. ~~App Hosting 연결~~ 10/10 완료. 검토 URL에서 로그인 확인 → 팀에 공유
 2. 2.5 확인: 팀원 4명이 카카오 로그인 1회 → `/admin/users`에서 권장 설정 적용 (석원·원일이 D5·D6를 관리 화면에 직접 넣으려면 10/14 전 필요). 화면은 완료
 3. 2.1 후속: 배포 주소가 생기면 `/__/auth` 프록시 + 리다이렉트 로그인 전환 (2.1 진행 메모)
 4. Phase 4 외부 API (D1 API 키, 이제 PM이 직접 발급) 또는 Phase 6 진단 입력 화면 (외부 의존 없음)
 5. 팀원 PR 검토 (모듈 뼈대는 10/10 완료, 1.6)
 
 **사용자가 해야 할 일 (대기 중)**
-- [ ] App Hosting 백엔드 생성: GitHub `smz7093-web/onkiro`, 루트 디렉터리 `web`, 브랜치 `main`
+- [x] App Hosting 백엔드 생성 (10/10, 검토 URL https://onkiro-web--onkiro-2fe12.asia-east1.hosted.app)
+- [ ] 검토 URL에서 카카오 로그인 확인 (승인된 도메인 추가 후) → 팀원에게 URL 공유
 - [ ] Java(JDK 21) 설치 → `npm run test:rules`(규칙 테스트 20개) 실행 가능
 - [ ] 예산 알림(월 5만 원) 설정 여부 확인 (Blaze 전환과 별개)
 - [ ] 팀원 GitHub 초대(쓰기 권한) + `main` 브랜치 보호(PR 필수) → 팀원 개발 시작 조건
@@ -220,6 +221,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 - **할 일**: `firebase.json`에 Auth·Firestore·Storage·Functions 에뮬레이터를 설정한다. App Hosting 백엔드 1개를 GitHub 저장소의 `main` 브랜치에 연결해, `main`에 푸시하면 자동 배포되는 **팀 공용 검토 URL 1개**를 만든다. 브랜치·PR별 미리보기는 두지 않는다(1인 개발이라 불필요). 팀원 검토는 이 URL로 주 2회 한다.
 - **완료 기준**: 로컬 에뮬레이터에서 앱이 동작하고, `main` 푸시 후 검토 URL에서 빈 홈이 열린다. URL을 팀에 공유했다.
 - **진행 메모**: 2026-10-06: `firebase.json`에 에뮬레이터(auth 9099, firestore 8080, storage 9199, functions 5001, UI 4000) 설정, `npm run emulators`는 `demo-onkiro` 데모 프로젝트로 실제 프로젝트 없이 실행. `web/apphosting.yaml`(min 0, max 2 인스턴스) 작성. **남은 일**: Java(JDK 21) 설치 후 에뮬레이터 실행 확인, GitHub 저장소 생성·푸시, App Hosting 백엔드 생성(루트 디렉터리 `web`, 브랜치 `main`, 리전은 생성 화면에서 서울 지원 여부 확인).
+  - 2026-10-10: App Hosting 백엔드 `onkiro-web`(asia-east1, Node 24) 연결, **검토 URL https://onkiro-web--onkiro-2fe12.asia-east1.hosted.app**, `main` 푸시 시 자동 출시(약 3분). 첫 출시는 어댑터 빌드 실패: 저장소 루트의 `package-lock.json` 때문에 Next.js가 루트를 작업 공간으로 잡아 standalone 출력이 `web/` 아래로 중첩됨 → `next.config.ts`에 `turbopack.root`·`outputFileTracingRoot`를 `web`으로 고정해 해결. Firebase Auth 승인된 도메인에 검토 도메인 추가(사용자). 어댑터(`@apphosting/adapter-nextjs`)는 Windows에서 실행되지 않아 로컬 재현은 일반 `next build`로만 한다. **남은 일**: 에뮬레이터 확인(Java).
 
 #### 1.4 코드 품질 도구
 - **할 일**: ESLint·Prettier 설정, Vitest 설치(엔진 테스트용), `npm test` 스크립트.
