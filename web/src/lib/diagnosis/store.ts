@@ -11,7 +11,9 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import type { ChecklistAnswers } from "../engine/checklist";
+import type { RevenueInput } from "../engine/types";
 import { db } from "../firebase/client";
+import type { EstimateOptions } from "./compute";
 import { initialFacts, type Facts } from "./facts";
 import { advanceReached, type StepId } from "./steps";
 
@@ -29,8 +31,23 @@ export interface Assessment {
   // 지금까지 도달한 단계 (이 단계까지 열 수 있다)
   reached: StepId;
   checklist: Partial<ChecklistAnswers>;
+  // 결과 화면 값 (task.md 7.1~7.4). 스냅샷을 만들 때 함께 갱신한다
+  estimateOptions: EstimateOptions | null;
+  revenueInput: RevenueInput | null;
+  latestSnapshotId: string | null;
+  // 마지막 스냅샷 입력의 지문 (같으면 새 스냅샷을 만들지 않는다)
+  latestInputsKey: string | null;
+  // 마이페이지 목록용 요약 (원 단위, 반올림 전)
+  latestSummary: LatestSummary | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+}
+
+export interface LatestSummary {
+  total: number;
+  rangeLow: number;
+  rangeHigh: number;
+  baseNet: number;
 }
 
 export interface AddressInput {
@@ -60,6 +77,11 @@ function toAssessment(id: string, d: Record<string, unknown>): Assessment {
     status: (d.status as AssessmentStatus) ?? "draft",
     reached: (d.reached as StepId) ?? "address",
     checklist: (d.checklist as Partial<ChecklistAnswers>) ?? {},
+    estimateOptions: (d.estimateOptions as EstimateOptions) ?? null,
+    revenueInput: (d.revenueInput as RevenueInput) ?? null,
+    latestSnapshotId: (d.latestSnapshotId as string) ?? null,
+    latestInputsKey: (d.latestInputsKey as string) ?? null,
+    latestSummary: (d.latestSummary as LatestSummary) ?? null,
     createdAt: toDate(d.createdAt),
     updatedAt: toDate(d.updatedAt),
   };

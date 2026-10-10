@@ -318,6 +318,61 @@ describe("assessments·properties (진단)", () => {
   });
 });
 
+describe("snapshots (계산 스냅샷)", () => {
+  const snapshot = {
+    inputs: {},
+    options: { module: "B", demolition: false },
+    result: {},
+    priceVersion: "v2026.10-1",
+    assumptionVersion: "v0.3",
+    formulaVersion: "v1.0",
+    inputsKey: "abcd1234",
+    reason: "view",
+    parentSnapshotId: null,
+    createdBy: "alice",
+    createdAt: serverTimestamp(),
+  };
+
+  it("스냅샷을 만들며 진단을 saved로 바꾸고, 스냅샷은 고칠 수 없다", async () => {
+    const db = member();
+    const batch = writeBatch(db);
+    batch.set(doc(db, "assessments/a1/snapshots/s1"), snapshot);
+    batch.update(doc(db, "assessments/a1"), {
+      latestSnapshotId: "s1",
+      latestInputsKey: "abcd1234",
+      status: "saved",
+      updatedAt: serverTimestamp(),
+    });
+    await assertSucceeds(batch.commit());
+    await assertFails(
+      updateDoc(doc(db, "assessments/a1/snapshots/s1"), { reason: "save" }),
+    );
+    await assertFails(deleteDoc(doc(db, "assessments/a1/snapshots/s1")));
+  });
+
+  it("없는 스냅샷을 연결하거나 consult로 바꾸지 못한다", async () => {
+    const ref = doc(member(), "assessments/a1");
+    await assertFails(
+      updateDoc(ref, {
+        latestSnapshotId: "nope",
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(ref, { status: "consult", updatedAt: serverTimestamp() }),
+    );
+  });
+
+  it("다른 사람 진단에는 스냅샷을 만들 수 없다", async () => {
+    await assertFails(
+      setDoc(doc(newcomer(), "assessments/a1/snapshots/s2"), {
+        ...snapshot,
+        createdBy: "bob",
+      }),
+    );
+  });
+});
+
 describe("branches", () => {
   it("숙소 상세는 누구나 읽고, 아직 아무도 쓰지 못한다", async () => {
     await assertSucceeds(getDoc(doc(anonymous(), "branches/b1")));

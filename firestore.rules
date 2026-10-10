@@ -143,6 +143,20 @@ service cloud.firestore {
         || getAfter(/databases/$(database)/documents/properties/$(propertyId)).data.ownerUid == request.auth.uid;
     }
 
+    // 회원은 견적 도달 시 draft → saved/expertRequired로만 바꾼다. 상담 연결(consult)은 상담 신청이 바꾼다(9.1)
+    function statusChangeAllowed() {
+      return request.resource.data.get('status', 'draft') == resource.data.get('status', 'draft')
+        || (resource.data.get('status', 'draft') != 'consult'
+          && request.resource.data.status in ['saved', 'expertRequired']);
+    }
+
+    // 마지막 스냅샷을 바꿀 때는 같은 배치에서 만든 본인 스냅샷이어야 한다
+    function snapshotLinkValid(aid) {
+      return request.resource.data.get('latestSnapshotId', null) == resource.data.get('latestSnapshotId', null)
+        || getAfter(/databases/$(database)/documents/assessments/$(aid)/snapshots/$(request.resource.data.latestSnapshotId))
+             .data.createdBy == request.auth.uid;
+    }
+
     match /assessments/{aid} {
       allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
       allow create: if signedIn()
@@ -158,13 +172,34 @@ service cloud.firestore {
       allow update: if signedIn()
         && resource.data.uid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['propertyId', 'address', 'reached', 'checklist', 'updatedAt'])
+             .hasOnly(['propertyId', 'address', 'reached', 'checklist', 'updatedAt',
+                       'estimateOptions', 'revenueInput', 'latestSnapshotId', 'latestInputsKey',
+                       'latestSummary', 'status'])
         && request.resource.data.reached in diagnosisSteps()
         && request.resource.data.checklist is map
         && (request.resource.data.address == null || request.resource.data.address is string)
         && ownsPropertyAfter(request.resource.data.propertyId)
+        && statusChangeAllowed()
+        && snapshotLinkValid(aid)
         && request.resource.data.updatedAt == request.time;
       allow delete: if false;
+
+      // 계산 스냅샷 (SIM-20, task.md 7.4): 추가만 하고 고치거나 지우지 않는다
+      match /snapshots/{sid} {
+        allow read: if ownsAssessment(aid) || isAdmin();
+        allow create: if ownsAssessment(aid)
+          && request.resource.data.keys().hasOnly(['inputs', 'options', 'result', 'priceVersion',
+                                                   'assumptionVersion', 'formulaVersion', 'inputsKey',
+                                                   'reason', 'parentSnapshotId', 'createdBy', 'createdAt'])
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.parentSnapshotId == null
+          && request.resource.data.reason in ['view', 'save', 'pdf', 'consult']
+          && request.resource.data.priceVersion is string
+          && request.resource.data.assumptionVersion is string
+          && request.resource.data.formulaVersion is string
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
 
       // 사진 기록. 파일은 Storage assessments/{aid}/photos/{photoId}.jpg (storage.rules)
       match /photos/{photoId} {
