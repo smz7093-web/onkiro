@@ -5,6 +5,32 @@
   --foreground: #171717;
 }
 
+/* 목업(mockup/assets/style.css) 색 토큰. bg-accent, text-ink, border-line처럼 쓴다.
+   공통 UI 컴포넌트(components/ui, task.md 6.7)는 이 색만 쓴다. 어두운 화면 색은 6.7에서 정한다. */
+@theme {
+  --color-paper: #f1f3ef;
+  --color-surface: #ffffff;
+  --color-surface-2: #f5f7f3;
+  --color-ink: #16201c;
+  --color-ink-2: #44514b;
+  --color-muted: #76827c;
+  --color-line: #dce2da;
+  --color-line-2: #c9d1c7;
+  --color-accent: #1f5c4a;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #e1ede7;
+  --color-ochre: #9a6414;
+  --color-ochre-soft: #f6ecda;
+  --color-good: #1e7a4c;
+  --color-good-soft: #e1f1e7;
+  --color-warn: #9a5b00;
+  --color-warn-soft: #fbefd9;
+  --color-crit: #b42318;
+  --color-crit-soft: #fbe4e1;
+  --color-info: #2a58a6;
+  --color-info-soft: #e2eaf8;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -150,6 +150,17 @@ describe("auditLogs", () => {
   });
 });
 
+describe("branches", () => {
+  it("숙소 상세는 누구나 읽고, 아직 아무도 쓰지 못한다", async () => {
+    await assertSucceeds(getDoc(doc(anonymous(), "branches/b1")));
+    await assertFails(setDoc(doc(admin(), "branches/b1"), { name: "x" }));
+  });
+
+  it("지점 실적 하위 컬렉션은 막혀 있다", async () => {
+    await assertFails(getDoc(doc(anonymous(), "branches/b1/dailyRecords/2026-10-10")));
+  });
+});
+
 describe("나머지 경로", () => {
   it("규칙이 없는 컬렉션은 관리자도 막힌다", async () => {
     await assertFails(getDoc(doc(admin(), "assessments/a1")));

@@ -123,6 +123,13 @@ service cloud.firestore {
       allow delete: if hasPerm('canEditAssumptions') && resource.data.status == 'draft';
     }
 
+    // 지점(숙소) 상세 (STY-01·02, task.md 9.3): 누구나 읽는다. 콘텐츠 편집 화면을 만들 때
+    // canEditContent 권한자 쓰기 규칙을 추가한다. 실적·공사비 하위 컬렉션은 아래 기본 거부에 걸린다.
+    match /branches/{branchId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // 변경 이력: 서버 함수만 쓰고 관리자만 읽는다.
     match /auditLogs/{logId} {
       allow read: if isAdmin();

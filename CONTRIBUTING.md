@@ -13,7 +13,12 @@
 | 원일 | 상담 상태 전이·담당 배정 규칙 함수 | `web/src/lib/consult/` | 9.7 | 10/21 |
 | 해순 | 숙소 상세 화면 | `web/src/app/(public)/stay/` | 9.3 | 10/27 |
 
-각 작업의 요구사항과 완료 기준은 `task.md`의 해당 번호에 있다. 함수의 입력·출력 타입, 숙소 데이터 읽기 함수처럼 시작에 필요한 뼈대는 PM이 먼저 만들어 둔다.
+각 작업의 요구사항과 완료 기준은 `task.md`의 해당 번호에 있다. 시작에 필요한 뼈대는 PM이 만들어 두었다. 파일 안의 `TODO(이름)` 주석이 각자 채울 자리다.
+
+- 석원: `checklist.ts`의 `evaluateChecklist`, `checklist.test.ts`의 `it.todo` 줄
+- 원일: `revenue.cases.test.ts`의 `CASES` 표, `consult/status.ts`의 두 함수와 `status.test.ts`
+- 주연: `components/ui/index.ts`의 목록. 만든 것은 http://localhost:3000/ui 견본 페이지에서 확인
+- 해순: `app/(public)/stay/[id]/stay-detail.tsx`. http://localhost:3000/stay/sample-1 에서 샘플 숙소로 확인
 
 **PM만 고치는 곳**: 위 표 밖의 모든 파일. 특히 `firestore.rules`·`storage.rules`(보안 규칙), `functions/`(서버 함수), `web/src/lib/firebase/`·`lib/auth/`·`lib/permissions.ts`(로그인·권한), `lib/engine/`의 기존 파일(견적·수익 계산), `package.json`(라이브러리 추가), `apphosting.yaml`·`firebase.json`(배포 설정). 바꿔야 할 것 같으면 PR 설명에 적거나 PM에게 요청한다.
 
