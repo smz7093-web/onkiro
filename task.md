@@ -32,9 +32,9 @@
 **팀원 산출물 대기**: D1(PM 이관, 10/8 지남) · D2~D4(석원·해순, 10/10) · D5(석원, 10/14: 단가·철거 조건·병행 공정·'모름' 가산) · D6(원일, 10/17) · D7(원일)·D9(해순, 10/14) · D8(PM 초안·원일 검토, 10/21, Analytics 고지 포함)
 
 **환경·작업 메모**
-- Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`.
+- Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`. 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/diagnose`(동의 보호 확인용 임시), `/admin`(관리자), `/admin/users`(회원·권한), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
-- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(81개 + todo 6개), `functions`에서 `npm test`(17개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
+- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(81개 + todo 6개), `functions`에서 `npm test`(24개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
 - Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
@@ -541,11 +541,11 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 #### 8.1 PDF 리포트 (SIM-16)
 - 목업 `sim-report`. A4 인쇄용 페이지 + 인쇄 CSS, 사용자는 브라우저 인쇄로 PDF 저장.
 - **필수 내용**: 진단 ID, 주소, 계산 기준일, 적용 버전(단가·가정값·계산식), 예상 공사비·범위·공기, 3안 표, 포함·제외 비용, 면책 문구, 인허가 "법적 판정 아님". 하나라도 빠지면 통과 아님. 페이지 수는 실제 내용 기준.
-- **진행 메모**:
+- **진행 메모**: 2026-10-11 화면 완료, 실제 인쇄 확인 대기. `/report/[진단]/[스냅샷]`(`components/report/report-view.tsx`): 저장된 스냅샷만 읽어 표시(재계산 없음). 진단 번호(`DX-`+id 앞 8자), 주소, 계산 기준일(스냅샷 시각), 버전 3종, 공사비·범위·공기·불확실도 근거, 공정표, 위험 신호, 3안 표, 가정값 13개, 포함·제외 비용·세후 순이익 아님, 인허가(법적 판정 아님), 면책. 'PDF로 저장(인쇄)' 버튼 → 브라우저 인쇄, `globals.css`에 A4 `@page`·`print:hidden`. 결과 화면 'PDF 받기'와 마이페이지에서 연다. 상담 담당(전체 권한)도 읽을 수 있다. **남은 일**: 크롬에서 A4 PDF 저장해 잘림·페이지 나눔 확인, 면책 문구는 D8 후 교체.
 
 #### 8.2 마이페이지 (COM-03)
 - 목업 `mypage`. 내 진단 목록(진단 ID·주소·진단일·견적 합계·월 추정액·상태), 리포트 다시 보기(저장된 스냅샷 기준, 재계산 아님), 상담 신청 내역·상태.
-- **진행 메모**:
+- **진행 메모**: 2026-10-11 화면 완료. `/me`: 내 진단(진단 번호·상태·진단일·견적 합계·기본안 월 추정액, '리포트 다시 보기'=마지막 스냅샷, '이어서 하기/결과·입력 보기'), 상담 신청 내역(유형·단계·신청일·연결 진단·담당자, '신청 당시 리포트'). 리포트·마이페이지는 `RequireLogin`(약관 재동의 전에도 열람 가능). 진단 화면 머리말에 마이페이지 링크.
 
 #### 8.3 D8 (10/21, PM 초안 → `[원일]` 검토)
 - 약관, 개인정보 처리방침, 견적 면책 문구, 진단 사진 보관 기간·삭제 절차. 받으면 2.2 동의 문구·8.1 면책 문구 교체.
@@ -560,14 +560,14 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 - 목업 `con-apply`. 유형(현장진단/턴키 PM/빈집 맡기기), 신청인, 연락처, 소유 관계(본인/가족/공동상속), 연결 진단(자동), 희망 연락일, 메모, 전화 상담 요청. 공동상속이면 "동의서는 계약 단계에서 준비" 안내만.
 - 저장: `consultations/{id}` status=접수, 신청 시점 스냅샷 ID 포함. 연결된 진단 status=consult(이미 consult면 유지, expertRequired면 유지).
 - 한 진단에 상담 여러 건 신청 가능. 이후 상담 단계가 보류·계약 등으로 바뀌어도 진단 상태는 consult를 유지한다.
-- **진행 메모**:
+- **진행 메모**: 2026-10-11 화면 완료. `/consult?assessment=&type=&snapshot=`(`components/consult/consult-apply.tsx`): 유형 3개(설명 포함), 신청인(회원 이름 기본), 연락처, 소유 관계(공동상속 → 동의서는 계약 단계 안내), 희망 연락일, 메모, 전화 상담 요청. 같은 배치로 `consultations` 생성(status=received, 스냅샷 id) + 진단 status=consult·`lastConsultId`(expertRequired면 status 유지). 규칙이 '같은 배치의 본인 상담이 이 진단을 가리키는지' 확인. 진단 없이도 신청 가능(홈 '빈집 맡기기' 용도, type=entrust). 접수 알림은 관리자 메뉴 '상담' 배지(새 접수 수, 전체 권한만).
 
 #### 9.2 상담 관리 (CON-02)
 - 목업 `adm-consult`. 칸반 6단계(접수/연락/방문 예정/제안/계약/보류), 유형 필터, 담당자 배정, 메모, 전화 접수 대리 입력(`proxyEnteredBy`).
 - **이력**: 상태 변경, 담당자 배정·변경, 메모 수정을 모두 `consultations/{id}/events`에 기록한다. 이벤트 = {kind(status/assignee/memo), before, after, actorUid, at}.
 - 담당자 배정 시 연결 진단의 `assigneeUid`에 복사(사진 "담당 건" 권한 판정용). 한 진단에 상담이 여러 건이면 가장 최근에 배정된 담당자를 복사한다.
 - 알림: 접수 시 운영팀 알림(시연에서는 이메일 또는 관리자 화면 배지). 실패해도 관리자 화면에 표시. 운영 기준: 영업일 1일 내 첫 연락, 원일이 매일 오전 확인.
-- **진행 메모**:
+- **진행 메모**: 2026-10-11 화면·함수 완료. `/admin/consults`(`components/admin/consult-board.tsx`): 6단계 칸반(모바일은 세로), 유형 필터, 카드 선택 → 상세(연락처 전화 링크, 소유 관계, 희망일, 연결 진단의 신청 당시 리포트, 신청 메모), 단계 옮기기(원일의 `canTransition`으로 거름), 담당자 배정(전체 권한만, 운영팀 목록), 운영팀 메모(`staffMemo`, 신청 메모와 별도), 변경 이력. 전화 접수 대리 입력(전체 권한). 변경은 서버 함수 `updateConsultation`(권한·입력 검증, events 기록, 담당자를 진단 `assigneeUid`에 복사)·`createProxyConsultation`(`proxyEnteredBy`) — `functions/src/consult.ts` 테스트 7개. 담당 건 권한은 본인 배정 상담만 조회. **남은 일**: D13 단계 규칙은 화면에서만 거르고 서버는 단계 이름만 검사(원일 규칙 확정 후 서버에도 반영 검토), 이메일 알림은 시연 후.
 
 #### 9.3 `[해순·개발]` 숙소 상세·외부 예약 (STY-01, 02) (10/27)
 - **PM이 먼저**: `branches` 문서 타입·읽기 함수·보안 규칙, 시연용 샘플 데이터. 해순은 화면만 만든다.
