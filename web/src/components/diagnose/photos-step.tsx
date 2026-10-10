@@ -74,8 +74,9 @@ export function PhotosStep() {
       }
       if (files.length > room)
         setError(`최대 ${MAX_PHOTOS}장까지만 올렸습니다.`);
-    } catch {
-      setError("사진을 올리지 못했습니다. 다른 사진으로 다시 시도해 주세요.");
+    } catch (e) {
+      console.error("사진 업로드 실패", e);
+      setError(uploadErrorMessage(e));
     } finally {
       setUploading(null);
     }
@@ -245,4 +246,14 @@ export function PhotosStep() {
       {footer("나중에 올리기")}
     </div>
   );
+}
+
+// 업로드 실패 원인을 사용자와 PM이 알 수 있게 보여준다 (오류 코드는 문의할 때 쓴다)
+function uploadErrorMessage(e: unknown) {
+  const code = e && typeof e === "object" && "code" in e ? String(e.code) : "";
+  if (code === "storage/unauthorized" || code === "permission-denied")
+    return `사진을 올릴 권한이 없습니다. 운영팀에 알려 주세요. (${code})`;
+  if (e instanceof Error && !code && e.name !== "FirebaseError")
+    return `이 사진 형식은 처리할 수 없습니다. JPG나 PNG로 다시 시도해 주세요. (${e.message})`;
+  return `사진을 올리지 못했습니다. 잠시 뒤 다시 시도해 주세요. (${code || "unknown"})`;
 }
