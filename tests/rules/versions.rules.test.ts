@@ -35,8 +35,14 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
-    await setDoc(doc(db, "priceVersions/v1"), { status: "active", data: { version: "v1" } });
-    await setDoc(doc(db, "priceVersions/v0"), { status: "retired", data: { version: "v0" } });
+    await setDoc(doc(db, "priceVersions/v1"), {
+      status: "active",
+      data: { version: "v1" },
+    });
+    await setDoc(doc(db, "priceVersions/v0"), {
+      status: "retired",
+      data: { version: "v0" },
+    });
     await setDoc(doc(db, "priceVersions/v2"), {
       status: "draft",
       data: { version: "v2" },
@@ -83,7 +89,12 @@ describe("priceVersions", () => {
     await assertSucceeds(getDoc(doc(member(), "priceVersions/v1")));
     await assertFails(getDoc(doc(member(), "priceVersions/v2")));
     await assertSucceeds(
-      getDocs(query(collection(member(), "priceVersions"), where("status", "==", "active"))),
+      getDocs(
+        query(
+          collection(member(), "priceVersions"),
+          where("status", "==", "active"),
+        ),
+      ),
     );
     await assertFails(getDocs(collection(member(), "priceVersions")));
   });
@@ -93,27 +104,44 @@ describe("priceVersions", () => {
   });
 
   it("단가 편집 권한자만 초안을 만든다", async () => {
-    await assertSucceeds(setDoc(doc(seokwon(), "priceVersions/v3"), newDraft("seokwon", "v3")));
-    await assertFails(setDoc(doc(wonil(), "priceVersions/v4"), newDraft("wonil", "v4")));
+    await assertSucceeds(
+      setDoc(doc(seokwon(), "priceVersions/v3"), newDraft("seokwon", "v3")),
+    );
+    await assertFails(
+      setDoc(doc(wonil(), "priceVersions/v4"), newDraft("wonil", "v4")),
+    );
   });
 
   it("처음부터 적용 상태로 만들거나 버전 이름이 다르면 거부한다", async () => {
     await assertFails(
-      setDoc(doc(seokwon(), "priceVersions/v3"), { ...newDraft("seokwon", "v3"), status: "active" }),
+      setDoc(doc(seokwon(), "priceVersions/v3"), {
+        ...newDraft("seokwon", "v3"),
+        status: "active",
+      }),
     );
-    await assertFails(setDoc(doc(seokwon(), "priceVersions/v3"), newDraft("seokwon", "v9")));
+    await assertFails(
+      setDoc(doc(seokwon(), "priceVersions/v3"), newDraft("seokwon", "v9")),
+    );
   });
 
   it("초안은 고치고 지울 수 있지만 status는 바꾸지 못한다", async () => {
     const ref = doc(seokwon(), "priceVersions/v2");
-    const edit = { data: { version: "v2", fixedDays: 6 }, updatedBy: "seokwon", updatedAt: serverTimestamp() };
+    const edit = {
+      data: { version: "v2", fixedDays: 6 },
+      updatedBy: "seokwon",
+      updatedAt: serverTimestamp(),
+    };
     await assertSucceeds(updateDoc(ref, edit));
     await assertFails(updateDoc(ref, { ...edit, status: "active" }));
     await assertSucceeds(deleteDoc(ref));
   });
 
   it("적용·이전 버전은 고치거나 지우지 못한다", async () => {
-    const edit = { data: { version: "v1" }, updatedBy: "seokwon", updatedAt: serverTimestamp() };
+    const edit = {
+      data: { version: "v1" },
+      updatedBy: "seokwon",
+      updatedAt: serverTimestamp(),
+    };
     await assertFails(updateDoc(doc(seokwon(), "priceVersions/v1"), edit));
     await assertFails(deleteDoc(doc(seokwon(), "priceVersions/v1")));
     await assertFails(deleteDoc(doc(seokwon(), "priceVersions/v0")));
@@ -122,7 +150,17 @@ describe("priceVersions", () => {
 
 describe("assumptionVersions", () => {
   it("가정값 편집 권한자만 초안을 만든다", async () => {
-    await assertSucceeds(setDoc(doc(wonil(), "assumptionVersions/v0.4"), newDraft("wonil", "v0.4")));
-    await assertFails(setDoc(doc(seokwon(), "assumptionVersions/v0.5"), newDraft("seokwon", "v0.5")));
+    await assertSucceeds(
+      setDoc(
+        doc(wonil(), "assumptionVersions/v0.4"),
+        newDraft("wonil", "v0.4"),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(seokwon(), "assumptionVersions/v0.5"),
+        newDraft("seokwon", "v0.5"),
+      ),
+    );
   });
 });

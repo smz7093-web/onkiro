@@ -123,6 +123,88 @@ service cloud.firestore {
       allow delete: if hasPerm('canEditAssumptions') && resource.data.status == 'draft';
     }
 
+    // 진단·빈집 (task.md 6.1~6.5). 회원 본인 것만 읽고 쓴다. 관리자는 읽기만.
+    // status·uid·담당자는 회원이 바꾸지 못한다 (견적 도달·상담 연결 시 Phase 7·9에서 규칙을 넓힌다).
+    function diagnosisSteps() {
+      return ['address', 'confirm', 'photos', 'checklist', 'estimate', 'revenue'];
+    }
+
+    function assessmentDoc(aid) {
+      return get(/databases/$(database)/documents/assessments/$(aid)).data;
+    }
+
+    function ownsAssessment(aid) {
+      return signedIn() && assessmentDoc(aid).uid == request.auth.uid;
+    }
+
+    // 진단에 연결하는 빈집은 본인 것이어야 한다 (같은 배치에서 만드는 경우 포함)
+    function ownsPropertyAfter(propertyId) {
+      return propertyId == null
+        || getAfter(/databases/$(database)/documents/properties/$(propertyId)).data.ownerUid == request.auth.uid;
+    }
+
+    match /assessments/{aid} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'propertyId', 'address', 'status', 'reached',
+                                                 'checklist', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'draft'
+        && request.resource.data.propertyId == null
+        && request.resource.data.reached == 'address'
+        && request.resource.data.checklist is map
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['propertyId', 'address', 'reached', 'checklist', 'updatedAt'])
+        && request.resource.data.reached in diagnosisSteps()
+        && request.resource.data.checklist is map
+        && (request.resource.data.address == null || request.resource.data.address is string)
+        && ownsPropertyAfter(request.resource.data.propertyId)
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+
+      // 사진 기록. 파일은 Storage assessments/{aid}/photos/{photoId}.jpg (storage.rules)
+      match /photos/{photoId} {
+        allow read: if ownsAssessment(aid)
+          || canSeePhotos(assessmentDoc(aid).get('assigneeUid', null));
+        allow create: if ownsAssessment(aid)
+          && request.resource.data.keys().hasOnly(['part', 'storagePath', 'exifStripped', 'consentModelUse',
+                                                   'deleteAfter', 'width', 'height', 'size', 'createdAt'])
+          && request.resource.data.part in ['front', 'back', 'left', 'right', 'roof', 'kitchen', 'bathroom', 'crack']
+          && request.resource.data.storagePath == 'assessments/' + aid + '/photos/' + photoId + '.jpg'
+          && request.resource.data.exifStripped == true
+          && request.resource.data.consentModelUse is bool
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if ownsAssessment(aid);
+      }
+    }
+
+    match /properties/{pid} {
+      allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['ownerUid', 'addressRoad', 'addressJibun', 'pnu', 'lat', 'lng',
+                                                 'noRegistry', 'facts', 'createdAt', 'updatedAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.addressRoad is string
+        && request.resource.data.noRegistry is bool
+        && request.resource.data.facts is map
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['addressRoad', 'addressJibun', 'pnu', 'lat', 'lng', 'noRegistry', 'facts', 'updatedAt'])
+        && request.resource.data.addressRoad is string
+        && request.resource.data.noRegistry is bool
+        && request.resource.data.facts is map
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
     // 지점(숙소) 상세 (STY-01·02, task.md 9.3): 누구나 읽는다. 콘텐츠 편집 화면을 만들 때
     // canEditContent 권한자 쓰기 규칙을 추가한다. 실적·공사비 하위 컬렉션은 아래 기본 거부에 걸린다.
     match /branches/{branchId} {
