@@ -373,6 +373,63 @@ describe("snapshots (계산 스냅샷)", () => {
   });
 });
 
+describe("consultations (상담)", () => {
+  const consult = (uid: string, assessmentId: string | null = null) => ({
+    uid,
+    type: "inspection",
+    assessmentId,
+    snapshotId: null,
+    applicantName: "앨리스",
+    phone: "010-1234-5678",
+    ownership: "self",
+    preferredDate: null,
+    memo: "",
+    phoneRequested: false,
+    status: "received",
+    assigneeUid: null,
+    assigneeName: null,
+    proxyEnteredBy: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  it("회원은 본인 진단에 상담을 신청하며 진단을 consult로 바꾼다", async () => {
+    const db = member();
+    const batch = writeBatch(db);
+    batch.set(doc(db, "consultations/c1"), consult("alice", "a1"));
+    batch.update(doc(db, "assessments/a1"), {
+      status: "consult",
+      lastConsultId: "c1",
+      updatedAt: serverTimestamp(),
+    });
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(getDoc(doc(db, "consultations/c1")));
+  });
+
+  it("남의 진단에 연결하거나 접수 외 상태로 만들 수 없다", async () => {
+    await assertFails(
+      setDoc(doc(newcomer(), "consultations/c2"), consult("bob", "a1")),
+    );
+    await assertFails(
+      setDoc(doc(member(), "consultations/c3"), {
+        ...consult("alice"),
+        status: "contracted",
+      }),
+    );
+  });
+
+  it("회원은 상담을 고칠 수 없고, 전체 상담 권한 운영팀은 읽는다", async () => {
+    await assertSucceeds(
+      setDoc(doc(member(), "consultations/c4"), consult("alice")),
+    );
+    await assertFails(
+      updateDoc(doc(member(), "consultations/c4"), { status: "contacted" }),
+    );
+    await assertSucceeds(getDoc(doc(staff(), "consultations/c4")));
+    await assertFails(getDoc(doc(newcomer(), "consultations/c4")));
+  });
+});
+
 describe("branches", () => {
   it("숙소 상세는 누구나 읽고, 아직 아무도 쓰지 못한다", async () => {
     await assertSucceeds(getDoc(doc(anonymous(), "branches/b1")));
@@ -388,7 +445,7 @@ describe("branches", () => {
 
 describe("나머지 경로", () => {
   it("규칙이 없는 컬렉션은 관리자도 막힌다", async () => {
-    await assertFails(getDoc(doc(admin(), "consultations/c1")));
-    await assertFails(setDoc(doc(admin(), "consultations/c1"), { x: 1 }));
+    await assertFails(getDoc(doc(admin(), "unknownCollection/x1")));
+    await assertFails(setDoc(doc(admin(), "unknownCollection/x1"), { x: 1 }));
   });
 });

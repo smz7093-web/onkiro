@@ -1,7 +1,9 @@
 import {
   collection,
   doc,
+  getDoc,
   serverTimestamp,
+  Timestamp,
   writeBatch,
 } from "firebase/firestore";
 import type { ChecklistResult } from "../engine/checklist";
@@ -106,4 +108,42 @@ export async function saveResultInputs(
     updatedAt: serverTimestamp(),
   });
   await batch.commit();
+}
+
+export interface StoredSnapshot {
+  id: string;
+  inputs: SnapshotInputs;
+  options: EstimateOptions;
+  estimate: EstimateResult;
+  checklistResult: ChecklistResult;
+  scenarios: Record<ScenarioId, RevenueResult>;
+  reason: SnapshotReason;
+  createdAt: Date | null;
+}
+
+// 저장된 스냅샷 그대로 읽는다 (리포트 다시 보기는 재계산하지 않는다, COM-03)
+export async function getSnapshot(
+  assessmentId: string,
+  snapshotId: string,
+): Promise<StoredSnapshot | null> {
+  const snap = await getDoc(
+    doc(db, "assessments", assessmentId, "snapshots", snapshotId),
+  );
+  if (!snap.exists()) return null;
+  const d = snap.data();
+  const result = d.result as {
+    estimate: EstimateResult;
+    checklist: ChecklistResult;
+    scenarios: Record<ScenarioId, RevenueResult>;
+  };
+  return {
+    id: snap.id,
+    inputs: d.inputs as SnapshotInputs,
+    options: d.options as EstimateOptions,
+    estimate: result.estimate,
+    checklistResult: result.checklist,
+    scenarios: result.scenarios,
+    reason: d.reason as SnapshotReason,
+    createdAt: d.createdAt instanceof Timestamp ? d.createdAt.toDate() : null,
+  };
 }

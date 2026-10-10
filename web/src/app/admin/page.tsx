@@ -6,6 +6,12 @@ export default function AdminHome() {
       <h1 className="text-2xl font-semibold">관리자</h1>
       <ul className="flex flex-col gap-2 text-base">
         <li>
+          <Link href="/admin/consults" className="underline">
+            상담
+          </Link>{" "}
+          — 상담 접수·단계·담당자·메모 관리, 전화 접수 대리 입력 (CON-02)
+        </li>
+        <li>
           <Link href="/admin/prices" className="underline">
             단가 DB
           </Link>{" "}

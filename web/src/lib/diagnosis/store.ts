@@ -223,3 +223,14 @@ export async function finishStep(
   }
   return reached;
 }
+
+// 진단 문서만 읽는다 (리포트·상담 화면. 운영팀은 빈집 문서를 읽지 못한다)
+export async function getAssessment(id: string): Promise<Assessment | null> {
+  const snap = await getDoc(doc(db, "assessments", id));
+  return snap.exists() ? toAssessment(snap.id, snap.data()) : null;
+}
+
+// 화면·리포트에 보이는 진단 번호 (예: DX-3F2A9C1E)
+export function diagnosisCode(id: string) {
+  return `DX-${id.slice(0, 8).toUpperCase()}`;
+}

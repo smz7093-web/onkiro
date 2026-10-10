@@ -52,7 +52,9 @@ service cloud.firestore {
     // 회원 문서: 본인은 role이 member인 문서만 만들 수 있다. 권한 필드는 관리자 함수만 쓴다.
     // 관리자는 회원·권한 관리 화면(ADM-05)을 위해 모든 회원 문서를 읽는다.
     match /users/{uid} {
-      allow read: if isSelf(uid) || isAdmin();
+      // 운영팀은 담당자 배정용으로 운영팀 계정 목록을 읽는다 (query는 role in ['staff', 'admin']로 걸러야 한다)
+      allow read: if isSelf(uid) || isAdmin()
+        || (isStaff() && resource.data.role in ['staff', 'admin']);
       allow create: if isSelf(uid)
         && request.resource.data.keys().hasOnly(['name', 'role', 'createdAt'])
         && request.resource.data.role == 'member'
@@ -147,7 +149,14 @@ service cloud.firestore {
     function statusChangeAllowed() {
       return request.resource.data.get('status', 'draft') == resource.data.get('status', 'draft')
         || (resource.data.get('status', 'draft') != 'consult'
-          && request.resource.data.status in ['saved', 'expertRequired']);
+          && request.resource.data.status in ['saved', 'expertRequired'])
+        || (request.resource.data.status == 'consult' && consultLinkValid());
+    }
+
+    // 상담을 신청하며 진단을 consult로 바꿀 때: 같은 배치에서 만든 본인 상담이 이 진단을 가리켜야 한다
+    function consultLinkValid() {
+      let c = getAfter(/databases/$(database)/documents/consultations/$(request.resource.data.lastConsultId)).data;
+      return c.uid == request.auth.uid && c.assessmentId == request.resource.id;
     }
 
     // 마지막 스냅샷을 바꿀 때는 같은 배치에서 만든 본인 스냅샷이어야 한다
@@ -158,7 +167,8 @@ service cloud.firestore {
     }
 
     match /assessments/{aid} {
-      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin()
+        || canHandleConsult(resource.data.get('assigneeUid', null)));
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['uid', 'propertyId', 'address', 'status', 'reached',
                                                  'checklist', 'createdAt', 'updatedAt'])
@@ -174,7 +184,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['propertyId', 'address', 'reached', 'checklist', 'updatedAt',
                        'estimateOptions', 'revenueInput', 'latestSnapshotId', 'latestInputsKey',
-                       'latestSummary', 'status'])
+                       'latestSummary', 'status', 'lastConsultId'])
         && request.resource.data.reached in diagnosisSteps()
         && request.resource.data.checklist is map
         && (request.resource.data.address == null || request.resource.data.address is string)
@@ -186,7 +196,8 @@ service cloud.firestore {
 
       // 계산 스냅샷 (SIM-20, task.md 7.4): 추가만 하고 고치거나 지우지 않는다
       match /snapshots/{sid} {
-        allow read: if ownsAssessment(aid) || isAdmin();
+        allow read: if ownsAssessment(aid) || isAdmin()
+          || canHandleConsult(assessmentDoc(aid).get('assigneeUid', null));
         allow create: if ownsAssessment(aid)
           && request.resource.data.keys().hasOnly(['inputs', 'options', 'result', 'priceVersion',
                                                    'assumptionVersion', 'formulaVersion', 'inputsKey',
@@ -215,6 +226,41 @@ service cloud.firestore {
           && request.resource.data.createdAt == request.time;
         allow update: if false;
         allow delete: if ownsAssessment(aid);
+      }
+    }
+
+    // 상담 (CON-01·02, task.md 9.1·9.2). 회원은 본인 상담을 만들고 읽는다.
+    // 상태·담당자·메모 변경과 전화 대리 입력은 서버 함수(updateConsultation, createProxyConsultation)만 한다.
+    match /consultations/{cid} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid
+        || canHandleConsult(resource.data.get('assigneeUid', null)));
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'type', 'assessmentId', 'snapshotId', 'applicantName',
+                                                 'phone', 'ownership', 'preferredDate', 'memo', 'phoneRequested',
+                                                 'status', 'assigneeUid', 'assigneeName', 'proxyEnteredBy',
+                                                 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.type in ['inspection', 'turnkey', 'entrust']
+        && request.resource.data.ownership in ['self', 'family', 'coHeir', 'other']
+        && request.resource.data.applicantName is string && request.resource.data.applicantName.size() > 0
+        && request.resource.data.phone is string && request.resource.data.phone.size() >= 8
+        && request.resource.data.memo is string && request.resource.data.memo.size() <= 2000
+        && request.resource.data.phoneRequested is bool
+        && (request.resource.data.preferredDate == null || request.resource.data.preferredDate is string)
+        && request.resource.data.status == 'received'
+        && request.resource.data.assigneeUid == null
+        && request.resource.data.assigneeName == null
+        && request.resource.data.proxyEnteredBy == null
+        && (request.resource.data.assessmentId == null
+          || get(/databases/$(database)/documents/assessments/$(request.resource.data.assessmentId)).data.uid == request.auth.uid)
+        && (request.resource.data.snapshotId == null || request.resource.data.snapshotId is string)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update, delete: if false;
+
+      match /events/{eid} {
+        allow read: if canHandleConsult(get(/databases/$(database)/documents/consultations/$(cid)).data.get('assigneeUid', null));
+        allow write: if false;
       }
     }
 

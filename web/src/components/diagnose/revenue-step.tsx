@@ -303,7 +303,7 @@ function Slider({
   );
 }
 
-function ScenarioTable({
+export function ScenarioTable({
   scenarios,
   deltas,
 }: {

@@ -13,6 +13,9 @@ export default function DiagnoseLayout({ children }: { children: ReactNode }) {
           <Link href="/diagnose" className="text-lg font-semibold">
             온기로 빈집 진단
           </Link>
+          <Link href="/me" className="ml-auto text-base text-ink-2 underline">
+            마이페이지
+          </Link>
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6">

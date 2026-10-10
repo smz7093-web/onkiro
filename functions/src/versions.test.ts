@@ -1,13 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { canApprove, validateAssumptionSet, validatePriceTable } from "./versions";
+import {
+  canApprove,
+  validateAssumptionSet,
+  validatePriceTable,
+} from "./versions";
 
 // web/src/lib/engine/defaults.ts의 임시 기준값과 같은 내용
 const price = {
   version: "v2026.10-1",
   processes: {
-    demolition: { quantityBasis: "floorArea", baseUnitPrice: 25000, baseDays: 3, baseApplies: "optional" },
-    roof: { quantityBasis: "roofArea", repairUnitPrice: 173600, repairDays: 12 },
-    interior: { quantityBasis: "floorArea", baseDays: 15, baseApplies: "always" },
+    demolition: {
+      quantityBasis: "floorArea",
+      baseUnitPrice: 25000,
+      baseDays: 3,
+      baseApplies: "optional",
+    },
+    roof: {
+      quantityBasis: "roofArea",
+      repairUnitPrice: 173600,
+      repairDays: 12,
+    },
+    interior: {
+      quantityBasis: "floorArea",
+      baseDays: 15,
+      baseApplies: "always",
+    },
   },
   moduleUnitPrices: { A: 165000, B: 208000, C: 236000 },
   conditionCoefficients: { good: 0, partial: 0.4, full: 1 },
@@ -15,7 +32,12 @@ const price = {
   contingencyRate: 0.1,
   regionFactors: { hongseong: 1 },
   fixedDays: 5,
-  uncertainty: { base: 0.15, perMissingPhotoPart: 0.05, noRegistry: 0.1, perUnknownAnswer: 0 },
+  uncertainty: {
+    base: 0.15,
+    perMissingPhotoPart: 0.05,
+    noRegistry: 0.1,
+    perUnknownAnswer: 0,
+  },
   rangeRoundingUnit: 1000000,
 };
 
@@ -51,7 +73,11 @@ describe("validatePriceTable", () => {
     const errors = validatePriceTable(
       {
         ...price,
-        processes: { ...price.processes, pool: { quantityBasis: "lumpSum" }, roof: { quantityBasis: "roofArea", repairUnitPrice: -1 } },
+        processes: {
+          ...price.processes,
+          pool: { quantityBasis: "lumpSum" },
+          roof: { quantityBasis: "roofArea", repairUnitPrice: -1 },
+        },
       },
       "v2026.10-2",
     );
@@ -93,7 +119,10 @@ describe("validateAssumptionSet", () => {
 
   it("빠진 입력값을 잡는다", () => {
     const { rent: _rent, ...rest } = assumption.defaults;
-    const errors = validateAssumptionSet({ ...assumption, defaults: rest }, "v0.3");
+    const errors = validateAssumptionSet(
+      { ...assumption, defaults: rest },
+      "v0.3",
+    );
     expect(errors.some((e) => e.startsWith("rent"))).toBe(true);
   });
 });
@@ -101,9 +130,13 @@ describe("validateAssumptionSet", () => {
 describe("canApprove", () => {
   it("관리자와 canApproveVersions 운영팀만 적용할 수 있다", () => {
     expect(canApprove({ role: "admin" })).toBe(true);
-    expect(canApprove({ role: "staff", perms: ["canApproveVersions"] })).toBe(true);
+    expect(canApprove({ role: "staff", perms: ["canApproveVersions"] })).toBe(
+      true,
+    );
     expect(canApprove({ role: "staff", perms: ["canEditPrices"] })).toBe(false);
-    expect(canApprove({ role: "member", perms: ["canApproveVersions"] })).toBe(false);
+    expect(canApprove({ role: "member", perms: ["canApproveVersions"] })).toBe(
+      false,
+    );
     expect(canApprove(undefined)).toBe(false);
   });
 });

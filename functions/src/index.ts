@@ -12,6 +12,12 @@ import {
   sameClaims,
 } from "./permissions.js";
 import {
+  canHandle,
+  canManageAll,
+  parseProxyInput,
+  planUpdate,
+} from "./consult.js";
+import {
   canApprove,
   COLLECTION_OF,
   VERSION_KINDS,
@@ -30,35 +36,49 @@ export const ping = onCall(() => ({ ok: true, at: new Date().toISOString() }));
 // 회원 문서의 권한 필드를 Auth 커스텀 클레임으로 옮긴다 (task.md 2.3).
 // 권한 필드는 관리자 함수(setUserPermissions)나 Firebase 콘솔에서만 바뀐다. 회원 본인은 보안 규칙상 쓸 수 없다.
 // 첫 관리자는 콘솔에서 본인 문서의 role을 admin으로 바꾸면 이 함수가 반영한다.
-export const syncUserClaims = onDocumentWritten("users/{uid}", async (event) => {
-  const uid = event.params.uid;
-  const after = event.data?.after;
-  const auth = getAuth();
+export const syncUserClaims = onDocumentWritten(
+  "users/{uid}",
+  async (event) => {
+    const uid = event.params.uid;
+    const after = event.data?.after;
+    const auth = getAuth();
 
-  let current: Record<string, unknown> | undefined;
-  try {
-    current = (await auth.getUser(uid)).customClaims;
-  } catch (e) {
-    // 콘솔에서 Auth 계정 없이 문서만 만든 경우
-    logger.warn("syncUserClaims: Auth 사용자가 없습니다", { uid, error: String(e) });
-    return;
-  }
+    let current: Record<string, unknown> | undefined;
+    try {
+      current = (await auth.getUser(uid)).customClaims;
+    } catch (e) {
+      // 콘솔에서 Auth 계정 없이 문서만 만든 경우
+      logger.warn("syncUserClaims: Auth 사용자가 없습니다", {
+        uid,
+        error: String(e),
+      });
+      return;
+    }
 
-  if (!after?.exists) {
-    if (current && Object.keys(current).length > 0) await auth.setCustomUserClaims(uid, null);
-    return;
-  }
+    if (!after?.exists) {
+      if (current && Object.keys(current).length > 0)
+        await auth.setCustomUserClaims(uid, null);
+      return;
+    }
 
-  const next = claimsFromPermissions(permissionsFromDoc(after.data()));
-  if (sameClaims(current, next)) return;
-  await auth.setCustomUserClaims(uid, { ...next });
-  logger.info("syncUserClaims: 권한 반영", { uid, role: next.role, perms: next.perms });
-});
+    const next = claimsFromPermissions(permissionsFromDoc(after.data()));
+    if (sameClaims(current, next)) return;
+    await auth.setCustomUserClaims(uid, { ...next });
+    logger.info("syncUserClaims: 권한 반영", {
+      uid,
+      role: next.role,
+      perms: next.perms,
+    });
+  },
+);
 
 // 관리자만 다른 회원의 권한을 바꾼다 (ADM-05). 결과는 syncUserClaims가 토큰에 반영한다.
 export const setUserPermissions = onCall(async (request) => {
   if (request.auth?.token.role !== "admin") {
-    throw new HttpsError("permission-denied", "관리자만 권한을 바꿀 수 있습니다");
+    throw new HttpsError(
+      "permission-denied",
+      "관리자만 권한을 바꿀 수 있습니다",
+    );
   }
   const { uid, ...rest } = (request.data ?? {}) as Record<string, unknown>;
   if (typeof uid !== "string" || uid.length === 0) {
@@ -68,7 +88,10 @@ export const setUserPermissions = onCall(async (request) => {
   if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.error);
   // 관리자가 스스로 관리자 권한을 내려 관리할 사람이 없어지는 일을 막는다
   if (uid === request.auth.uid && parsed.fields.role !== "admin") {
-    throw new HttpsError("failed-precondition", "본인의 관리자 권한은 내릴 수 없습니다");
+    throw new HttpsError(
+      "failed-precondition",
+      "본인의 관리자 권한은 내릴 수 없습니다",
+    );
   }
 
   const db = getFirestore();
@@ -76,7 +99,10 @@ export const setUserPermissions = onCall(async (request) => {
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(userRef);
     if (!snap.exists) {
-      throw new HttpsError("not-found", "회원 문서가 없습니다. 먼저 한 번 로그인해야 합니다");
+      throw new HttpsError(
+        "not-found",
+        "회원 문서가 없습니다. 먼저 한 번 로그인해야 합니다",
+      );
     }
     const before = Object.fromEntries(
       Object.keys(parsed.fields).map((k) => [k, snap.get(k) ?? null]),
@@ -100,11 +126,17 @@ export const setUserPermissions = onCall(async (request) => {
 export const activateVersion = onCall(async (request) => {
   const token = request.auth?.token as Record<string, unknown> | undefined;
   if (!request.auth || !canApprove(token)) {
-    throw new HttpsError("permission-denied", "적용 권한(canApproveVersions)이 없습니다");
+    throw new HttpsError(
+      "permission-denied",
+      "적용 권한(canApproveVersions)이 없습니다",
+    );
   }
   const { kind, version } = (request.data ?? {}) as Record<string, unknown>;
   if (!VERSION_KINDS.includes(kind as VersionKind)) {
-    throw new HttpsError("invalid-argument", "kind는 price 또는 assumption이어야 합니다");
+    throw new HttpsError(
+      "invalid-argument",
+      "kind는 price 또는 assumption이어야 합니다",
+    );
   }
   if (typeof version !== "string" || version.length === 0) {
     throw new HttpsError("invalid-argument", "version이 필요합니다");
@@ -121,11 +153,21 @@ export const activateVersion = onCall(async (request) => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new HttpsError("not-found", "버전이 없습니다");
     if (snap.get("status") !== "draft") {
-      throw new HttpsError("failed-precondition", "초안(draft)만 적용할 수 있습니다");
+      throw new HttpsError(
+        "failed-precondition",
+        "초안(draft)만 적용할 수 있습니다",
+      );
     }
-    const errors = validateVersion(kind as VersionKind, snap.get("data"), version);
+    const errors = validateVersion(
+      kind as VersionKind,
+      snap.get("data"),
+      version,
+    );
     if (errors.length > 0) {
-      throw new HttpsError("invalid-argument", `검증 실패: ${errors.join(" / ")}`);
+      throw new HttpsError(
+        "invalid-argument",
+        `검증 실패: ${errors.join(" / ")}`,
+      );
     }
     const actives = await tx.get(col.where("status", "==", "active"));
     const now = FieldValue.serverTimestamp();
@@ -150,4 +192,117 @@ export const activateVersion = onCall(async (request) => {
     return actives.docs.map((d) => d.id);
   });
   return { ok: true, version, retired };
+});
+
+// 상담 상태·담당자·메모 변경 (CON-02, task.md 9.2). 바뀐 항목마다 events에 이력을 남기고,
+// 담당자를 배정하면 연결 진단의 assigneeUid에 복사한다(사진 "담당 건" 권한 판정용).
+export const updateConsultation = onCall(async (request) => {
+  if (!request.auth)
+    throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+  const token = request.auth.token as Record<string, unknown>;
+  const actorUid = request.auth.uid;
+  const { id, ...rest } = (request.data ?? {}) as Record<string, unknown>;
+  if (typeof id !== "string" || id === "")
+    throw new HttpsError("invalid-argument", "상담 id가 필요합니다");
+
+  const db = getFirestore();
+  const ref = db.collection("consultations").doc(id);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError("not-found", "상담이 없습니다");
+    const current = {
+      status: snap.get("status") as string,
+      assigneeUid: (snap.get("assigneeUid") as string | null) ?? null,
+      // 운영팀 메모 (신청인이 쓴 memo와 따로 둔다)
+      memo: (snap.get("staffMemo") as string | null) ?? "",
+    };
+    if (!canHandle(token, actorUid, current.assigneeUid)) {
+      throw new HttpsError(
+        "permission-denied",
+        "이 상담을 다룰 권한이 없습니다",
+      );
+    }
+    const plan = planUpdate(current, rest);
+    if (!plan.ok) throw new HttpsError("invalid-argument", plan.error);
+    if (plan.events.length === 0) return;
+
+    const { memo, ...rest2 } = plan.changes;
+    const update: Record<string, unknown> = {
+      ...rest2,
+      ...(memo !== undefined ? { staffMemo: memo } : {}),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    if (plan.changes.assigneeUid !== undefined) {
+      if (!canManageAll(token)) {
+        throw new HttpsError(
+          "permission-denied",
+          "담당자 배정은 전체 상담 권한이 있어야 합니다",
+        );
+      }
+      let assigneeName: string | null = null;
+      if (plan.changes.assigneeUid) {
+        const user = await tx.get(
+          db.collection("users").doc(plan.changes.assigneeUid),
+        );
+        if (
+          !user.exists ||
+          !["staff", "admin"].includes(user.get("role") as string)
+        ) {
+          throw new HttpsError(
+            "invalid-argument",
+            "운영팀 계정에만 배정할 수 있습니다",
+          );
+        }
+        assigneeName = (user.get("name") as string | null) ?? null;
+      }
+      update.assigneeName = assigneeName;
+      const assessmentId = snap.get("assessmentId") as string | null;
+      if (assessmentId) {
+        tx.update(db.collection("assessments").doc(assessmentId), {
+          assigneeUid: plan.changes.assigneeUid,
+        });
+      }
+    }
+    tx.update(ref, update);
+    for (const e of plan.events) {
+      tx.create(ref.collection("events").doc(), {
+        ...e,
+        actorUid,
+        at: FieldValue.serverTimestamp(),
+      });
+    }
+  });
+  return { ok: true };
+});
+
+// 전화 접수 대리 입력 (CON-02). 회원 계정 없이 운영팀(전체 상담 권한)이 상담을 만든다.
+export const createProxyConsultation = onCall(async (request) => {
+  if (
+    !request.auth ||
+    !canManageAll(request.auth.token as Record<string, unknown>)
+  ) {
+    throw new HttpsError(
+      "permission-denied",
+      "전체 상담 권한이 있어야 대리 입력할 수 있습니다",
+    );
+  }
+  const parsed = parseProxyInput(request.data);
+  if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.error);
+  const db = getFirestore();
+  const ref = db.collection("consultations").doc();
+  const now = FieldValue.serverTimestamp();
+  await ref.create({
+    ...parsed.value,
+    uid: null,
+    assessmentId: null,
+    snapshotId: null,
+    phoneRequested: true,
+    status: "received",
+    assigneeUid: null,
+    assigneeName: null,
+    proxyEnteredBy: request.auth.uid,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return { ok: true, id: ref.id };
 });

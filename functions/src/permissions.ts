@@ -35,20 +35,36 @@ export interface PermissionClaims {
 }
 
 const allFlags = (value: boolean) =>
-  Object.fromEntries(FLAG_KEYS.map((k) => [k, value])) as Record<FlagKey, boolean>;
+  Object.fromEntries(FLAG_KEYS.map((k) => [k, value])) as Record<
+    FlagKey,
+    boolean
+  >;
 
 const isRole = (v: unknown): v is Role => ROLES.includes(v as Role);
-const isAccess = (v: unknown): v is AccessLevel => ACCESS_LEVELS.includes(v as AccessLevel);
+const isAccess = (v: unknown): v is AccessLevel =>
+  ACCESS_LEVELS.includes(v as AccessLevel);
 
 // 회원 문서 필드 → 권한. 잘못된 값은 가장 좁은 권한으로 본다.
 // admin은 필드와 관계없이 모든 권한, member는 필드와 관계없이 권한 없음.
-export function permissionsFromDoc(data: Record<string, unknown> | undefined): Permissions {
+export function permissionsFromDoc(
+  data: Record<string, unknown> | undefined,
+): Permissions {
   const role: Role = isRole(data?.role) ? data.role : "member";
   if (role === "admin") {
-    return { role, photoAccess: "all", consultAccess: "all", flags: allFlags(true) };
+    return {
+      role,
+      photoAccess: "all",
+      consultAccess: "all",
+      flags: allFlags(true),
+    };
   }
   if (role === "member") {
-    return { role, photoAccess: "none", consultAccess: "none", flags: allFlags(false) };
+    return {
+      role,
+      photoAccess: "none",
+      consultAccess: "none",
+      flags: allFlags(false),
+    };
   }
   const flags = allFlags(false);
   for (const k of FLAG_KEYS) flags[k] = data?.[k] === true;
@@ -87,14 +103,26 @@ export function sameClaims(
 // 관리자 함수 입력 검증 → 회원 문서에 쓸 필드. 잘못된 입력은 오류 문구를 돌려준다.
 export function permissionFieldsFromInput(
   input: unknown,
-): { ok: true; fields: Record<string, unknown> } | { ok: false; error: string } {
-  if (typeof input !== "object" || input === null) return { ok: false, error: "입력이 없습니다" };
+):
+  { ok: true; fields: Record<string, unknown> } | { ok: false; error: string } {
+  if (typeof input !== "object" || input === null)
+    return { ok: false, error: "입력이 없습니다" };
   const i = input as Record<string, unknown>;
-  if (!isRole(i.role)) return { ok: false, error: "role은 member, staff, admin 중 하나여야 합니다" };
+  if (!isRole(i.role))
+    return {
+      ok: false,
+      error: "role은 member, staff, admin 중 하나여야 합니다",
+    };
   if (i.photoAccess !== undefined && !isAccess(i.photoAccess))
-    return { ok: false, error: "photoAccess는 all, assigned, none 중 하나여야 합니다" };
+    return {
+      ok: false,
+      error: "photoAccess는 all, assigned, none 중 하나여야 합니다",
+    };
   if (i.consultAccess !== undefined && !isAccess(i.consultAccess))
-    return { ok: false, error: "consultAccess는 all, assigned, none 중 하나여야 합니다" };
+    return {
+      ok: false,
+      error: "consultAccess는 all, assigned, none 중 하나여야 합니다",
+    };
   const fields: Record<string, unknown> = {
     role: i.role,
     photoAccess: i.photoAccess ?? "none",

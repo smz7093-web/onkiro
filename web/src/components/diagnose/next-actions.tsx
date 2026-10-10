@@ -55,7 +55,7 @@ export function NextActions({
           sid === before ? "이미 저장된 내용입니다." : "저장했습니다.",
         );
       } else if (action === "pdf") {
-        router.push(`/diagnose/${assessment.id}/report?snapshot=${sid}`);
+        router.push(`/report/${assessment.id}/${sid}`);
       } else {
         router.push(
           `/consult?assessment=${assessment.id}&type=${action}&snapshot=${sid}`,
