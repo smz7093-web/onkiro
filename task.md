@@ -33,8 +33,8 @@
 
 **환경·작업 메모**
 - Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`.
-- 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/diagnose`(동의 보호 확인용 임시), `/admin`(관리자), `/admin/users`(회원·권한), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플).
-- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(53개 + todo 6개), `functions`에서 `npm test`(17개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
+- 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/diagnose`(동의 보호 확인용 임시), `/admin`(관리자), `/admin/users`(회원·권한), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
+- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(74개 + todo 6개), `functions`에서 `npm test`(17개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
 - Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
@@ -471,26 +471,26 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 - 단계마다 `assessments/{id}`(status=draft)에 저장. 마이페이지에서 이어서 진행 가능. 계정 기준 저장이라 브라우저·기기가 바뀌어도 로그인하면 이어진다.
 - 진단 삭제·취소 버튼은 두지 않는다. 삭제는 11.2 삭제 요청 경로로 처리한다.
 - 상태 변화는 "작업 전체에 걸친 규칙"의 진단 상태 규칙을 따른다.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 코드 완료, 실제 계정 확인 대기. `/diagnose`(새 진단 시작·내 진단 이어하기), `/diagnose/[id]/{address,confirm,photos,checklist,estimate,revenue}`. `assessments.reached`(도달 단계)까지만 열고 그 뒤 주소는 도달 단계로 보낸다. 저장은 단계 '다음'마다, 체크리스트는 답마다. 코드: `lib/diagnosis/{steps,store}.ts`, `components/diagnose/*`(버튼 모양은 6.7 공통 UI로 교체 예정). 규칙: 본인 진단만 읽기·쓰기, status·uid는 회원이 못 바꿈(7.4·9.1에서 넓힘), 연결 빈집은 본인 것만. **약관 개정 시 기존 진단 열람 허용**은 아직 아님(지금은 재동의 전 진단 화면 전체를 막음).
 
 #### 6.2 주소 입력 (SIM-01)
 - 목업 `sim-address`. 검색 → 후보 선택 → `properties/{id}` 생성. 필지 연결 실패 시 "다음 단계에서 직접 입력" 안내.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 화면 완료. 검색창 + 직접 입력(도로명 필수, 지번 선택). 검색은 `lib/diagnosis/address.ts`의 `searchAddress`가 4.2 전까지 '사용 불가'를 던지고 화면이 직접 입력 안내를 띄운다(4.2에서 본문만 교체). 주소 저장 시 `properties` 문서를 만들고(욕실·주방 1개 기본값) 다시 고치면 주소만 바꾼다.
 
 #### 6.3 자동조회 확인·수정 (SIM-02, 03, 05)
 - 목업 `sim-confirm`. 조회값마다 출처·조회 시각 표시, 모든 값 수정 가능. 수정하면 `facts.{key}`에 `userEdited: true`, `originalValue` 보관. "대장 없음" 선택 시 `noRegistry: true` → 인허가 리스크 플래그 + 불확실도 +10%p.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 화면 완료(외부 조회 없이 직접 입력). 항목 정의 `lib/diagnosis/facts.ts`: 건축물대장 5개(연면적 필수), 토지 3개, 직접 입력 2개(욕실·주방 수, 필수). 값마다 출처·조회 시각·수정 여부·원래 값 표시, 빈 값은 '결측'. `editFact`가 조회값을 고치면 `originalValue`를 처음 한 번만 보관(테스트). '대장 없음' 체크 → `properties.noRegistry`. 출처 `demoFixture`('시연용 저장 데이터')를 미리 정의(4.6).
 
 #### 6.4 사진 업로드 (SIM-06)
 - 목업 `sim-photo`. 부위 8종(외관 정면·후면·좌측·우측, 지붕, 주방, 욕실, 벽체 균열), 최대 20장. 브라우저에서 리사이즈하며 EXIF 제거 후 Storage 업로드. "나중에 올리기" 허용. 누락 부위 수는 엔진 입력.
 - **사진 없이 진행**: 사진을 하나도 올리지 않아도 다음 단계로 갈 수 있다(누락 부위만큼 불확실도 가산).
 - **주의**: 외부 사용자에게는 D8 확정 전까지 이 단계를 숨긴다(11.2). 시연은 팀 계정으로만 진행.
 - **완료 기준**: GPS 정보가 들어 있는 테스트 사진을 올린 뒤 Storage에서 내려받은 파일에 EXIF(특히 GPS)가 남아 있지 않음을 확인한다(예: `exifr`로 읽어 빈 결과). 이 확인을 자동 테스트로 남긴다.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 코드 완료, 실제 업로드 확인 대기. 부위 8종·최대 20장·부위별 가이드(D9 전 임시 문구), 브라우저에서 회전 반영·긴 변 1600px·JPEG 0.85로 다시 그린 뒤 `stripJpegMetadata`로 APP1~15·COM 구간 제거(`lib/diagnosis/photo-file.ts`). 자동 테스트: piexifjs로 GPS를 넣은 JPEG → exifr로 위치 확인 → 제거 후 EXIF 없음. 파일 `assessments/{id}/photos/{photoId}.jpg`, 기록에 `exifStripped`·`consentModelUse`(선택 동의)·`deleteAfter: null`(D8 후). Storage 규칙은 Firestore 진단 문서로 주인·담당자 확인(교차 서비스 규칙, 배포). 회원 계정은 업로드 대신 건너뛰기 안내(운영팀만 업로드). **남은 일**: 실제 휴대폰 사진 업로드 → Storage에서 내려받은 파일에 GPS 없음 확인(완료 기준), 교차 서비스 규칙 권한이 없으면 업로드가 거부되므로 첫 업로드로 확인.
 
 #### 6.5 상태 체크리스트 (SIM-07)
 - 목업 `sim-check`의 10문항(누수, 수도, 전기, 정화조, 마지막 거주, 균열, 기울어짐, 욕실, 주방, 난방). 10문항 모두 답해야 "견적 계산하기" 활성. "모름"은 불확실도 가산.
-- **진행 메모**:
+- **진행 메모**: 2026-10-10 화면 완료. `CHECKLIST_QUESTIONS`(3.7)로 10문항을 그리고 답마다 저장, 10개 모두 답하면 '견적 계산하기' → 견적 단계(7.1 전까지 저장된 입력 요약 화면).
 
 #### 6.6 `[해순]` D9, `[원일]` D7 (10/14)
 - D9 부위별 촬영 가이드 문구·예시 사진 → 6.4 화면에 반영. D7 인허가 간이 확인 항목·경고 문구·관할 기관 안내 → 7.2에 반영.
