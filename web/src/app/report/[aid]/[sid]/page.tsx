@@ -10,7 +10,7 @@ export default async function ReportPage({
   const { aid, sid } = await params;
   return (
     <RequireLogin>
-      {() => <ReportView assessmentId={aid} snapshotId={sid} />}
+      <ReportView assessmentId={aid} snapshotId={sid} />
     </RequireLogin>
   );
 }

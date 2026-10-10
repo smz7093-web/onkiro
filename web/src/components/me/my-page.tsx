@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAuthUser } from "@/lib/auth/use-auth-user";
 import {
   CONSULT_STAGE_LABELS,
   CONSULT_TYPE_LABELS,
@@ -33,12 +34,14 @@ const linkBtn =
   "inline-flex h-12 items-center rounded-lg border border-line-2 bg-surface px-4 text-base";
 
 // 마이페이지 (COM-03, task.md 8.2). 리포트 다시 보기는 저장된 스냅샷으로 연다(재계산 아님).
-export function MyPage({ uid }: { uid: string }) {
+export function MyPage() {
+  const uid = useAuthUser()?.uid;
   const [assessments, setAssessments] = useState<Assessment[] | null>(null);
   const [consults, setConsults] = useState<Consultation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!uid) return;
     let cancelled = false;
     Promise.all([listMyAssessments(uid), listMyConsultations(uid)])
       .then(([a, c]) => {
