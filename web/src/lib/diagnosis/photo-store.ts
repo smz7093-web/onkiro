@@ -18,7 +18,7 @@ import { db, storage } from "../firebase/client";
 import { preparePhoto } from "./photo-file";
 import type { PhotoPartId } from "./photos";
 
-// 진단 사진 (SIM-06, task.md 6.4). 기록은 assessments/{id}/photos, 파일은 Storage 같은 경로.
+// 진단 사진 (SIM-06, task.md 6.4). 기록은 assessments/{id}/photos, 파일은 Storage users/{uid}/assessments/{id}/photos.
 // 보관 기간(deleteAfter)은 사진 정책(D8)이 확정되면 채운다.
 
 export interface DiagnosisPhoto {
@@ -64,7 +64,8 @@ export async function uploadPhoto(
 ): Promise<DiagnosisPhoto> {
   const prepared = await preparePhoto(file);
   const photoRef = doc(photosOf(assessmentId));
-  const storagePath = `assessments/${assessmentId}/photos/${photoRef.id}.jpg`;
+  // 경로에 올린 회원 uid를 넣어 Storage 규칙이 Firestore 조회 없이 주인을 확인한다
+  const storagePath = `users/${uid}/assessments/${assessmentId}/photos/${photoRef.id}.jpg`;
   await uploadBytes(ref(storage, storagePath), prepared.blob, {
     contentType: "image/jpeg",
   });

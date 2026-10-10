@@ -1,8 +1,7 @@
 rules_version = '2';
 
 // task.md 2.4 뼈대: 권한 확인 함수만 두고 모든 경로를 막는다.
-// 진단 사진 (task.md 6.4): 진단 주인만 올리고 지운다. 운영팀은 photoAccess 권한대로 읽는다.
-// 진단 주인·담당자는 Firestore assessments 문서에서 읽는다 (교차 서비스 규칙).
+// 진단 사진 (task.md 6.4): 올린 회원만 올리고 지운다. 운영팀은 photoAccess 권한대로 읽는다.
 service firebase.storage {
   match /b/{bucket}/o {
 
@@ -26,23 +25,31 @@ service firebase.storage {
             || (request.auth.token.get('photoAccess', 'none') == 'assigned' && assigneeUid == request.auth.uid)));
     }
 
-    function assessment(aid) {
-      return firestore.get(/databases/(default)/documents/assessments/$(aid)).data;
+    // 담당 건(assigned) 사진 권한만 Firestore 진단 문서의 담당자를 읽는다 (교차 서비스 규칙)
+    function assigneeOf(aid) {
+      return firestore.get(/databases/(default)/documents/assessments/$(aid)).data.get('assigneeUid', null);
     }
 
-    function ownsAssessment(aid) {
-      return signedIn() && assessment(aid).uid == request.auth.uid;
+    function photoReader() {
+      return isAdmin()
+        || (role() == 'staff' && request.auth.token.get('photoAccess', 'none') == 'all');
     }
 
+    // 진단 사진: users/{올린 회원}/assessments/{진단}/photos/{사진}.jpg
+    // 주인 확인은 경로의 uid로 한다. 진단이 본인 것인지는 Firestore 사진 기록 규칙이 확인한다.
     // 브라우저에서 줄이고 위치정보(EXIF)를 지운 JPEG만 받는다 (lib/diagnosis/photo-file.ts)
-    match /assessments/{aid}/photos/{fileName} {
-      allow read: if ownsAssessment(aid) || canSeePhotos(assessment(aid).get('assigneeUid', null));
-      allow create: if ownsAssessment(aid)
+    match /users/{uid}/assessments/{aid}/photos/{fileName} {
+      allow read: if (signedIn() && request.auth.uid == uid)
+        || photoReader()
+        || (role() == 'staff'
+          && request.auth.token.get('photoAccess', 'none') == 'assigned'
+          && assigneeOf(aid) == request.auth.uid);
+      allow create: if signedIn() && request.auth.uid == uid
         && fileName.matches('[A-Za-z0-9]+[.]jpg')
         && request.resource.contentType == 'image/jpeg'
         && request.resource.size < 5 * 1024 * 1024;
       allow update: if false;
-      allow delete: if ownsAssessment(aid);
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
 
     match /{allPaths=**} {

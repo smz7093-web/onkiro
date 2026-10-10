@@ -201,7 +201,7 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      // 사진 기록. 파일은 Storage assessments/{aid}/photos/{photoId}.jpg (storage.rules)
+      // 사진 기록. 파일은 Storage users/{uid}/assessments/{aid}/photos/{photoId}.jpg (storage.rules)
       match /photos/{photoId} {
         allow read: if ownsAssessment(aid)
           || canSeePhotos(assessmentDoc(aid).get('assigneeUid', null));
@@ -209,7 +209,7 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['part', 'storagePath', 'exifStripped', 'consentModelUse',
                                                    'deleteAfter', 'width', 'height', 'size', 'createdAt'])
           && request.resource.data.part in ['front', 'back', 'left', 'right', 'roof', 'kitchen', 'bathroom', 'crack']
-          && request.resource.data.storagePath == 'assessments/' + aid + '/photos/' + photoId + '.jpg'
+          && request.resource.data.storagePath == 'users/' + request.auth.uid + '/assessments/' + aid + '/photos/' + photoId + '.jpg'
           && request.resource.data.exifStripped == true
           && request.resource.data.consentModelUse is bool
           && request.resource.data.createdAt == request.time;

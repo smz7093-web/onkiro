@@ -292,7 +292,7 @@ describe("assessments·properties (진단)", () => {
   it("사진 기록은 진단 주인만 만들고, 사진 권한 없는 운영팀은 못 읽는다", async () => {
     const photo = {
       part: "front",
-      storagePath: "assessments/a1/photos/ph1.jpg",
+      storagePath: "users/alice/assessments/a1/photos/ph1.jpg",
       exifStripped: true,
       consentModelUse: false,
       deleteAfter: null,
