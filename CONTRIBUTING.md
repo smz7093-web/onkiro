@@ -7,7 +7,7 @@
 | 팀원 | 모듈 | 고쳐도 되는 위치 | task.md | 마감 |
 | --- | --- | --- | --- | --- |
 | 주연 | 공통 UI 컴포넌트 | `web/src/components/ui/`, 견본 페이지 `web/src/app/ui/` | 6.7 | 10/17 |
-| 주연 | 서비스 소개 홈, 반응형 점검 | `web/src/app/(public)/` (숙소 `stay/` 제외) | 9.4, 9.5 | 10/28 |
+| 주연 | 서비스 소개 홈, 반응형 점검 | 홈 `web/src/app/page.tsx`(지금 임시 홈을 바꾼다), 홈 전용 부품은 `web/src/components/home/` | 9.4, 9.5 | 10/28 |
 | 석원 | 체크리스트 판정표 입력 (**코딩 없음**: 관리자 화면 → 단가 DB → 새 초안 → '체크리스트 판정표'). 선택: 판정 사례 테스트 | 관리자 화면, (선택) `web/src/lib/engine/checklist.test.ts` | 3.7 | 10/17 |
 | 원일 | 수익 검증 사례 테스트 | `web/src/lib/engine/revenue.cases.test.ts` | 5.7 | 10/21 |
 | 원일 | 상담 상태 전이·담당 배정 규칙 함수 | `web/src/lib/consult/` | 9.7 | 10/21 |
