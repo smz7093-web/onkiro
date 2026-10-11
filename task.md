@@ -44,7 +44,7 @@
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/admin/branches`(숙소 콘텐츠), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
 - 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(96개 + todo 3개), `functions`에서 `npm test`(48개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
-- 규칙 테스트: 루트에서 `npm run test:rules`(Firestore 에뮬레이터 + vitest, Java 21 필요). Java 설치 전에 연 터미널이면 PATH에 `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspotin`이 없으니 새 터미널을 연다.
+- 규칙 테스트: 루트에서 `npm run test:rules`(Firestore 에뮬레이터 + vitest, Java 21 필요). Java 설치 전에 연 터미널이면 PATH에 `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot\bin`이 없으니 새 터미널을 연다.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
 - Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
 
