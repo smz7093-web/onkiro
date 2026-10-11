@@ -249,6 +249,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 - **완료 기준**: 실제 카카오 계정으로 로그인해 Firebase uid가 생긴다. **1주차 안에 반드시 확인**(prd.md 14절 결정 1).
 - **네이버**: 버튼만 "준비 중"으로 비활성 표시.
 - **진행 메모**: 2026-10-08 완료(방식 ①). 카카오 기존 '온기로' 앱에서 카카오 로그인·OpenID Connect ON, REST API 키의 리다이렉트 URI `https://onkiro-2fe12.firebaseapp.com/__/auth/handler`, 클라이언트 시크릿 ON, 동의항목 닉네임 필수·이메일 선택. Firebase는 Identity Platform 업그레이드 후 OIDC 공급자 `oidc.kakao`(코드 흐름, 발급자 `https://kauth.kakao.com`) 등록, 웹 앱 `onkiro-web` 등록(설정값은 `web/src/lib/firebase/config.ts`, 공개 값). 코드: `src/lib/firebase/{client,kakao}.ts`, 임시 확인 화면 `/login`. 실제 카카오 계정 로그인 확인. **남은 일**: 지금은 `signInWithPopup`. 앱 주소와 authDomain이 달라 리다이렉트가 서드파티 쿠키 차단에 걸리므로, App Hosting 배포 주소가 생기면 Next.js rewrites로 `/__/auth/*`를 `onkiro-2fe12.firebaseapp.com`으로 프록시하고 authDomain을 배포 도메인으로 바꾼 뒤 모바일은 `signInWithRedirect`로 전환한다(카카오 리다이렉트 URI에 배포 도메인 핸들러도 추가).
+  - 2026-10-11: 전환 완료(실기기 확인 대기). `next.config.ts` rewrites로 `/__/auth/*`·`/__/firebase/*`를 firebaseapp.com으로 프록시, `config.ts`의 `PROXIED_AUTH_HOSTS`(검토 도메인)에서는 authDomain=현재 도메인 + `signInWithRedirect`, 돌아오면 `getRedirectResult`로 닉네임 반영. localhost는 기본 도메인+팝업 유지. 카카오 Redirect URI에 `https://onkiro-web--onkiro-2fe12.asia-east1.hosted.app/__/auth/handler` 추가(사용자). `/__/firebase/init.json`은 기본 도메인에서도 404(Firebase Hosting 미사용)이며 로그인에는 필요 없음. 도메인을 바꾸거나 추가하면 세 곳(PROXIED_AUTH_HOSTS, 카카오 Redirect URI, Firebase 승인된 도메인)을 함께 고친다.
 
 #### 2.2 약관·동의 (COM-04)
 - **할 일**: 최초 로그인 후 동의 화면. 필수 4개(이용약관, 개인정보 수집·이용, 견적 면책, 진단 사진 검수용 이용) + 선택 1개(사진 모델 개선용). 동의 완료 전에는 진단을 시작할 수 없다.
