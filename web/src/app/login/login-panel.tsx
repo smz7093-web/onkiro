@@ -6,7 +6,11 @@ import { useEffect, useState } from "react";
 import { useAuthUser } from "@/lib/auth/use-auth-user";
 import { usePermissions } from "@/lib/auth/use-permissions";
 import { loadConsentStatus } from "@/lib/consent/store";
-import { signInWithKakao, signOutUser } from "@/lib/firebase/kakao";
+import {
+  completeKakaoRedirect,
+  signInWithKakao,
+  signOutUser,
+} from "@/lib/firebase/kakao";
 import { ensureMemberDoc } from "@/lib/users";
 
 // 로그인 → 회원 문서 확인 → 필수 동의가 없으면 동의 화면으로 보낸다 (COM-02, COM-04).
@@ -17,6 +21,22 @@ export function LoginPanel({ next }: { next: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [consentDone, setConsentDone] = useState(false);
+
+  // 리다이렉트 로그인에서 돌아왔으면 카카오 닉네임으로 회원 문서를 채운다
+  useEffect(() => {
+    let cancelled = false;
+    completeKakaoRedirect()
+      .then((r) => (r ? ensureMemberDoc(r.user, r.nickname) : undefined))
+      .catch((e) => {
+        if (!cancelled)
+          setError(
+            e instanceof FirebaseError ? `${e.code}: ${e.message}` : String(e),
+          );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 이미 로그인한 상태로 들어왔을 때도 동의 여부를 확인한다
   useEffect(() => {
@@ -49,8 +69,9 @@ export function LoginPanel({ next }: { next: string | null }) {
     setError(null);
     setBusy(true);
     try {
-      const { user: signedIn, nickname } = await signInWithKakao();
-      await ensureMemberDoc(signedIn, nickname);
+      const result = await signInWithKakao();
+      // 리다이렉트 방식이면 카카오로 이동하고, 돌아온 뒤 위 효과가 마무리한다
+      if (result) await ensureMemberDoc(result.user, result.nickname);
     } catch (e) {
       setError(
         e instanceof FirebaseError ? `${e.code}: ${e.message}` : String(e),
