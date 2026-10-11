@@ -24,7 +24,7 @@
 2. 팀원 산출물 반영: D4(석원이 판정표 입력 → PM 적용, 그 전까지 견적에 지붕·구조 보수가 빠짐), D5·D6 → 5.6 최종 전환, D7 → `lib/diagnosis/permits.ts`, D9 → `lib/diagnosis/photos.ts` 가이드 문구, D8 확정 → 동의·면책 문구 교체와 약관 버전 올림
 3. 팀원 PR 검토 (5.7, 6.7, 9.3~9.5, 9.7) → 6.7 공통 UI가 오면 진단·결과 화면 버튼 교체
 4. ~~9.3 숙소 콘텐츠 편집 화면~~ 10/11 완료 → D12가 오면 관리 화면에서 입력, 홈·숙소 화면 링크를 실제 숙소 id로
-5. Phase 10 통합 테스트 준비 (Java 설치 후 규칙 테스트 실행, 시연 시나리오 3회 통과, 시연 데이터·계정)
+5. Phase 10 통합 테스트 준비 (규칙 테스트는 10/12 35개 통과, 남은 것: 시연 시나리오 3회 통과, 시연 데이터·계정)
 
 **사용자가 해야 할 일 (대기 중)**
 - [x] App Hosting 백엔드 생성 (10/10)
@@ -34,7 +34,7 @@
 - [ ] 석원·원일·주연 첫 로그인 → `/admin/users`에서 권장 설정 적용 (해순은 10/10 완료)
 - [ ] 팀원 GitHub 초대(쓰기 권한) + `main` 브랜치 보호(PR 필수, 비공개 무료 저장소면 규칙으로만 운영) → 팀원 개발 시작 조건
 - [ ] D1 API 키: 10/10 신청, 승인 대기 → `npx firebase functions:secrets:set`으로 `JUSO_API_KEY`·`DATA_GO_KR_KEY`·`VWORLD_API_KEY`·`KAKAO_REST_API_KEY` 저장 후 이름만 알려 주기
-- [ ] Java(JDK 21) 설치 → `npm run test:rules`(규칙 테스트 37개) 실행 가능
+- [x] Java(JDK 21) 설치 (10/12) → `npm run test:rules` 35개 통과
 - [ ] 예산 알림(월 5만 원) 설정 여부 확인
 
 **팀원 산출물 대기**: D2·D3·D4(석원·해순, 10/10 지남 — D4는 관리자 화면 판정표로 입력) · D5(석원, 10/14) · D7(원일, 10/14) · D9(해순, 10/14) · D6·D13(원일, 10/17) · D8 검토(원일, 10/21) · D12(해순, 10/21)
@@ -44,6 +44,7 @@
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/admin/branches`(숙소 콘텐츠), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
 - 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(96개 + todo 3개), `functions`에서 `npm test`(48개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
+- 규칙 테스트: 루트에서 `npm run test:rules`(Firestore 에뮬레이터 + vitest, Java 21 필요). Java 설치 전에 연 터미널이면 PATH에 `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspotin`이 없으니 새 터미널을 연다.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
 - Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
 
@@ -611,7 +612,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 #### 10.1 보안 규칙 테스트
 - `@firebase/rules-unit-testing`으로 역할별(비로그인, 회원 본인/타인, 해순, 석원, 원일, 주연, PM) 읽기·쓰기 허용/거부 테스트. 2.3 권한표의 각 권한 키마다 허용 1건·거부 1건 이상. 특히 사진 접근, 상담 담당 건, 스냅샷·active 버전 수정 금지.
 - 시연 기간에는 2단계 인증을 강제하지 않는 상태로 테스트한다. 이 예외는 시연까지만 허용하고 11.3에서 해소한다.
-- **진행 메모**:
+- **진행 메모**: 2026-10-12 첫 실행(Java 설치 후): 35개 중 3개 실패 → 수정 후 35개 통과. ① 진단 수정 규칙이 `address`·`propertyId` 필드가 없는 문서에서 평가 오류로 거부 → `get(필드, null)`로 수정(앱은 항상 필드를 만들어 실사용 영향 없음). ② 회원이 스냅샷 없이 status를 saved로 바꿀 수 있었음 → 새 스냅샷을 연결할 때만 saved/expertRequired로 바뀌게 조임. 둘 다 배포. Storage 규칙 테스트는 아직 없음.
 
 #### 10.2 시연 시나리오 3회 연속 통과
 - 시나리오: 홈 → 카카오 로그인·동의 → 주소 검색 → 자동조회 확인 → 사진 업로드 → 체크리스트 → 견적 결과 → 수익 3안(슬라이더 조작) → PDF 인쇄 → 상담 신청 → (관리자) 상담 칸반에 접수 확인·상태 변경 → 마이페이지에서 상태 확인. + 숙소 상세, 단가·가정값 관리 화면.

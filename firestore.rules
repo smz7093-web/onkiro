@@ -145,11 +145,13 @@ service cloud.firestore {
         || getAfter(/databases/$(database)/documents/properties/$(propertyId)).data.ownerUid == request.auth.uid;
     }
 
-    // 회원은 견적 도달 시 draft → saved/expertRequired로만 바꾼다. 상담 연결(consult)은 상담 신청이 바꾼다(9.1)
+    // 회원은 견적 도달(새 스냅샷) 시 saved/expertRequired로만 바꾼다. 상담 연결(consult)은 상담 신청이 바꾼다(9.1)
     function statusChangeAllowed() {
       return request.resource.data.get('status', 'draft') == resource.data.get('status', 'draft')
         || (resource.data.get('status', 'draft') != 'consult'
-          && request.resource.data.status in ['saved', 'expertRequired'])
+          && request.resource.data.status in ['saved', 'expertRequired']
+          // 견적 상태는 새 스냅샷을 연결할 때만 바꾼다 (스냅샷 없이 '견적 완료'로 만들 수 없다)
+          && request.resource.data.get('latestSnapshotId', null) != resource.data.get('latestSnapshotId', null))
         || (request.resource.data.status == 'consult' && consultLinkValid());
     }
 
@@ -187,8 +189,8 @@ service cloud.firestore {
                        'latestSummary', 'status', 'lastConsultId'])
         && request.resource.data.reached in diagnosisSteps()
         && request.resource.data.checklist is map
-        && (request.resource.data.address == null || request.resource.data.address is string)
-        && ownsPropertyAfter(request.resource.data.propertyId)
+        && (request.resource.data.get('address', null) == null || request.resource.data.address is string)
+        && ownsPropertyAfter(request.resource.data.get('propertyId', null))
         && statusChangeAllowed()
         && snapshotLinkValid(aid)
         && request.resource.data.updatedAt == request.time;
