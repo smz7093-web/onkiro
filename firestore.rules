@@ -278,7 +278,8 @@ service cloud.firestore {
       allow update: if signedIn()
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['addressRoad', 'addressJibun', 'pnu', 'lat', 'lng', 'noRegistry', 'facts', 'updatedAt'])
+             .hasOnly(['addressRoad', 'addressJibun', 'pnu', 'lat', 'lng', 'noRegistry', 'facts', 'updatedAt',
+                       'nearby', 'lookedUpFor'])
         && request.resource.data.addressRoad is string
         && request.resource.data.noRegistry is bool
         && request.resource.data.facts is map

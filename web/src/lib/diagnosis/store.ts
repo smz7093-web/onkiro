@@ -15,6 +15,7 @@ import type { RevenueInput } from "../engine/types";
 import { db } from "../firebase/client";
 import type { EstimateOptions } from "./compute";
 import { initialFacts, type Facts } from "./facts";
+import type { Nearby } from "./lookup";
 import { advanceReached, type StepId } from "./steps";
 
 // 진단(assessments)과 빈집(properties) 문서 (prd.md 8절, task.md 6.1~6.5).
@@ -64,6 +65,10 @@ export interface Property extends AddressInput {
   ownerUid: string;
   noRegistry: boolean;
   facts: Facts;
+  // 주변 관광지 (SIM-04 시연판, task.md 4.5)
+  nearby: Nearby | null;
+  // 외부 조회를 마친 주소 (같은 주소로는 다시 조회하지 않는다)
+  lookedUpFor: string | null;
 }
 
 const toDate = (v: unknown) => (v instanceof Timestamp ? v.toDate() : null);
@@ -138,6 +143,8 @@ export async function loadDiagnosis(
       lng: (d.lng as number) ?? null,
       noRegistry: d.noRegistry === true,
       facts: (d.facts as Facts) ?? {},
+      nearby: (d.nearby as Nearby) ?? null,
+      lookedUpFor: (d.lookedUpFor as string) ?? null,
     },
   };
 }
@@ -183,12 +190,16 @@ export async function saveFacts(
   propertyId: string,
   facts: Facts,
   noRegistry: boolean,
+  lookup?: { nearby: Nearby | null; lookedUpFor: string },
 ): Promise<void> {
   const batch = writeBatch(db);
   const now = serverTimestamp();
   batch.update(doc(db, "properties", propertyId), {
     facts,
     noRegistry,
+    ...(lookup
+      ? { nearby: lookup.nearby, lookedUpFor: lookup.lookedUpFor }
+      : {}),
     updatedAt: now,
   });
   batch.update(doc(db, "assessments", assessment.id), {

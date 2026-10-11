@@ -15,6 +15,7 @@ export function AddressStep() {
   const { assessment, property, reload, go } = useDiagnosis();
   const [keyword, setKeyword] = useState("");
   const [candidates, setCandidates] = useState<AddressCandidate[] | null>(null);
+  const [fromDemo, setFromDemo] = useState(false);
   const [searchFailed, setSearchFailed] = useState(false);
   const [picked, setPicked] = useState<AddressCandidate | null>(null);
   const [road, setRoad] = useState(property?.addressRoad ?? "");
@@ -26,7 +27,9 @@ export function AddressStep() {
     setSearchFailed(false);
     setCandidates(null);
     try {
-      setCandidates(await searchAddress(keyword));
+      const r = await searchAddress(keyword);
+      setCandidates(r.candidates);
+      setFromDemo(r.source === "demoFixture");
     } catch (e) {
       setSearchFailed(true);
       if (!(e instanceof AddressSearchUnavailable)) console.error(e);
@@ -107,6 +110,11 @@ export function AddressStep() {
       {candidates && candidates.length === 0 && (
         <p className="text-base text-muted">
           검색 결과가 없습니다. 아래에 직접 입력해 주세요.
+        </p>
+      )}
+      {candidates && candidates.length > 0 && fromDemo && (
+        <p className="w-fit rounded bg-warn-soft px-2 py-0.5 text-sm text-warn">
+          시연용 저장 데이터
         </p>
       )}
       {candidates && candidates.length > 0 && (

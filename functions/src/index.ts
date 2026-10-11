@@ -4,6 +4,7 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions";
 import {
   claimsFromPermissions,
@@ -17,6 +18,14 @@ import {
   parseProxyInput,
   planUpdate,
 } from "./consult.js";
+import { readCache, writeCache } from "./external/cache.js";
+import { DEMO_FIXTURES } from "./external/demo-fixtures.js";
+import { fetchJson } from "./external/http.js";
+import {
+  lookupProperty as lookupPropertyService,
+  searchAddress as searchAddressService,
+  type Deps,
+} from "./external/lookup.js";
 import {
   canApprove,
   COLLECTION_OF,
@@ -306,3 +315,78 @@ export const createProxyConsultation = onCall(async (request) => {
   });
   return { ok: true, id: ref.id };
 });
+
+// ── 외부 API (task.md 4.1~4.6) ──────────────────────────────────────────────
+// 키는 Secret Manager에 있다(npx firebase functions:secrets:set 이름). 키가 저장되기 전에는 이 함수들을 배포할 수 없다.
+const JUSO_API_KEY = defineSecret("JUSO_API_KEY");
+const DATA_GO_KR_KEY = defineSecret("DATA_GO_KR_KEY");
+const VWORLD_API_KEY = defineSecret("VWORLD_API_KEY");
+const KAKAO_REST_API_KEY = defineSecret("KAKAO_REST_API_KEY");
+
+async function externalDeps(): Promise<Deps> {
+  const db = getFirestore();
+  // 시연 스위치: config/demo.useFixtures (콘솔에서 바꾼다)
+  const demo = await db.collection("config").doc("demo").get();
+  return {
+    fetchJson: (url, opts) => fetchJson(url, opts),
+    readCache: (api, key, days) => readCache(db, api, key, days),
+    writeCache: (api, key, value) => writeCache(db, api, key, value),
+    fixtures: DEMO_FIXTURES,
+    useFixtures: demo.get("useFixtures") === true,
+    now: () => new Date(),
+  };
+}
+
+// 주소 검색 (SIM-01). 실패하면 { ok: false }를 돌려주고 화면은 직접 입력으로 안내한다.
+export const searchAddress = onCall(
+  { secrets: [JUSO_API_KEY, KAKAO_REST_API_KEY], timeoutSeconds: 30 },
+  async (request) => {
+    if (!request.auth)
+      throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+    const keyword = (request.data as { keyword?: unknown } | undefined)
+      ?.keyword;
+    if (
+      typeof keyword !== "string" ||
+      keyword.trim().length < 2 ||
+      keyword.length > 80
+    ) {
+      throw new HttpsError("invalid-argument", "검색어는 2~80자여야 합니다");
+    }
+    return searchAddressService(
+      keyword.trim(),
+      { juso: JUSO_API_KEY.value(), kakao: KAKAO_REST_API_KEY.value() },
+      await externalDeps(),
+    );
+  },
+);
+
+// 빈집 정보 조회 (SIM-02, 03, 04): 건축물대장·토지·주변 관광지를 출처별로 돌려준다.
+export const lookupProperty = onCall(
+  { secrets: [DATA_GO_KR_KEY, VWORLD_API_KEY], timeoutSeconds: 30 },
+  async (request) => {
+    if (!request.auth)
+      throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+    const { pnu, lat, lng } = (request.data ?? {}) as Record<string, unknown>;
+    const okNum = (v: unknown) =>
+      v === null || (typeof v === "number" && Number.isFinite(v));
+    if (
+      !(pnu === null || (typeof pnu === "string" && /^\d{19}$/.test(pnu))) ||
+      !okNum(lat) ||
+      !okNum(lng)
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "pnu(19자리)·좌표 형식이 올바르지 않습니다",
+      );
+    }
+    return lookupPropertyService(
+      {
+        pnu: pnu as string | null,
+        lat: lat as number | null,
+        lng: lng as number | null,
+      },
+      { dataGoKr: DATA_GO_KR_KEY.value(), vworld: VWORLD_API_KEY.value() },
+      await externalDeps(),
+    );
+  },
+);

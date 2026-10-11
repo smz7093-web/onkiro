@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { lookupProperty } from "@/lib/diagnosis/address";
 import {
   editFact,
   FACT_DEFS,
@@ -11,6 +12,11 @@ import {
   type FactDef,
   type Facts,
 } from "@/lib/diagnosis/facts";
+import {
+  mergeLookup,
+  type MergeResult,
+  type Nearby,
+} from "@/lib/diagnosis/lookup";
 import { saveFacts } from "@/lib/diagnosis/store";
 import { useDiagnosis } from "./diagnosis-context";
 import { btnPrimary, btnSecondary, card, input, notice } from "./styles";
@@ -28,8 +34,15 @@ const UNIT: Partial<Record<FactDef["kind"], string>> = {
 
 const shown = (v: Fact["value"]) => (v === null ? "" : String(v));
 
-// 2단계 자동조회 확인·수정 (SIM-02, 03, 05, task.md 6.3).
-// 외부 조회(4.3, 4.4) 전에는 모든 값을 직접 입력한다. 값마다 출처를 보여주고, 조회값을 고치면 원래 값을 함께 저장한다.
+const FAIL_LABEL = {
+  building: "건축물대장",
+  land: "토지 정보",
+  tour: "주변 관광지",
+} as const;
+
+// 2단계 자동조회 확인·수정 (SIM-02, 03, 04, 05, task.md 6.3·4.3~4.5).
+// 주소가 바뀌었으면 들어올 때 한 번 외부 조회(서버 함수)를 하고, 비어 있는 칸만 조회값으로 채운다.
+// 조회가 안 되면(함수 배포 전·실패) 직접 입력으로 계속한다. 값마다 출처를 보여주고, 조회값을 고치면 원래 값을 함께 저장한다.
 export function ConfirmStep() {
   const { assessment, property, reload, go } = useDiagnosis();
   const [facts, setFacts] = useState<Facts>(property?.facts ?? {});
@@ -38,6 +51,42 @@ export function ConfirmStep() {
   const [noRegistry, setNoRegistry] = useState(property?.noRegistry ?? false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const needsLookup =
+    !!property &&
+    property.lookedUpFor !== property.addressRoad &&
+    (!!property.pnu || (property.lat !== null && property.lng !== null));
+  const [lookup, setLookup] = useState<
+    | { state: "idle" | "loading" | "unavailable" }
+    | { state: "done"; result: MergeResult }
+  >({ state: needsLookup ? "loading" : "idle" });
+  const [nearby, setNearby] = useState<Nearby | null>(property?.nearby ?? null);
+
+  useEffect(() => {
+    if (!needsLookup || !property) return;
+    let cancelled = false;
+    lookupProperty({
+      pnu: property.pnu,
+      lat: property.lat,
+      lng: property.lng,
+    }).then(
+      (r) => {
+        if (cancelled) return;
+        if (!r) return setLookup({ state: "unavailable" });
+        setFacts((prev) => {
+          const merged = mergeLookup(prev, r);
+          setLookup({ state: "done", result: merged });
+          setNearby(merged.nearby);
+          return merged.facts;
+        });
+      },
+      () => !cancelled && setLookup({ state: "unavailable" }),
+    );
+    return () => {
+      cancelled = true;
+    };
+    // 들어올 때 한 번만 조회한다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!property) {
     return (
@@ -68,7 +117,15 @@ export function ConfirmStep() {
     setBusy(true);
     setError(null);
     try {
-      await saveFacts(assessment, propertyId, facts, noRegistry);
+      await saveFacts(
+        assessment,
+        propertyId,
+        facts,
+        noRegistry,
+        lookup.state === "done"
+          ? { nearby, lookedUpFor: property!.addressRoad }
+          : undefined,
+      );
       await reload();
       go("photos");
     } catch {
@@ -84,11 +141,38 @@ export function ConfirmStep() {
         <p className="text-base text-ink-2">{property.addressRoad}</p>
       </div>
 
-      <p className={notice}>
-        공공 데이터 자동 조회는 준비 중입니다. 아는 값을 직접 입력해 주세요.
-        비워 둔 값은 &lsquo;결측&rsquo;으로 표시되고 견적 범위가 넓어질 수
-        있어요.
-      </p>
+      {lookup.state === "loading" ? (
+        <p className={notice} role="status">
+          건축물대장·토지 정보를 불러오는 중입니다…
+        </p>
+      ) : lookup.state === "done" ? (
+        <>
+          {lookup.result.failures.filter((f) => f.source !== "tour").length >
+            0 && (
+            <p className={notice}>
+              {lookup.result.failures
+                .filter((f) => f.source !== "tour")
+                .map((f) => FAIL_LABEL[f.source])
+                .join(", ")}
+              을(를) 불러오지 못했습니다. 아는 값을 직접 입력해 주세요.
+            </p>
+          )}
+          {lookup.result.registryNotFound && (
+            <p className={notice}>
+              이 주소로 등록된 건축물대장을 찾지 못했습니다. 무허가·미등기
+              건물이면 아래에서 &lsquo;대장 없음&rsquo;을 선택하세요.
+            </p>
+          )}
+        </>
+      ) : (
+        <p className={notice}>
+          {property.pnu
+            ? "지금은 공공 데이터를 자동으로 불러올 수 없습니다."
+            : "주소를 직접 입력해 필지 정보가 없어 자동 조회를 하지 않았습니다."}{" "}
+          아는 값을 직접 입력해 주세요. 비워 둔 값은 &lsquo;결측&rsquo;으로
+          표시되고 견적 범위가 넓어질 수 있어요.
+        </p>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {GROUPS.map((g) => (
@@ -141,6 +225,36 @@ export function ConfirmStep() {
             })}
           </section>
         ))}
+
+        {nearby && (
+          <section className={card}>
+            <h2 className="text-lg font-semibold">주변 관광지</h2>
+            {nearby.spots.length === 0 ? (
+              <p className="text-base text-ink-2">
+                반경 20km 안에서 찾지 못했습니다.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1 text-base">
+                {nearby.spots.map((s) => (
+                  <li key={s.title} className="flex justify-between gap-2">
+                    <span>{s.title}</span>
+                    <span className="text-ink-2">
+                      직선 {s.distanceKm.toFixed(1)}km
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <span className="text-xs text-muted">
+              출처:{" "}
+              {nearby.source === "demoFixture"
+                ? "시연용 저장 데이터"
+                : "한국관광공사 TourAPI"}{" "}
+              · 조회 {new Date(nearby.fetchedAt).toLocaleString("ko-KR")} ·
+              직선거리이며 경로 기준 이동시간은 준비 중입니다
+            </span>
+          </section>
+        )}
 
         <section className={card}>
           <h2 className="text-lg font-semibold">건축물대장이 없나요?</h2>
