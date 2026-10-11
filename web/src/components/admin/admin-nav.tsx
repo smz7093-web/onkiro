@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuthUser } from "@/lib/auth/use-auth-user";
 import { usePermissions } from "@/lib/auth/use-permissions";
 import { countReceived } from "@/lib/consult/store";
-import type { Permissions } from "@/lib/permissions";
+import { can, type Permissions } from "@/lib/permissions";
 
 type Item = { href: string; label: string; show: (p: Permissions) => boolean };
 
@@ -17,6 +17,11 @@ const MENU: Item[] = [
   },
   { href: "/admin/prices", label: "단가 DB", show: () => true },
   { href: "/admin/assumptions", label: "가정값", show: () => true },
+  {
+    href: "/admin/branches",
+    label: "숙소",
+    show: (p) => can(p, "canEditContent"),
+  },
   { href: "/admin/users", label: "회원·권한", show: (p) => p.role === "admin" },
 ];
 

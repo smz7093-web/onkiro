@@ -7,6 +7,8 @@ import type { Branch } from "@/lib/branches/types";
 // TODO(해순, task.md 9.3): 목업 stay-detail처럼 사진, 청결 관리, 편의시설, 체험, 위치,
 // 요금과 외부 예약 버튼(에어비앤비·네이버)을 그린다. 공통 UI 컴포넌트(components/ui)가 생기면 그것을 쓴다.
 // 데이터는 아래 branch 하나에 모두 들어 있다 (lib/branches/types.ts 참고).
+// 예약 버튼을 누를 때 trackReserveClick(branch.id, "airbnb" | "naver")를 부른다 (@/lib/analytics, 클릭 수 기록).
+// 예약 링크(branch.airbnbUrl, naverUrl)가 null이면 그 버튼은 숨긴다. 내용은 관리자 화면 /admin/branches에서 고친다.
 export function StayDetail({ id }: { id: string }) {
   const [branch, setBranch] = useState<Branch | null | undefined>(undefined);
 

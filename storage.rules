@@ -52,6 +52,22 @@ service firebase.storage {
       allow delete: if signedIn() && request.auth.uid == uid;
     }
 
+    // 숙소 사진 (STY-01, task.md 9.3): 누구나 보고, 콘텐츠 편집 권한자만 올린다.
+    // 숙소 문서에서 빠진 사진 파일은 지우지 않고 남긴다(되돌리기 대비).
+    function canEditContent() {
+      return isAdmin()
+        || (role() == 'staff' && 'canEditContent' in request.auth.token.get('perms', []));
+    }
+
+    match /branches/{branchId}/photos/{fileName} {
+      allow read: if true;
+      allow create: if canEditContent()
+        && fileName.matches('[a-z0-9]+[.]jpg')
+        && request.resource.contentType == 'image/jpeg'
+        && request.resource.size < 5 * 1024 * 1024;
+      allow update, delete: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

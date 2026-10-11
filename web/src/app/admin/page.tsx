@@ -24,6 +24,13 @@ export default function AdminHome() {
           — 수익 시뮬레이터 기본값·3안 편차 버전 관리 (ADM-02)
         </li>
         <li>
+          <Link href="/admin/branches" className="underline">
+            숙소
+          </Link>{" "}
+          — 숙소 상세 화면 콘텐츠·사진·예약 링크 편집, 콘텐츠 편집 권한
+          (STY-01·02)
+        </li>
+        <li>
           <Link href="/admin/users" className="underline">
             회원·권한
           </Link>{" "}

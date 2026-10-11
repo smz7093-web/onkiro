@@ -431,9 +431,46 @@ describe("consultations (상담)", () => {
 });
 
 describe("branches", () => {
-  it("숙소 상세는 누구나 읽고, 아직 아무도 쓰지 못한다", async () => {
+  const branch = (uid: string) => ({
+    name: "1호점",
+    content: { headline: "감나무집" },
+    airbnbUrl: null,
+    naverUrl: null,
+    updatedBy: uid,
+    updatedByName: null,
+    updatedAt: serverTimestamp(),
+  });
+
+  it("숙소 상세는 누구나 읽고, 콘텐츠 편집 권한자만 쓴다", async () => {
     await assertSucceeds(getDoc(doc(anonymous(), "branches/b1")));
-    await assertFails(setDoc(doc(admin(), "branches/b1"), { name: "x" }));
+    await assertSucceeds(
+      setDoc(doc(admin(), "branches/hongseong-1"), branch("pm")),
+    );
+    const editor = env
+      .authenticatedContext("haesoon", {
+        role: "staff",
+        perms: ["canEditContent"],
+      })
+      .firestore();
+    await assertSucceeds(
+      setDoc(doc(editor, "branches/hongseong-2"), branch("haesoon")),
+    );
+    await assertFails(
+      setDoc(doc(staff(), "branches/hongseong-3"), branch("juyeon")),
+    );
+    await assertFails(
+      setDoc(doc(member(), "branches/hongseong-4"), branch("alice")),
+    );
+  });
+
+  it("숙소 id 형식과 필드를 검사하고, 삭제는 막는다", async () => {
+    await assertFails(
+      setDoc(doc(admin(), "branches/Hong Seong"), branch("pm")),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "branches/b2"), { ...branch("pm"), price: 1 }),
+    );
+    await assertFails(deleteDoc(doc(admin(), "branches/b1")));
   });
 
   it("지점 실적 하위 컬렉션은 막혀 있다", async () => {
