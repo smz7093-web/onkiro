@@ -7,34 +7,42 @@
 
 ---
 
-## 진행 현황 (2026-10-11 기준)
+## 진행 현황 (2026-10-11 마감 기준)
 
-**10/10 업무분장 조정**: 주연은 행정 → **화면 UI 담당**. 팀원 4명이 전문 분야 개발 모듈을 하나씩 맡는다(1.6, 5.7, 6.7, 9.3~9.5, 9.7). 석원의 3.7은 10/11 관리자 화면 입력으로 바꿨다. 주연의 행정 업무는 D1 → PM, D7·D11·상담 접수·지점 실적 → 원일, D8 → PM 초안·원일 검토. 공유 PRD rev 83에 반영.
+**10/10 업무분장 조정**: 주연은 행정 → **화면 UI 담당**. 팀원 개발 모듈: 원일 5.7·9.7, 주연 6.7·9.4·9.5, 해순 9.3(1.6). 석원 3.7은 10/11 **코딩 → 관리자 화면 판정표 입력(B안)**으로 바꿨다. 주연의 행정 업무는 D1 → PM, D7·D11·상담 접수·지점 실적 → 원일, D8 → PM 초안·원일 검토. 공유 PRD rev 87. 팀원별 안내 메시지는 `팀원작업내용.md`(10/11 작성, 발송은 PM).
 
-**끝난 것**: 저장소·품질 도구, Firebase(서울), **App Hosting 검토 URL**(asia-east1) / 2.1 카카오 로그인(검토 도메인은 리다이렉트, 휴대폰 확인) / 2.2 동의 / 2.3 권한 / 2.4 규칙 뼈대 / 2.5 회원·권한 화면(해순 권한 부여) / 3.1~3.4 계산 엔진 / 5.1~5.4 기준값 관리 / **6.1~6.5 진단 입력**, **7.1~7.5 결과 화면**(검토 URL에서 주소→수익까지 확인) / 8.1 리포트·8.2 마이페이지·9.1 상담 신청·9.2 상담 관리(10/11 확인), 6.4 사진 GPS 제거 확인 / 8.3 D8 초안(원일 검토 대기) / 1.6 팀원 모듈 뼈대. 최신 커밋은 GitHub `main`.
+**끝난 것** (검토 URL https://onkiro-web--onkiro-2fe12.asia-east1.hosted.app 에서 PM 확인)
+- 기반: 저장소·품질 도구, Firebase(서울), App Hosting(asia-east1, `main` 푸시 시 자동 배포)
+- 인증·권한: 2.1 카카오 로그인(검토 도메인은 같은 도메인 리다이렉트, 휴대폰 확인) / 2.2 동의 / 2.3 권한 / 2.4 규칙 뼈대 / 2.5 회원·권한 화면(해순 권한 부여)
+- 계산·기준값: 3.1~3.4 계산 엔진 / 5.1~5.4 기준값 관리 / 3.7 판정표 구조(단가 DB 버전에 `checklistRules`, 관리자 편집기, 기본 판정표로 위험 신호 2개 동작)
+- 진단·결과: 6.1~6.5 진단 입력(사진 GPS 제거 확인) / 7.1~7.5 결과 화면·스냅샷
+- 리포트·상담: 8.1 A4 리포트 / 8.2 마이페이지 / 9.1 상담 신청 / 9.2 상담 관리 칸반·이력·전화 접수
+- 문서: 8.3 D8 초안(https://claude.ai/code/artifact/a76a3595-e6f0-4856-a0d5-260900a38474, 원일 검토 대기) / 1.6 팀원 모듈 뼈대·CONTRIBUTING.md
 
 **다음에 할 일 (권장 순서)**
-1. ~~사용자 확인: 8.1 A4 인쇄, 9.1→9.2 상담 흐름, 6.4 휴대폰 사진 GPS 제거~~ 10/11 모두 정상 확인(PM)
-2. Phase 4 외부 API — D1 키 승인되면 바로 (4.1 공통 구조 → 4.2 주소 → 4.3 건축물대장 → 4.4 브이월드 → 4.5 TourAPI → 4.6 시연 저장 데이터)
-3. 팀원 산출물 반영: D4·3.7(석원, 관리자 화면 판정표 입력 — 지금 견적에 지붕·구조 보수가 빠짐, 위험 신호 2개는 기본 판정표로 동작), D5·D6 → 5.6, D7 → 인허가 항목, D8 확정 → 동의·면책 문구 교체
-4. 팀원 PR 검토 (3.7, 5.7, 6.7, 9.3~9.5, 9.7)
-5. Phase 10 통합 테스트 준비 (Java 설치 후 규칙 테스트 실행, 시연 시나리오 점검)
+1. Phase 4 외부 API — D1 키 승인·저장되면 바로 (4.1 공통 구조 → 4.2 주소 → 4.3 건축물대장 → 4.4 브이월드 → 4.5 TourAPI → 4.6 시연 저장 데이터)
+2. 팀원 산출물 반영: D4(석원이 판정표 입력 → PM 적용, 그 전까지 견적에 지붕·구조 보수가 빠짐), D5·D6 → 5.6 최종 전환, D7 → `lib/diagnosis/permits.ts`, D9 → `lib/diagnosis/photos.ts` 가이드 문구, D8 확정 → 동의·면책 문구 교체와 약관 버전 올림
+3. 팀원 PR 검토 (5.7, 6.7, 9.3~9.5, 9.7) → 6.7 공통 UI가 오면 진단·결과 화면 버튼 교체
+4. 9.3 숙소 콘텐츠 편집 화면·`branches` 쓰기 규칙·예약 클릭 기록(D12 도착 시)
+5. Phase 10 통합 테스트 준비 (Java 설치 후 규칙 테스트 실행, 시연 시나리오 3회 통과, 시연 데이터·계정)
 
 **사용자가 해야 할 일 (대기 중)**
-- [x] App Hosting 백엔드 생성 (10/10, 검토 URL https://onkiro-web--onkiro-2fe12.asia-east1.hosted.app)
-- [x] 검토 URL에서 카카오 로그인 확인 (10/10), 휴대폰 리다이렉트 로그인 확인 (10/11)
+- [x] App Hosting 백엔드 생성 (10/10)
+- [x] 검토 URL 카카오 로그인 (10/10), 휴대폰 리다이렉트 로그인 (10/11), 카카오 Redirect URI에 검토 도메인 추가 (10/11)
+- [x] Storage 서비스 계정에 'Firebase Rules Firestore Service Agent' 역할 부여 (10/11)
+- [ ] `팀원작업내용.md` 날짜 채워 팀원 4명에게 발송
 - [ ] 석원·원일·주연 첫 로그인 → `/admin/users`에서 권장 설정 적용 (해순은 10/10 완료)
-- [ ] Java(JDK 21) 설치 → `npm run test:rules`(규칙 테스트 20개) 실행 가능
-- [ ] 예산 알림(월 5만 원) 설정 여부 확인 (Blaze 전환과 별개)
-- [ ] 팀원 GitHub 초대(쓰기 권한) + `main` 브랜치 보호(PR 필수) → 팀원 개발 시작 조건
-- [ ] D1 API 키: 10/10 신청 완료, 승인 대기 → 승인되면 Secret Manager에 저장(1.5 진행 메모의 이름)
+- [ ] 팀원 GitHub 초대(쓰기 권한) + `main` 브랜치 보호(PR 필수, 비공개 무료 저장소면 규칙으로만 운영) → 팀원 개발 시작 조건
+- [ ] D1 API 키: 10/10 신청, 승인 대기 → `npx firebase functions:secrets:set`으로 `JUSO_API_KEY`·`DATA_GO_KR_KEY`·`VWORLD_API_KEY`·`KAKAO_REST_API_KEY` 저장 후 이름만 알려 주기
+- [ ] Java(JDK 21) 설치 → `npm run test:rules`(규칙 테스트 33개) 실행 가능
+- [ ] 예산 알림(월 5만 원) 설정 여부 확인
 
-**팀원 산출물 대기**: D1(PM 이관, 10/8 지남) · D2~D4(석원·해순, 10/10) · D5(석원, 10/14: 단가·철거 조건·병행 공정·'모름' 가산) · D6(원일, 10/17) · D7(원일)·D9(해순, 10/14) · D8(PM 초안·원일 검토, 10/21, Analytics 고지 포함)
+**팀원 산출물 대기**: D2·D3·D4(석원·해순, 10/10 지남 — D4는 관리자 화면 판정표로 입력) · D5(석원, 10/14) · D7(원일, 10/14) · D9(해순, 10/14) · D6·D13(원일, 10/17) · D8 검토(원일, 10/21) · D12(해순, 10/21)
 
 **환경·작업 메모**
 - Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`. 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
-- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(81개 + todo 6개), `functions`에서 `npm test`(24개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
+- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(86개 + todo 3개), `functions`에서 `npm test`(26개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
 - Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
