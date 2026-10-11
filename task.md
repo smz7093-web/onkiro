@@ -34,7 +34,7 @@
 - [ ] 석원·원일·주연 첫 로그인 → `/admin/users`에서 권장 설정 적용 (해순은 10/10 완료)
 - [ ] 팀원 GitHub 초대(쓰기 권한) + `main` 브랜치 보호(PR 필수, 비공개 무료 저장소면 규칙으로만 운영) → 팀원 개발 시작 조건
 - [ ] D1 API 키: 10/10 신청, 승인 대기 → `npx firebase functions:secrets:set`으로 `JUSO_API_KEY`·`DATA_GO_KR_KEY`·`VWORLD_API_KEY`·`KAKAO_REST_API_KEY` 저장 후 이름만 알려 주기
-- [ ] Java(JDK 21) 설치 → `npm run test:rules`(규칙 테스트 33개) 실행 가능
+- [ ] Java(JDK 21) 설치 → `npm run test:rules`(규칙 테스트 37개) 실행 가능
 - [ ] 예산 알림(월 5만 원) 설정 여부 확인
 
 **팀원 산출물 대기**: D2·D3·D4(석원·해순, 10/10 지남 — D4는 관리자 화면 판정표로 입력) · D5(석원, 10/14) · D7(원일, 10/14) · D9(해순, 10/14) · D6·D13(원일, 10/17) · D8 검토(원일, 10/21) · D12(해순, 10/21)
