@@ -23,7 +23,7 @@
 1. Phase 4 외부 API — D1 키 승인·저장되면 바로 (4.1 공통 구조 → 4.2 주소 → 4.3 건축물대장 → 4.4 브이월드 → 4.5 TourAPI → 4.6 시연 저장 데이터)
 2. 팀원 산출물 반영: D4(석원이 판정표 입력 → PM 적용, 그 전까지 견적에 지붕·구조 보수가 빠짐), D5·D6 → 5.6 최종 전환, D7 → `lib/diagnosis/permits.ts`, D9 → `lib/diagnosis/photos.ts` 가이드 문구, D8 확정 → 동의·면책 문구 교체와 약관 버전 올림
 3. 팀원 PR 검토 (5.7, 6.7, 9.3~9.5, 9.7) → 6.7 공통 UI가 오면 진단·결과 화면 버튼 교체
-4. 9.3 숙소 콘텐츠 편집 화면·`branches` 쓰기 규칙·예약 클릭 기록(D12 도착 시)
+4. ~~9.3 숙소 콘텐츠 편집 화면~~ 10/11 완료 → D12가 오면 관리 화면에서 입력, 홈·숙소 화면 링크를 실제 숙소 id로
 5. Phase 10 통합 테스트 준비 (Java 설치 후 규칙 테스트 실행, 시연 시나리오 3회 통과, 시연 데이터·계정)
 
 **사용자가 해야 할 일 (대기 중)**
@@ -41,8 +41,8 @@
 
 **환경·작업 메모**
 - Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`. 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
-- 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
-- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(86개 + todo 3개), `functions`에서 `npm test`(26개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
+- 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/admin/branches`(숙소 콘텐츠), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
+- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(91개 + todo 3개), `functions`에서 `npm test`(26개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
 - Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
@@ -583,6 +583,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 - **PM이 먼저**: `branches` 문서 타입·읽기 함수·보안 규칙, 시연용 샘플 데이터. 해순은 화면만 만든다.
 - 목업 `stay-detail`. `branches/{id}.content`에서 읽어 표시(관리자가 수정 가능하게). 에어비앤비·네이버 예약 버튼, 클릭 수 기록(Analytics 이벤트).
 - **진행 메모**: 2026-10-10 PM 준비 완료: `lib/branches/{types,store,sample}.ts`(콘텐츠 구조, `getBranch`, 문서가 없으면 샘플), 규칙 `branches` 누구나 읽기·쓰기 금지(배포, 규칙 테스트 2개 추가), 화면 자리 `/stay/[id]`(`stay-detail.tsx`, 확인 주소 `/stay/sample-1`). 콘텐츠 편집 화면·쓰기 규칙·Analytics 클릭 기록은 PM이 나중에.
+  - 2026-10-11 PM 몫 완료: 관리 화면 `/admin/branches`(목록·새 숙소)·`/admin/branches/[id]`(기본 정보, 사진 올리기·설명·순서·빼기, 청결, 편의·안전 시설, 체험, 위치·요금·예약 링크), 저장 전 검사 `lib/branches/validate.ts`(테스트 5개), 샘플 id로 만들면 샘플 내용에서 시작. 사진은 `preparePhoto`로 줄이고 메타데이터를 지워 Storage `branches/{id}/photos`(공개 읽기, 콘텐츠 편집 권한자만 업로드)에 올림. 규칙: `branches` 쓰기는 `canEditContent`(id 형식·필드 검사, 삭제 금지, 규칙 테스트 2개 갱신). 관리자 메뉴 '숙소'. 예약 클릭 기록은 `lib/analytics.ts` `trackReserveClick(branchId, channel)` — 해순이 화면 버튼에서 부른다. **남은 일**: 해순 화면(9.3), D12 콘텐츠 입력(해순·주연 모두 편집 권한 있음), 홈 카드 링크를 실제 숙소 id로.
 
 #### 9.4 `[주연·개발]` 서비스 소개 홈 (COM-01) (10/28)
 - 목업 `home`. 미션, 진단·재생·운영 소개, 위탁 운영 모델("운영 조건은 협의 사항"), 1·2호점 카드, CTA 2개(내 빈집 진단하기 → 로그인/주소 입력, 빈집 맡기기 상담 → 상담 신청).
