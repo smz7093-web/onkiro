@@ -8,14 +8,14 @@
 | --- | --- | --- | --- | --- |
 | 주연 | 공통 UI 컴포넌트 | `web/src/components/ui/`, 견본 페이지 `web/src/app/ui/` | 6.7 | 10/17 |
 | 주연 | 서비스 소개 홈, 반응형 점검 | `web/src/app/(public)/` (숙소 `stay/` 제외) | 9.4, 9.5 | 10/28 |
-| 석원 | 체크리스트 → 공정 판정·위험 신호 함수 | `web/src/lib/engine/checklist.ts`, `checklist.test.ts` | 3.7 | 10/17 |
+| 석원 | 체크리스트 판정표 입력 (**코딩 없음**: 관리자 화면 → 단가 DB → 새 초안 → '체크리스트 판정표'). 선택: 판정 사례 테스트 | 관리자 화면, (선택) `web/src/lib/engine/checklist.test.ts` | 3.7 | 10/17 |
 | 원일 | 수익 검증 사례 테스트 | `web/src/lib/engine/revenue.cases.test.ts` | 5.7 | 10/21 |
 | 원일 | 상담 상태 전이·담당 배정 규칙 함수 | `web/src/lib/consult/` | 9.7 | 10/21 |
 | 해순 | 숙소 상세 화면 | `web/src/app/(public)/stay/` | 9.3 | 10/27 |
 
 각 작업의 요구사항과 완료 기준은 `task.md`의 해당 번호에 있다. 시작에 필요한 뼈대는 PM이 만들어 두었다. 파일 안의 `TODO(이름)` 주석이 각자 채울 자리다.
 
-- 석원: `checklist.ts`의 `evaluateChecklist`, `checklist.test.ts`의 `it.todo` 줄
+- 석원: 코드 대신 관리자 화면에서 판정표를 입력한다(task.md 3.7). 선택으로 `checklist.test.ts`에 판정 사례를 추가할 수 있다
 - 원일: `revenue.cases.test.ts`의 `CASES` 표, `consult/status.ts`의 두 함수와 `status.test.ts`
 - 주연: `components/ui/index.ts`의 목록. 만든 것은 http://localhost:3000/ui 견본 페이지에서 확인
 - 해순: `app/(public)/stay/[id]/stay-detail.tsx`. http://localhost:3000/stay/sample-1 에서 샘플 숙소로 확인
@@ -73,7 +73,7 @@ Claude Code를 쓰면 위 과정을 "3.7 작업 브랜치 만들어 줘", "검�
 
 - `main`에 직접 push하지 않는다. 모든 변경은 PR로 올린다.
 - `npm run lint`·`npm run typecheck`·`npm test`가 모두 통과해야 PR을 올린다. 통과하지 않으면 PR 설명에 그 사실과 오류 내용을 적는다.
-- 계산 로직(석원·원일)은 산출물(D4·D6·D13)의 표 한 줄마다 테스트를 하나 이상 쓴다. 테스트가 "이 기준이 코드에 그대로 들어갔다"는 증거다.
+- 계산 로직(원일)은 산출물(D6·D13)의 표 한 줄마다 테스트를 하나 이상 쓴다. 테스트가 "이 기준이 코드에 그대로 들어갔다"는 증거다.
 - 화면(주연·해순)은 목업(`mockup/` 폴더, 브라우저로 `mockup/index.html` 열기)을 참고하되 동작과 문구는 `prd.md`를 따른다. 폭 360px(휴대폰)에서도 가로 스크롤이 없게 만든다.
 - 비밀 값(API 키, 비밀번호)은 코드·커밋·PR·채팅 어디에도 붙이지 않는다.
 - PR 하나에는 작업 하나만 담는다. 작게 자주 올리는 편이 검토가 빠르다.
