@@ -20,6 +20,7 @@ import {
   type ProcessPrice,
   type QuantityBasis,
 } from "@/lib/engine/types";
+import { ChecklistRulesEditor } from "./checklist-rules-editor";
 import { man } from "./format";
 import { NumberField } from "./number-field";
 
@@ -382,6 +383,12 @@ export function PriceEditor({
           </div>
         )}
       </section>
+
+      <ChecklistRulesEditor
+        rules={data.checklistRules}
+        setRules={(checklistRules) => setData({ ...data, checklistRules })}
+        readOnly={readOnly}
+      />
 
       <PriceCheck data={data} />
     </div>

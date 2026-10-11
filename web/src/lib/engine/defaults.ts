@@ -1,3 +1,4 @@
+import { DEFAULT_CHECKLIST_RULES } from "./checklist";
 import type { AssumptionSet, PriceTable } from "./types";
 
 // 임시 기준값. 단가는 목업 adm-price-db, 가정값은 MVP_기능명세서.md 5절 기준이다.
@@ -60,6 +61,8 @@ export const PRICE_V2026_10_1: PriceTable = {
     perUnknownAnswer: 0,
   },
   rangeRoundingUnit: 1_000_000,
+  // 체크리스트 판정표 (D4 전 기본값: 욕실·주방, 위험 신호 2개)
+  checklistRules: DEFAULT_CHECKLIST_RULES,
 };
 
 export const ASSUMPTION_V0_3: AssumptionSet = {

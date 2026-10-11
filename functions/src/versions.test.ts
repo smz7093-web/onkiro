@@ -140,3 +140,43 @@ describe("canApprove", () => {
     expect(canApprove(undefined)).toBe(false);
   });
 });
+
+describe("체크리스트 판정표 검증 (task.md 3.7)", () => {
+  const ok = {
+    question: "leak",
+    answer: "yes",
+    process: "roof",
+    grade: "partial",
+    risk: null,
+  };
+  const withRules = (rules: unknown) => ({ ...price, checklistRules: rules });
+
+  it("올바른 판정표는 통과한다", () => {
+    expect(
+      validatePriceTable(
+        withRules([
+          ok,
+          { ...ok, process: null, grade: null, risk: "majorCrack" },
+        ]),
+        "v2026.10-1",
+      ),
+    ).toEqual([]);
+  });
+
+  it("공정·판정 짝이 안 맞거나 빈 줄은 거부한다", () => {
+    expect(
+      validatePriceTable(withRules([{ ...ok, grade: null }]), "v2026.10-1")
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      validatePriceTable(
+        withRules([{ ...ok, process: null, grade: null }]),
+        "v2026.10-1",
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(
+      validatePriceTable(withRules([{ ...ok, risk: "fire" }]), "v2026.10-1")
+        .length,
+    ).toBeGreaterThan(0);
+  });
+});

@@ -1,8 +1,16 @@
 // 상태 체크리스트 → 공정별 상태 판정·위험 신호 (SIM-07, 08, 10, task.md 3.7).
-// 담당: 석원(D4 매핑표를 코드로). 뼈대·타입: PM.
-// 이 파일은 React·Firebase를 import하지 않는다. 입력이 같으면 결과가 항상 같아야 한다.
+// 판정 기준(D4)은 코드가 아니라 단가 DB 버전의 판정표(PriceTable.checklistRules)에 있다.
+// 석원이 관리자 화면 단가 DB 초안에서 입력하고 PM이 적용한다(두 사람 확인). 이 파일은 판정표를 적용만 한다.
+// 이 파일은 React·Firebase를 import하지 않는다. 입력과 판정표가 같으면 결과가 항상 같다.
 
-import type { ConditionGrade, ProcessId } from "./types";
+import type {
+  ChecklistRule,
+  ConditionGrade,
+  ProcessId,
+  RiskFlagId,
+} from "./types";
+
+export type { ChecklistRule, RiskFlagId } from "./types";
 
 // 10문항과 선택지 (목업 sim-check). 화면(6.5)이 이 목록을 그대로 그린다.
 // 문구를 바꿀 때는 id는 그대로 두고 label만 바꾼다. id는 저장된 진단 데이터에 남는다.
@@ -109,10 +117,6 @@ export type ChecklistAnswers = {
   [Q in Question as Q["id"]]: Q["options"][number]["id"];
 };
 
-// 위험 신호 (SIM-10). 하나라도 있으면 결과 화면이 "전문가 진단 필수"를 띄우고
-// 수익 화면보다 현장진단 신청을 먼저 보여준다. 기준은 D4.
-export type RiskFlagId = "majorCrack" | "severeTilt" | "roofCollapse";
-
 export const RISK_FLAG_LABELS: Record<RiskFlagId, string> = {
   majorCrack: "큰 균열",
   severeTilt: "심한 기울어짐",
@@ -133,30 +137,109 @@ export interface ChecklistResult {
   unknownAnswers: number;
 }
 
-// 10문항 답 → 공정별 상태·위험 신호.
-// TODO(석원, D4): 아래 "예시"처럼 매핑표의 행을 하나씩 옮긴다. 한 공정에 여러 문항이 걸리면
-// 가장 나쁜 상태를 쓴다(worse 함수). 위험 신호 기준도 여기에 넣는다.
-export function evaluateChecklist(answers: ChecklistAnswers): ChecklistResult {
+// 판정표가 없는 단가 버전에 쓰는 기본 판정표.
+// 욕실·주방은 답이 곧 상태이고, 위험 신호 두 줄은 PRD(task.md 7.2)에 적힌 기준이다.
+// 나머지 문항(누수, 수도, 전기 등)은 D4(석원)로 관리자 화면에서 채운다.
+export const DEFAULT_CHECKLIST_RULES: ChecklistRule[] = [
+  {
+    question: "bathroom",
+    answer: "usable",
+    process: "bathroom",
+    grade: "good",
+    risk: null,
+  },
+  {
+    question: "bathroom",
+    answer: "partial",
+    process: "bathroom",
+    grade: "partial",
+    risk: null,
+  },
+  {
+    question: "bathroom",
+    answer: "full",
+    process: "bathroom",
+    grade: "full",
+    risk: null,
+  },
+  {
+    question: "kitchen",
+    answer: "usable",
+    process: "kitchen",
+    grade: "good",
+    risk: null,
+  },
+  {
+    question: "kitchen",
+    answer: "partial",
+    process: "kitchen",
+    grade: "partial",
+    risk: null,
+  },
+  {
+    question: "kitchen",
+    answer: "full",
+    process: "kitchen",
+    grade: "full",
+    risk: null,
+  },
+  {
+    question: "crack",
+    answer: "wide",
+    process: null,
+    grade: null,
+    risk: "majorCrack",
+  },
+  {
+    question: "tilt",
+    answer: "severe",
+    process: null,
+    grade: null,
+    risk: "severeTilt",
+  },
+];
+
+function labelOf(questionId: string, answerId: string) {
+  const q = CHECKLIST_QUESTIONS.find((x) => x.id === questionId);
+  const a = q?.options.find((o) => o.id === answerId);
+  return `${q?.label ?? questionId} → ${a?.label ?? answerId}`;
+}
+
+// 10문항 답 + 판정표 → 공정별 상태·위험 신호.
+// 답과 맞는 줄을 모두 적용하고, 한 공정에 여러 줄이 걸리면 가장 나쁜 판정을 쓴다.
+export function evaluateChecklist(
+  answers: ChecklistAnswers,
+  rules: readonly ChecklistRule[] = DEFAULT_CHECKLIST_RULES,
+): ChecklistResult {
   const conditions: Partial<Record<ProcessId, ConditionGrade>> = {};
   const riskFlags: RiskFlag[] = [];
+  const answerOf = answers as Record<string, string>;
 
-  const set = (process: ProcessId, grade: ConditionGrade) => {
-    conditions[process] = worse(conditions[process], grade);
-  };
-
-  // 예시: 욕실·주방 문항은 답이 곧 상태다
-  const direct = { usable: "good", partial: "partial", full: "full" } as const;
-  set("bathroom", direct[answers.bathroom]);
-  set("kitchen", direct[answers.kitchen]);
-
-  // TODO(석원): leak → 지붕, water·septic·power·heating → 전기·설비, crack·tilt → 구조 보강,
-  // lastOccupied → ? (D4 매핑표대로). 위험 신호: crack "wide" → majorCrack 등.
+  for (const r of rules) {
+    if (answerOf[r.question] !== r.answer) continue;
+    if (r.process && r.grade) {
+      conditions[r.process] = worse(conditions[r.process], r.grade);
+    }
+    if (r.risk && !riskFlags.some((f) => f.id === r.risk)) {
+      riskFlags.push({ id: r.risk, reason: labelOf(r.question, r.answer) });
+    }
+  }
 
   return {
     conditions,
     riskFlags,
     unknownAnswers: countUnknown(answers),
   };
+}
+
+// 판정표에 한 줄도 없는 답 (관리자 화면에서 빠진 답을 보여줄 때 쓴다)
+export function uncoveredAnswers(rules: readonly ChecklistRule[]) {
+  const covered = new Set(rules.map((r) => `${r.question}:${r.answer}`));
+  return CHECKLIST_QUESTIONS.flatMap((q) =>
+    q.options
+      .filter((o) => !covered.has(`${q.id}:${o.id}`))
+      .map((o) => ({ question: q.id as string, answer: o.id as string })),
+  );
 }
 
 const ORDER: ConditionGrade[] = ["good", "partial", "full"];

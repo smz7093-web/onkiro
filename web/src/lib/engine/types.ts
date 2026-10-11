@@ -39,6 +39,20 @@ export type ModuleType = "A" | "B" | "C";
 export type QuantityBasis =
   "floorArea" | "roofArea" | "bathrooms" | "kitchens" | "lumpSum";
 
+// 위험 신호 (SIM-10). 하나라도 있으면 결과 화면이 "전문가 진단 필수"를 먼저 보여준다
+export type RiskFlagId = "majorCrack" | "severeTilt" | "roofCollapse";
+
+// 체크리스트 판정표 한 줄 (D4, 석원이 관리자 화면 단가 DB에서 입력, task.md 3.7).
+// 문항 question의 답이 answer이면 공정 process를 grade로 판정하고, risk가 있으면 위험 신호를 낸다.
+// 한 공정에 여러 줄이 걸리면 가장 나쁜 판정을 쓴다.
+export interface ChecklistRule {
+  question: string;
+  answer: string;
+  process: ProcessId | null;
+  grade: ConditionGrade | null;
+  risk: RiskFlagId | null;
+}
+
 export interface ProcessPrice {
   quantityBasis: QuantityBasis;
   // 기본 공사 단가. 내부 리모델링은 모듈 단가(moduleUnitPrices)를 쓴다
@@ -69,6 +83,8 @@ export interface PriceTable {
   };
   // 범위 반올림 단위 (원)
   rangeRoundingUnit: number;
+  // 체크리스트 판정표. 없으면 DEFAULT_CHECKLIST_RULES(checklist.ts)를 쓴다
+  checklistRules?: ChecklistRule[];
 }
 
 export interface EstimateInput {

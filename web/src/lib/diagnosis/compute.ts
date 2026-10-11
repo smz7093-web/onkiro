@@ -2,6 +2,7 @@
 // 이 파일은 React·Firebase를 import하지 않는다. 같은 입력·버전이면 결과가 항상 같다 (prd.md 7.3).
 
 import {
+  DEFAULT_CHECKLIST_RULES,
   evaluateChecklist,
   type ChecklistAnswers,
   type ChecklistResult,
@@ -77,7 +78,11 @@ export function computeEstimate(
   inputs: DiagnosisInputs,
   price: PriceTable,
 ): EstimateComputation {
-  const checklist = evaluateChecklist(inputs.checklist);
+  // 판정표는 단가 버전에 들어 있다. 같은 단가 버전이면 같은 판정 (prd.md 7.3)
+  const checklist = evaluateChecklist(
+    inputs.checklist,
+    price.checklistRules ?? DEFAULT_CHECKLIST_RULES,
+  );
   const estimateInput = buildEstimateInput(inputs, checklist);
   return {
     checklist,

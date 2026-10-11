@@ -27,6 +27,8 @@ const PROCESS_IDS = [
   "exterior",
   "iot",
 ];
+const GRADES = ["good", "partial", "full"];
+const RISK_FLAGS = ["majorCrack", "severeTilt", "roofCollapse"];
 const QUANTITY_BASES = [
   "floorArea",
   "roofArea",
@@ -146,6 +148,41 @@ export function validatePriceTable(data: unknown, version: string): string[] {
     "perUnknownAnswer",
   ])
     c.num(`불확실도 ${k}`, u[k], 0, 1);
+
+  // 체크리스트 판정표 (D4, task.md 3.7). 없으면 화면이 기본 판정표를 쓴다
+  if (data.checklistRules !== undefined) {
+    if (!Array.isArray(data.checklistRules))
+      c.check(false, "판정표가 목록이 아닙니다");
+    else
+      data.checklistRules.forEach((r: unknown, i: number) => {
+        const n = `판정표 ${i + 1}번째 줄`;
+        if (!isObj(r)) return c.check(false, `${n}: 형식이 잘못됐습니다`);
+        c.check(
+          typeof r.question === "string" && typeof r.answer === "string",
+          `${n}: 문항·답이 없습니다`,
+        );
+        c.check(
+          r.process === null || PROCESS_IDS.includes(r.process as string),
+          `${n}: 모르는 공정입니다`,
+        );
+        c.check(
+          r.grade === null || GRADES.includes(r.grade as string),
+          `${n}: 판정이 잘못됐습니다`,
+        );
+        c.check(
+          r.risk === null || RISK_FLAGS.includes(r.risk as string),
+          `${n}: 모르는 위험 신호입니다`,
+        );
+        c.check(
+          (r.process === null) === (r.grade === null),
+          `${n}: 공정과 판정은 함께 골라야 합니다`,
+        );
+        c.check(
+          r.process !== null || r.risk !== null,
+          `${n}: 공정이나 위험 신호 중 하나는 있어야 합니다`,
+        );
+      });
+  }
 
   return c.errors;
 }
