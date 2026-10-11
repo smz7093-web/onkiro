@@ -20,7 +20,7 @@
 - 문서: 8.3 D8 초안(https://claude.ai/code/artifact/a76a3595-e6f0-4856-a0d5-260900a38474, 원일 검토 대기) / 1.6 팀원 모듈 뼈대·CONTRIBUTING.md
 
 **다음에 할 일 (권장 순서)**
-1. Phase 4 외부 API — D1 키 승인·저장되면 바로 (4.1 공통 구조 → 4.2 주소 → 4.3 건축물대장 → 4.4 브이월드 → 4.5 TourAPI → 4.6 시연 저장 데이터)
+1. Phase 4 외부 API — 코드는 10/12 준비 완료. D1 키 저장되면: 함수 2개 배포 → 실제 응답으로 파서 필드명 확인·수정 → 대표 주소 2곳 결과를 fixtures에 저장(4.6)
 2. 팀원 산출물 반영: D4(석원이 판정표 입력 → PM 적용, 그 전까지 견적에 지붕·구조 보수가 빠짐), D5·D6 → 5.6 최종 전환, D7 → `lib/diagnosis/permits.ts`, D9 → `lib/diagnosis/photos.ts` 가이드 문구, D8 확정 → 동의·면책 문구 교체와 약관 버전 올림
 3. 팀원 PR 검토 (5.7, 6.7, 9.3~9.5, 9.7) → 6.7 공통 UI가 오면 진단·결과 화면 버튼 교체
 4. ~~9.3 숙소 콘텐츠 편집 화면~~ 10/11 완료 → D12가 오면 관리 화면에서 입력, 홈·숙소 화면 링크를 실제 숙소 id로
@@ -42,7 +42,7 @@
 **환경·작업 메모**
 - Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`. 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/admin/branches`(숙소 콘텐츠), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
-- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(91개 + todo 3개), `functions`에서 `npm test`(26개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
+- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(96개 + todo 3개), `functions`에서 `npm test`(48개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.
 - Windows 스마트 앱 컨트롤을 꺼서 git이 동작한다(10/8). Bash에서 아주 긴 heredoc 명령이 따옴표 해석 오류를 내면 파일 쓰기 도구로 나눠 쓴다.
@@ -403,30 +403,30 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 #### 4.1 프록시 공통 구조
 - **할 일**: `functions/src/external/`에 API별 callable 함수. 공통 래퍼: 타임아웃 5초, 재시도 1회, 오류 로그, 결과에 `source`·`fetchedAt` 포함. 같은 PNU 결과는 Firestore 캐시 컬렉션(예: `apiCache/{api}_{pnu}`)에 저장해 재사용.
 - **키**: Secret Manager에서 읽는다.
-- **진행 메모**:
+- **진행 메모**: 2026-10-12 코드 완료, **배포는 키 저장 후**(함수가 없는 Secret을 참조하면 배포 실패). `functions/src/external/`: `http.ts` `fetchJson`(5초 타임아웃, 1회 재시도, 로그에서 쿼리·키 제거, JSON 아닌 응답은 parse 오류), `cache.ts`(`apiCache/{api}_{key}`, 서버만 접근, 주소 7일·대장·토지·관광 30일), `lookup.ts`(캐시→외부→시연 데이터, 출처별 실패 분리, 의존성 주입으로 테스트), 함수 `searchAddress`·`lookupProperty`(`index.ts`, `defineSecret` 4개). 테스트: 파서 15개·조회 9개. 배포 명령: `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:searchAddress,functions:lookupProperty`.
 
 #### 4.2 주소 검색 (SIM-01)
 - 도로명주소 API로 검색어 → 후보(도로명, 지번, PNU 구성 요소, 좌표). PNU = 법정동코드 10자리 + 산 여부 1자리 + 본번 4자리 + 부번 4자리.
 - 좌표가 응답에 없으면 카카오 로컬 API로 보완.
-- **진행 메모**:
+- **진행 메모**: 2026-10-12 코드 완료(실제 응답 확인 전). 도로명주소 검색API(`confmKey`, `resultType=json`) → 후보 10개, PNU = `admCd` + (`mtYn`=1이면 2, 아니면 1) + 본번·부번 4자리. 앞 5개는 카카오 로컬(`KakaoAK`)로 좌표 보완(실패해도 후보는 반환). 웹 `lib/diagnosis/address.ts`가 함수를 부르고, 실패·미배포면 직접 입력 안내.
 
 #### 4.3 건축물대장 (SIM-02)
 - 공공데이터포털 건축물대장 표제부: 연면적, 대지면적, 주구조, 지붕구조, 사용승인일. 결측 항목은 `missing`으로 반환(화면에서 `결측` 표시). 대장이 아예 없으면 빈 결과 + 플래그.
-- **진행 메모**:
+- **진행 메모**: 2026-10-12 코드 완료(실제 응답 확인 전). 건축HUB `BldRgstHubService/getBrTitleInfo`(PNU → 시군구5·법정동5·대지/산·번4·지4). 주건축물 중 연면적 최대 동, 구조·지붕은 확인 화면 선택지로 맞춤(`normalizeStructure`·`normalizeRoof`), 사용승인일 YYYY-MM-DD, 빈 값은 결측(null), 결과 없음 → `found:false` → 화면이 '대장 없음' 선택을 권함. **엔드포인트·필드명은 키 발급 후 실제 응답으로 확인**(다르면 `parsers.ts`만 고친다).
 
 #### 4.4 브이월드 토지정보 (SIM-03)
 - 지목, 용도지역, 개별공시지가(기준 연월).
-- **진행 메모**:
+- **진행 메모**: 2026-10-12 코드 완료(실제 응답 확인 전). 브이월드 NED `getLandCharacteristics`(`key`, `domain`=검토 주소, `pnu`) → 최근 기준연도의 지목(`lndcgrCodeNm`)·용도지역(`prposArea1Nm`)·공시지가(`pblntfPclnd`). 필드명 실제 확인 필요.
 
 #### 4.5 TourAPI 주변 관광지 (SIM-04 시연판)
 - 좌표 기준 반경 내 관광지 목록 → 직선거리 상위 3곳. 화면에 "경로 기준 준비 중" 표기. 경로 기준 이동시간은 11.7.
-- **진행 메모**:
+- **진행 메모**: 2026-10-12 코드 완료(실제 응답 확인 전). TourAPI `KorService2/locationBasedList2`(관광지 contentTypeId 12, 반경 20km) → 직선거리(haversine) 가까운 3곳. 확인 화면에 '주변 관광지' 카드(직선거리·경로 기준 준비 중·출처·조회 시각), `properties.nearby`에 저장. 좌표가 없으면(직접 입력 주소) 조회하지 않음.
 
 #### 4.6 시연용 조회 결과 저장
 - 시연에 쓸 대표 주소 2곳(예: 1호점 주소, 시나리오 1 예시 주소)의 4.2~4.5 결과를 `seed/demo-fixtures.json`에 저장. 외부 API가 실패하면 이 결과로 대체하는 스위치를 둔다.
 - **표시 규칙**: 저장 결과를 쓸 때는 값의 `source`를 `fixture`로 두고, 화면 출처를 "시연용 저장 데이터", 조회 시점을 실제 저장한 날짜로 표시한다. 실시간 조회로 보이면 안 된다.
 - **완료 기준**: 스위치를 켜면 대표 주소 2곳이 외부 호출 없이 진행되고, 화면에 "시연용 저장 데이터"가 보인다.
-- **진행 메모**:
+- **진행 메모**: 2026-10-12 틀 완료, 데이터 대기. 저장 데이터는 `functions/src/external/demo-fixtures.ts`(함수와 함께 배포되도록 seed/ 대신 여기 둠, 지금은 빈 목록). PNU 또는 검색어 포함으로 매칭. 스위치 = Firestore `config/demo` 문서 `useFixtures: true`(콘솔에서 바꿈): 켜면 저장 주소는 외부 호출 없이 반환, 꺼져 있어도 외부 실패 시 저장 데이터로 대체. 출처 `demoFixture` → 화면 '시연용 저장 데이터', 조회 시각 = `savedAt`(테스트 3개). **남은 일**: 키 발급 후 대표 주소 2곳 실제 조회 → 결과를 fixtures에 저장.
 
 ---
 
