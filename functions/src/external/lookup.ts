@@ -247,7 +247,9 @@ export async function lookupProperty(
     try {
       if (!pnu)
         throw new Error("필지번호(PNU)가 없어 토지정보를 조회할 수 없습니다");
-      if (!keys.vworld) throw new Error("브이월드 API 키가 없습니다");
+      // 'pending'은 승인 전 임시값(배포 도구가 선언된 키를 모두 요구한다)
+      if (!keys.vworld || keys.vworld === "pending")
+        throw new Error("브이월드 API 키가 없습니다");
       return await cached(
         deps,
         "land",

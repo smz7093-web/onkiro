@@ -149,6 +149,17 @@ describe("출처별로 따로 성공·실패", () => {
     });
   });
 
+  it("브이월드 키가 임시값(pending)이면 토지만 건너뛴다", async () => {
+    const d = deps({ fixtures: [] });
+    const r = await lookupProperty(
+      { pnu: "4480025021103120001", lat: null, lng: null },
+      { ...KEYS, vworld: "pending" },
+      d,
+    );
+    expect(d.calls).toEqual(["building"]);
+    expect(r.land).toMatchObject({ ok: false });
+  });
+
   it("키가 없으면 호출하지 않고 실패로 알린다", async () => {
     const d = deps({ fixtures: [] });
     const r = await searchAddress("홍성군", {}, d);
