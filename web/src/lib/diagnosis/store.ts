@@ -16,6 +16,7 @@ import { db } from "../firebase/client";
 import type { EstimateOptions } from "./compute";
 import { initialFacts, type Facts } from "./facts";
 import type { Nearby } from "./lookup";
+import { deletePhoto, listPhotos } from "./photo-store";
 import { advanceReached, type StepId } from "./steps";
 
 // 진단(assessments)과 빈집(properties) 문서 (prd.md 8절, task.md 6.1~6.5).
@@ -233,6 +234,24 @@ export async function finishStep(
     });
   }
   return reached;
+}
+
+// 완료 전(draft) 진단만 회원이 지울 수 있다 (firestore.rules). 견적이 나온 진단은 개인정보 삭제 요청으로
+export function canDeleteAssessment(a: Assessment) {
+  return a.status === "draft" && !a.latestSnapshotId;
+}
+
+// 진단 삭제: 사진(파일·기록) → 진단·빈집 문서 순서로 지운다.
+// 사진 기록 삭제 규칙이 진단 문서로 주인을 확인하므로 진단 문서는 마지막에 지운다.
+export async function deleteAssessment(a: Assessment): Promise<void> {
+  if (!canDeleteAssessment(a))
+    throw new Error("견적이 나온 진단은 삭제할 수 없습니다");
+  const photos = await listPhotos(a.id);
+  for (const p of photos) await deletePhoto(a.id, p);
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "assessments", a.id));
+  if (a.propertyId) batch.delete(doc(db, "properties", a.propertyId));
+  await batch.commit();
 }
 
 // 진단 문서만 읽는다 (리포트·상담 화면. 운영팀은 빈집 문서를 읽지 못한다)

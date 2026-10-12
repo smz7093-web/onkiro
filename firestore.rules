@@ -194,7 +194,12 @@ service cloud.firestore {
         && statusChangeAllowed()
         && snapshotLinkValid(aid)
         && request.resource.data.updatedAt == request.time;
-      allow delete: if false;
+      // 완료 전(draft, 스냅샷·상담 연결 없음) 진단만 본인이 지운다. 견적이 나온 진단은 개인정보 삭제 요청으로
+      allow delete: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && resource.data.get('status', 'draft') == 'draft'
+        && resource.data.get('latestSnapshotId', null) == null
+        && resource.data.get('lastConsultId', null) == null;
 
       // 계산 스냅샷 (SIM-20, task.md 7.4): 추가만 하고 고치거나 지우지 않는다
       match /snapshots/{sid} {
@@ -286,7 +291,8 @@ service cloud.firestore {
         && request.resource.data.noRegistry is bool
         && request.resource.data.facts is map
         && request.resource.data.updatedAt == request.time;
-      allow delete: if false;
+      // 진단 삭제 때 함께 지운다 (빈집 문서는 진단 하나에 하나)
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
     }
 
     // 지점(숙소) 상세 (STY-01·02, task.md 9.3): 누구나 읽는다. 실적·공사비 하위 컬렉션은 아래 기본 거부에 걸린다.

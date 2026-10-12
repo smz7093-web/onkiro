@@ -289,6 +289,34 @@ describe("assessments·properties (진단)", () => {
     );
   });
 
+  it("완료 전(draft) 진단은 주인만 빈집 문서와 함께 지울 수 있다", async () => {
+    await assertFails(deleteDoc(doc(newcomer(), "assessments/a1")));
+    await assertFails(deleteDoc(doc(newcomer(), "properties/p1")));
+    const db = member();
+    const batch = writeBatch(db);
+    batch.delete(doc(db, "assessments/a1"));
+    batch.delete(doc(db, "properties/p1"));
+    await assertSucceeds(batch.commit());
+  });
+
+  it("견적이 나왔거나 상담에 연결된 진단은 주인도 지우지 못한다", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "assessments/saved1"), {
+        uid: "alice",
+        status: "saved",
+        latestSnapshotId: "s1",
+      });
+      await setDoc(doc(db, "assessments/draft-linked"), {
+        uid: "alice",
+        status: "draft",
+        lastConsultId: "c1",
+      });
+    });
+    await assertFails(deleteDoc(doc(member(), "assessments/saved1")));
+    await assertFails(deleteDoc(doc(member(), "assessments/draft-linked")));
+  });
+
   it("사진 기록은 진단 주인만 만들고, 사진 권한 없는 운영팀은 못 읽는다", async () => {
     const photo = {
       part: "front",

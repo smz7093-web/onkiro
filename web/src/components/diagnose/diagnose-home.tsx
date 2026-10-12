@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { useAuthUser } from "@/lib/auth/use-auth-user";
 import { STEPS } from "@/lib/diagnosis/steps";
 import {
+  canDeleteAssessment,
   createAssessment,
+  deleteAssessment,
   listMyAssessments,
   type Assessment,
 } from "@/lib/diagnosis/store";
@@ -14,13 +16,34 @@ import { btnPrimary, card } from "./styles";
 
 const STEP_LABEL = Object.fromEntries(STEPS.map((s) => [s.id, s.label]));
 
-// 진단 시작과 이어하기 (task.md 6.1). 진단 삭제 버튼은 두지 않는다 (삭제는 개인정보 삭제 요청으로).
+const btnLine =
+  "inline-flex h-12 items-center rounded-lg border border-line-2 px-4 text-base";
+
+// 진단 시작·이어하기·삭제 (task.md 6.1). 완료 전(draft) 진단만 삭제할 수 있고,
+// 견적이 나온 진단은 개인정보 삭제 요청으로 지운다.
 export function DiagnoseHome() {
   const user = useAuthUser();
   const router = useRouter();
   const [list, setList] = useState<Assessment[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 삭제 확인 중인 진단 id, 삭제 진행 중인 진단 id
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  async function remove(a: Assessment) {
+    setDeleting(a.id);
+    setError(null);
+    try {
+      await deleteAssessment(a);
+      setList((l) => l?.filter((x) => x.id !== a.id) ?? null);
+      setConfirming(null);
+    } catch {
+      setError("진단을 삭제하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -91,13 +114,52 @@ export function DiagnoseHome() {
                       {a.updatedAt?.toLocaleDateString("ko-KR") ?? "–"}
                     </span>
                   </div>
-                  <Link
-                    href={`/diagnose/${a.id}/${a.reached}`}
-                    className="inline-flex h-12 items-center rounded-lg border border-line-2 px-4 text-base"
-                  >
-                    이어서 하기
-                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/diagnose/${a.id}/${a.reached}`}
+                      className={btnLine}
+                    >
+                      이어서 하기
+                    </Link>
+                    {canDeleteAssessment(a) && confirming !== a.id && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(a.id)}
+                        className={`${btnLine} text-crit`}
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {confirming === a.id && (
+                  <div
+                    role="alert"
+                    className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-crit-soft p-3"
+                  >
+                    <span className="text-base">
+                      이 진단과 올린 사진을 모두 지울까요? 되돌릴 수 없습니다.
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => remove(a)}
+                        disabled={deleting === a.id}
+                        className="inline-flex h-12 items-center rounded-lg bg-crit px-4 text-base text-white disabled:opacity-60"
+                      >
+                        {deleting === a.id ? "지우는 중…" : "삭제하기"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(null)}
+                        disabled={deleting === a.id}
+                        className={btnLine}
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
