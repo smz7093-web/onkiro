@@ -41,7 +41,7 @@ export function ChecklistRulesEditor({
   const usingDefault = rules === undefined;
   const missing = uncoveredAnswers(list);
   const cell =
-    "h-10 rounded-md border border-zinc-300 bg-white px-2 text-base disabled:bg-zinc-50";
+    "h-10 rounded-md border border-zinc-300 bg-white px-2 text-base text-ink disabled:bg-zinc-50 disabled:text-ink disabled:opacity-100";
 
   const update = (i: number, patch: Partial<ChecklistRule>) =>
     setRules(list.map((r, j) => (j === i ? { ...r, ...patch } : r)));

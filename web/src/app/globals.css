@@ -38,11 +38,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 어두운 화면 색은 아직 없다(6.7에서 정한다). 그 전까지는 기기가 다크 모드여도 밝은 화면으로 고정한다.
+   (다크 모드 PC에서 흰 입력칸에 밝은 글씨가 겹쳐 안 보이던 문제, 10/12) */
+:root {
+  color-scheme: light;
 }
 
 body {

@@ -61,7 +61,7 @@ export function PriceEditor({
   };
   const num = (v: number | undefined) => v ?? 0;
   const input =
-    "h-10 w-28 rounded-md border border-zinc-300 px-2 text-right text-base read-only:bg-zinc-50";
+    "h-10 w-28 rounded-md border border-zinc-300 bg-white px-2 text-right text-base text-ink read-only:bg-zinc-50";
 
   return (
     <div className="flex flex-col gap-8">
