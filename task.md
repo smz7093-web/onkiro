@@ -18,12 +18,12 @@
 - 진단·결과: 6.1~6.5 진단 입력(사진 GPS 제거 확인) / 7.1~7.5 결과 화면·스냅샷
 - 리포트·상담: 8.1 A4 리포트 / 8.2 마이페이지 / 9.1 상담 신청 / 9.2 상담 관리 칸반·이력·전화 접수
 - 숙소: 9.3 PM 몫(관리 화면 `/admin/branches`, 사진 업로드, 쓰기 규칙, 예약 클릭 기록 함수). 1호점 `onkiro-1` 등록(사진 6장) — 화면 표시는 해순 작업 대기
-- 외부 API 준비: 4.1~4.6 코드·테스트 완료(공통 호출·캐시·응답 변환·시연 데이터 스위치, 함수 `searchAddress`·`lookupProperty`). **키 저장 전이라 함수 미배포**, 화면은 직접 입력으로 동작
+- 외부 API: 4.1~4.6 코드·테스트 완료. 10/12 키 3개 저장(`DATA_GO_KR_KEY`·`JUSO_API_KEY`·`KAKAO_REST_API_KEY`) → 건축물대장·TourAPI·도로명주소·카카오 실제 응답 확인, 함수 `searchAddress`·`lookupProperty` 배포. **브이월드는 발급 시스템 오류로 문의 중** — `VWORLD_API_KEY`에 임시값 `pending`이 들어 있어 토지(지목·용도지역·공시지가)만 직접 입력. 키가 오면 저장 후 `lookupProperty` 재배포
 - 문서: 8.3 D8 초안(https://claude.ai/code/artifact/a76a3595-e6f0-4856-a0d5-260900a38474, 원일 검토 대기) / 1.6 팀원 모듈 뼈대·CONTRIBUTING.md / 팀원작업내용.md
 - 테스트: 웹 96개, 함수 48개, 보안 규칙 35개 통과
 
 **다음에 할 일 (권장 순서)**
-1. Phase 4 마무리 — D1 키 저장되면: 함수 2개 배포(`FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:searchAddress,functions:lookupProperty`) → 실제 응답으로 파서 필드명 확인·수정(`functions/src/external/parsers.ts`) → 대표 주소 2곳 결과를 `demo-fixtures.ts`에 저장(4.6)
+1. Phase 4 마무리 — 대표 주소 2곳 결과를 `demo-fixtures.ts`에 저장(4.6) / 브이월드 키가 오면 저장 → `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:lookupProperty` → 브이월드 응답 필드명 확인(`parsers.ts`)
 2. 팀원 산출물 반영: D4(석원이 판정표 입력 → PM 적용, 그 전까지 견적에 지붕·구조 보수가 빠짐), D5·D6 → 5.6 최종 전환, D7 → `lib/diagnosis/permits.ts`, D9 → `lib/diagnosis/photos.ts` 가이드 문구, D8 확정 → 동의·면책 문구 교체와 약관 버전 올림
 3. 팀원 PR 검토 (5.7, 6.7, 9.3~9.5, 9.7) → 6.7 공통 UI가 오면 진단·결과 화면 버튼 교체
 4. D12가 오면 숙소 콘텐츠 입력(해순·주연도 가능), 홈·숙소 링크를 실제 숙소 id(`onkiro-1` 등)로
@@ -37,7 +37,9 @@
 - [ ] `팀원작업내용.md` 날짜 채워 팀원 4명에게 발송
 - [ ] 석원·원일·주연 첫 로그인 → `/admin/users`에서 권장 설정 적용 (해순은 10/10 완료)
 - [ ] 팀원 GitHub 초대(쓰기 권한) + `main` 브랜치 보호(PR 필수, 비공개 무료 저장소면 규칙으로만 운영) → 팀원 개발 시작 조건
-- [ ] D1 API 키: 10/10 신청, 승인 대기 → `npx firebase functions:secrets:set`으로 `JUSO_API_KEY`·`DATA_GO_KR_KEY`·`VWORLD_API_KEY`·`KAKAO_REST_API_KEY` 저장 후 이름만 알려 주기
+- [x] D1 API 키 3개 저장 (10/12)
+- [ ] 브이월드 키: 발급 시스템 오류로 문의 중(10/12) → 발급되면 `npx firebase functions:secrets:set VWORLD_API_KEY`
+- [ ] 검토 URL에서 실제 주소로 진단 → 주소 후보·대장 자동 채움·주변 관광지 확인
 - [ ] 시연 대표 주소 2곳 정하기 (1호점 실제 주소, 시나리오 1 예시 주소) → 4.6 저장 데이터
 - [ ] 예산 알림(월 5만 원) 설정 여부 확인
 
