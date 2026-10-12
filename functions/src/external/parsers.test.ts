@@ -124,12 +124,36 @@ describe("건축물대장 표제부", () => {
     ).toBe(false);
   });
 
+  it("실제 응답 형식(10/12 확인): 숫자는 숫자로, '기타지붕'이면 비고 칸을 읽는다", () => {
+    const r = parseBuildingTitle(
+      wrap({
+        mainAtchGbCdNm: "주건축물",
+        platArea: 0,
+        totArea: 9453.87,
+        strctCdNm: "철근콘크리트구조",
+        etcStrct: "철근콩크리트조, 목조, 연와조",
+        roofCdNm: "기타지붕",
+        etcRoof: "스레트, 도단즙",
+        useAprDay: "19260905",
+      }),
+    );
+    expect(r.facts).toEqual({
+      floorArea: 9453.87,
+      landArea: null,
+      structure: "철근콘크리트",
+      roofStructure: "슬레이트",
+      approvalDate: "1926-09-05",
+    });
+  });
+
   it("구조·지붕 이름을 선택지로 맞춘다", () => {
     expect(normalizeStructure("시멘트블럭조")).toBe("조적조(벽돌·블록)");
     expect(normalizeStructure("철근콘크리트구조")).toBe("철근콘크리트");
     expect(normalizeStructure("일반목구조")).toBe("목구조");
     expect(normalizeRoof("(철근)콘크리트")).toBe("슬래브");
     expect(normalizeRoof("칼라강판")).toBe("금속(강판)");
+    expect(normalizeStructure("연와조")).toBe("조적조(벽돌·블록)");
+    expect(normalizeRoof("기타지붕")).toBe("기타");
   });
 });
 
@@ -167,6 +191,7 @@ describe("TourAPI 주변 관광지", () => {
     const r = parseTourList(
       {
         response: {
+          header: { resultCode: "0000", resultMsg: "OK" },
           body: {
             items: {
               item: [

@@ -1,5 +1,5 @@
-// 외부 API 응답 → 온기로 값 (task.md 4.2~4.5). 공개 문서의 응답 형식 기준이며,
-// 키 발급 후 실제 응답으로 한 번 더 맞춘다(필드 이름이 다르면 여기만 고친다).
+// 외부 API 응답 → 온기로 값 (task.md 4.2~4.5). 건축물대장·TourAPI는 10/12 실제 응답으로 확인했고,
+// 도로명주소·카카오·브이월드는 공개 문서 기준이다(키 저장 후 확인, 필드 이름이 다르면 여기만 고친다).
 // 이 파일은 네트워크를 쓰지 않는 순수 함수다.
 
 type Obj = Record<string, unknown>;
@@ -86,7 +86,7 @@ export interface BuildingFacts {
 export function normalizeStructure(name: string): string | null {
   if (!name) return null;
   if (name.includes("목")) return "목구조";
-  if (/벽돌|조적|블록|블럭|석조/.test(name)) return "조적조(벽돌·블록)";
+  if (/벽돌|조적|블록|블럭|석조|연와/.test(name)) return "조적조(벽돌·블록)";
   if (/경량철골/.test(name)) return "경량철골";
   if (/철근|콘크리트|RC/i.test(name)) return "철근콘크리트";
   if (/철골/.test(name)) return "경량철골";
@@ -96,10 +96,22 @@ export function normalizeStructure(name: string): string | null {
 export function normalizeRoof(name: string): string | null {
   if (!name) return null;
   if (name.includes("기와")) return "기와";
-  if (name.includes("슬레이트")) return "슬레이트";
+  if (/슬레이트|스레트|슬레트/.test(name)) return "슬레이트";
   if (/강판|금속|징크|함석|칼라/.test(name)) return "금속(강판)";
   if (/슬래브|콘크리트/.test(name)) return "슬래브";
   return "기타";
+}
+
+// 코드 이름이 '기타지붕'·'기타구조'처럼 '기타'로 떨어지면 대장의 비고 칸(etcRoof·etcStrct)을 다시 읽는다
+// (실제 응답 예: roofCdNm "기타지붕", etcRoof "스레트, 도단즙")
+function withEtc(
+  normalize: (name: string) => string | null,
+  name: string,
+  etc: string,
+): string | null {
+  const first = normalize(name);
+  if (first !== "기타" && first !== null) return first;
+  return normalize(etc.split(",")[0].trim()) ?? first;
 }
 
 const toDate = (yyyymmdd: string) =>
@@ -144,8 +156,16 @@ export function parseBuildingTitle(raw: unknown): {
     facts: {
       floorArea: num(pick.totArea) || null,
       landArea: num(pick.platArea) || null,
-      structure: normalizeStructure(str(pick.strctCdNm)),
-      roofStructure: normalizeRoof(str(pick.roofCdNm)),
+      structure: withEtc(
+        normalizeStructure,
+        str(pick.strctCdNm),
+        str(pick.etcStrct),
+      ),
+      roofStructure: withEtc(
+        normalizeRoof,
+        str(pick.roofCdNm),
+        str(pick.etcRoof),
+      ),
       approvalDate: toDate(str(pick.useAprDay)),
     },
   };
