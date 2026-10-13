@@ -6,6 +6,7 @@ import {
   type DemoFixture,
   type Deps,
 } from "./lookup.js";
+import { DEMO_FIXTURES } from "./demo-fixtures.js";
 
 const FIXTURE: DemoFixture = {
   pnu: "4480025021103120001",
@@ -165,6 +166,30 @@ describe("출처별로 따로 성공·실패", () => {
     const r = await searchAddress("홍성군", {}, d);
     expect(d.calls).toEqual([]);
     expect(r).toMatchObject({ ok: false });
+  });
+});
+
+describe("저장된 대표 주소 2곳 (DEMO_FIXTURES)", () => {
+  it("도로명·지번 검색어 모두 저장 데이터를 찾는다", async () => {
+    const d = deps({ fixtures: DEMO_FIXTURES, useFixtures: true });
+    for (const q of [
+      "충청남도 홍성군 광천읍 상정1길 21-48",
+      "광천읍 상정리 628",
+      "홍성읍 충절로1053번길 86-9",
+      "오관리 542-17",
+    ]) {
+      const s = await searchAddress(q, KEYS, d);
+      expect(s).toMatchObject({ ok: true, source: "demoFixture" });
+    }
+    expect(d.calls).toEqual([]);
+  });
+
+  it("필지번호는 법정동코드 형식(19자리)이고 대장이 있다", () => {
+    for (const f of DEMO_FIXTURES) {
+      expect(f.pnu).toMatch(/^\d{19}$/);
+      expect(f.candidate.pnu).toBe(f.pnu);
+      expect(f.building.found).toBe(true);
+    }
   });
 });
 
