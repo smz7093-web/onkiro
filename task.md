@@ -24,7 +24,7 @@
 - 테스트: 웹 96개, 함수 50개, 보안 규칙 37개 통과
 
 **다음에 할 일 (권장 순서)**
-1. Phase 4 마무리 — 대표 주소 2곳 결과를 `demo-fixtures.ts`에 저장(4.6) / 브이월드 키가 오면 저장 → `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:lookupProperty` → 브이월드 응답 필드명 확인(`parsers.ts`)
+1. Phase 4 마무리 — 4.6 대표 주소 2곳(광천읍 상정리 628, 홍성읍 오관리 542-17) 저장 완료(10/13, 토지는 PM 입력값) / 브이월드 키가 오면 저장 → `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:lookupProperty` → 브이월드 응답 필드명 확인(`parsers.ts`)
 2. 팀원 산출물 반영: D4(석원이 판정표 입력 → PM 적용, 그 전까지 견적에 지붕·구조 보수가 빠짐), D5·D6 → 5.6 최종 전환, D7 → `lib/diagnosis/permits.ts`, D9 → `lib/diagnosis/photos.ts` 가이드 문구, D8 확정 → 동의·면책 문구 교체와 약관 버전 올림
 3. 팀원 PR 검토 (5.7, 6.7, 9.3~9.5, 9.7) → 6.7 공통 UI가 오면 진단·결과 화면 버튼 교체
 4. D12가 오면 숙소 콘텐츠 입력(해순·주연도 가능), 홈·숙소 링크를 실제 숙소 id(`onkiro-1` 등)로
@@ -42,7 +42,8 @@
 - [x] D1 API 키 3개 저장 (10/12)
 - [ ] 브이월드 키: 발급 시스템 오류로 문의 중(10/12) → 발급되면 `npx firebase functions:secrets:set VWORLD_API_KEY`
 - [x] 검토 URL에서 실제 주소로 진단 → 주소 검색·대장 자동 채움 확인 (10/12)
-- [ ] 시연 대표 주소 2곳 정하기 (1호점 실제 주소, 시나리오 1 예시 주소) → 4.6 저장 데이터
+- [x] 시연 대표 주소 2곳 (10/13, 사진은 추후 보강)
+- 담당자별 WBS: https://claude.ai/code/artifact/29826f75-b846-4650-8d83-d39c87b521c6 (10/13)
 - [ ] 예산 알림(월 5만 원) 설정 여부 확인
 
 **팀원 산출물 대기**: D2·D3·D4(석원·해순, 10/10 지남 — D4는 관리자 화면 판정표로 입력) · D5(석원, 10/14) · D7(원일, 10/14) · D9(해순, 10/14) · D6·D13(원일, 10/17) · D8 검토(원일, 10/21) · D12(해순, 10/21)
