@@ -52,6 +52,16 @@ service firebase.storage {
       allow delete: if signedIn() && request.auth.uid == uid;
     }
 
+    // AI 리모델링 가상 이미지 (함수 renderRemodel만 쓴다). 읽기는 진단 사진과 같다
+    match /users/{uid}/assessments/{aid}/renders/{fileName} {
+      allow read: if (signedIn() && request.auth.uid == uid)
+        || photoReader()
+        || (role() == 'staff'
+          && request.auth.token.get('photoAccess', 'none') == 'assigned'
+          && assigneeOf(aid) == request.auth.uid);
+      allow write: if false;
+    }
+
     // 숙소 사진 (STY-01, task.md 9.3): 누구나 보고, 콘텐츠 편집 권한자만 올린다.
     // 숙소 문서에서 빠진 사진 파일은 지우지 않고 남긴다(되돌리기 대비).
     function canEditContent() {

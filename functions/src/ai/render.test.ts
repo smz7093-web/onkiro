@@ -1,0 +1,73 @@
+import { describe, expect, it, vi } from "vitest";
+import {
+  parseImageResponse,
+  renderPrompt,
+  vertexImageCaller,
+} from "./render.js";
+
+describe("AI 리모델링 가상 이미지", () => {
+  it("등급마다 수준이 다르고, 구도·크기 유지와 사람·글자 금지를 늘 넣는다", () => {
+    const a = renderPrompt("A", { roofStructure: null });
+    const c = renderPrompt("C", { roofStructure: "기와" });
+    expect(a).toContain("Basic renovation");
+    expect(c).toContain("Premium renovation");
+    expect(c).toContain("clay tile");
+    for (const p of [a, c]) {
+      expect(p).toContain("same camera angle");
+      expect(p).toContain("Do not make the building bigger");
+      expect(p).toContain("No people");
+    }
+  });
+
+  it("응답에서 첫 이미지를 꺼내고, 없으면 오류", () => {
+    const img = parseImageResponse({
+      candidates: [
+        {
+          content: {
+            parts: [
+              { text: "here" },
+              { inlineData: { mimeType: "image/png", data: "QUJD" } },
+            ],
+          },
+        },
+      ],
+    });
+    expect(img.mimeType).toBe("image/png");
+    expect(img.data.toString()).toBe("ABC");
+    expect(() =>
+      parseImageResponse({
+        candidates: [{ content: { parts: [{ text: "no" }] } }],
+      }),
+    ).toThrow();
+  });
+
+  it("Vertex AI에 사진과 프롬프트를 보내고 이미지를 받는다", async () => {
+    const f = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    { inlineData: { mimeType: "image/png", data: "QUJD" } },
+                  ],
+                },
+              },
+            ],
+          }),
+        ),
+    );
+    const out = await vertexImageCaller(
+      "p1",
+      async () => "tok",
+      f as unknown as typeof fetch,
+    )(Buffer.from("jpg"), "prompt");
+    expect(out.data.toString()).toBe("ABC");
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toContain("/projects/p1/locations/global/");
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      "Bearer tok",
+    );
+  });
+});

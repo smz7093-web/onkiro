@@ -72,6 +72,22 @@ export async function explainGrades(
   ).data;
 }
 
+// 리모델링 후 모습 AI 가상 이미지 (외관 정면 사진 → 등급별). Storage 경로를 돌려준다
+export async function renderRemodel(
+  assessmentId: string,
+  module: ModuleType,
+): Promise<{ storagePath: string; cached: boolean }> {
+  return (
+    await httpsCallable<
+      { assessmentId: string; module: ModuleType },
+      { storagePath: string; cached: boolean }
+    >(functions, "renderRemodel", { timeout: 120_000 })({
+      assessmentId,
+      module,
+    })
+  ).data;
+}
+
 export async function analyzeDiagnosisPhotos(
   assessmentId: string,
 ): Promise<AiResponse<PhotoSuggestion[]>> {

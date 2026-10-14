@@ -29,6 +29,13 @@ import {
   analyzePhotos as analyzePhotosService,
   PHOTO_PART_LABELS,
 } from "./ai/photos.js";
+import {
+  metadataToken,
+  RENDER_MODEL,
+  RENDER_PROMPT_VERSION,
+  renderPrompt,
+  vertexImageCaller,
+} from "./ai/render.js";
 import { readCache, writeCache } from "./external/cache.js";
 import { DEMO_FIXTURES } from "./external/demo-fixtures.js";
 import { fetchJson } from "./external/http.js";
@@ -560,5 +567,83 @@ export const analyzeDiagnosisPhotos = onCall(
         );
       },
     );
+  },
+);
+
+// 리모델링 후 모습 AI 가상 이미지 (외관 정면 사진 → 등급별, Vertex AI Gemini, 10/15).
+// 키 없이 함수 서비스 계정으로 호출한다. 결과는 Storage users/{주인}/assessments/{id}/renders/에 저장하고,
+// 같은 사진·등급·프롬프트 버전이면 저장된 이미지를 돌려준다.
+export const renderRemodel = onCall(
+  { timeoutSeconds: 120, memory: "512MiB" },
+  async (request) => {
+    if (!request.auth)
+      throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+    const data = (request.data ?? {}) as Record<string, unknown>;
+    const module = data.module;
+    if (module !== "A" && module !== "B" && module !== "C")
+      throw new HttpsError("invalid-argument", "등급이 올바르지 않습니다");
+    const aRef = await ownedAssessment(
+      data.assessmentId,
+      request.auth.uid,
+      request.auth.token.role === "admin",
+    );
+    const front = (
+      await aRef.collection("photos").where("part", "==", "front").get()
+    ).docs.sort(
+      (a, b) =>
+        (b.createTime?.toMillis() ?? 0) - (a.createTime?.toMillis() ?? 0),
+    )[0];
+    if (!front)
+      throw new HttpsError(
+        "failed-precondition",
+        "외관 정면 사진이 없습니다. 사진 단계에서 먼저 올려 주세요",
+      );
+    const cRef = aRef.collection("ai").doc(`render-${module}`);
+    const key = `${front.id}:${module}:${RENDER_PROMPT_VERSION}:${RENDER_MODEL}`;
+    const hit = await cRef.get();
+    if (hit.exists && hit.get("key") === key)
+      return { storagePath: hit.get("storagePath") as string, cached: true };
+
+    await countAiUse(request.auth.uid);
+    const aSnap = await aRef.get();
+    const owner = aSnap.get("uid") as string;
+    const pid = aSnap.get("propertyId");
+    const property =
+      typeof pid === "string"
+        ? await getFirestore().collection("properties").doc(pid).get()
+        : null;
+    const roof = property?.get("facts.roofStructure.value");
+    try {
+      const bucket = getStorage().bucket();
+      const [photo] = await bucket
+        .file(front.get("storagePath") as string)
+        .download();
+      const projectId = process.env.GCLOUD_PROJECT ?? "onkiro-2fe12";
+      const img = await vertexImageCaller(projectId, () => metadataToken())(
+        photo,
+        renderPrompt(module, {
+          roofStructure: typeof roof === "string" ? roof : null,
+        }),
+      );
+      const ext = img.mimeType.split("/")[1];
+      const storagePath = `users/${owner}/assessments/${aRef.id}/renders/${module}-${front.id}.${ext}`;
+      await bucket
+        .file(storagePath)
+        .save(img.data, { contentType: img.mimeType, resumable: false });
+      await cRef.set({
+        key,
+        storagePath,
+        model: RENDER_MODEL,
+        createdBy: request.auth.uid,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      return { storagePath, cached: false };
+    } catch (e) {
+      logger.warn("AI 이미지 생성 실패", { error: String(e) });
+      throw new HttpsError(
+        "unavailable",
+        "이미지를 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요",
+      );
+    }
   },
 );

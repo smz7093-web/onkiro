@@ -14,6 +14,7 @@ import {
 import type { EstimateInput, ModuleType, PriceTable } from "@/lib/engine/types";
 import { FINISH_TIERS, tierEstimates } from "@/lib/diagnosis/compute";
 import type { Facts } from "@/lib/diagnosis/facts";
+import { RemodelPreview } from "./remodel-preview";
 import { btnSecondary, card } from "./styles";
 
 const manwon = (won: number) =>
@@ -193,6 +194,7 @@ export function FinishTiers({
           </p>
         </div>
       )}
+      <RemodelPreview module={selected} />
     </section>
   );
 }
