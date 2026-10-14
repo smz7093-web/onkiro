@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { claudeCaller, hasKey } from "./claude.js";
+import { AI_MODELS, claudeCaller, hasKey } from "./claude.js";
 import {
   explainGrades,
   gradePrompt,
@@ -193,6 +193,7 @@ describe("Claude 호출", () => {
     await expect(
       claudeCaller(
         "pending",
+        AI_MODELS.grades,
         f as unknown as typeof fetch,
       )({
         system: "",
@@ -214,6 +215,7 @@ describe("Claude 호출", () => {
     );
     const out = await claudeCaller(
       "sk-test",
+      AI_MODELS.grades,
       f as unknown as typeof fetch,
     )({
       system: "s",
@@ -225,5 +227,13 @@ describe("Claude 호출", () => {
       (f.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
     );
     expect(body.tool_choice).toEqual({ type: "tool", name: "t" });
+    expect(body.model).toBe("claude-sonnet-5-5");
+  });
+
+  it("등급 설명은 Sonnet, 사진 분석은 Opus", () => {
+    expect(AI_MODELS).toEqual({
+      grades: "claude-sonnet-5-5",
+      photos: "claude-opus-5-5",
+    });
   });
 });

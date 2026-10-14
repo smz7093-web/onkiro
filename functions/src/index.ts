@@ -20,7 +20,7 @@ import {
   parseProxyInput,
   planUpdate,
 } from "./consult.js";
-import { CLAUDE_MODEL, claudeCaller, hasKey } from "./ai/claude.js";
+import { AI_MODELS, claudeCaller, hasKey } from "./ai/claude.js";
 import {
   explainGrades as explainGradesService,
   parseGradeInput,
@@ -450,8 +450,10 @@ async function cachedAi<T>(
   run: () => Promise<T>,
 ): Promise<{ result: T; cached: boolean; model: string }> {
   const cRef = aRef.collection("ai").doc(kind);
+  const model = AI_MODELS[kind];
   const hit = await cRef.get();
-  if (hit.exists && hit.get("key") === key)
+  // 입력과 모델이 모두 같을 때만 저장된 결과를 쓴다 (모델을 바꾸면 새로 만든다)
+  if (hit.exists && hit.get("key") === key && hit.get("model") === model)
     return {
       result: hit.get("result") as T,
       cached: true,
@@ -465,11 +467,11 @@ async function cachedAi<T>(
     await cRef.set({
       key,
       result,
-      model: CLAUDE_MODEL,
+      model,
       createdBy: uid,
       createdAt: FieldValue.serverTimestamp(),
     });
-    return { result, cached: false, model: CLAUDE_MODEL };
+    return { result, cached: false, model };
   } catch (e) {
     if (e instanceof HttpsError) throw e;
     logger.warn(`AI ${kind} 실패`, { error: String(e) });
@@ -499,7 +501,10 @@ export const explainGrades = onCall(
         "등급 견적 형식이 올바르지 않습니다",
       );
     return cachedAi(aRef, "grades", sha(input), request.auth.uid, () =>
-      explainGradesService(input, claudeCaller(ANTHROPIC_API_KEY.value())),
+      explainGradesService(
+        input,
+        claudeCaller(ANTHROPIC_API_KEY.value(), AI_MODELS.grades),
+      ),
     );
   },
 );
@@ -551,7 +556,7 @@ export const analyzeDiagnosisPhotos = onCall(
         );
         return analyzePhotosService(
           files,
-          claudeCaller(ANTHROPIC_API_KEY.value()),
+          claudeCaller(ANTHROPIC_API_KEY.value(), AI_MODELS.photos),
         );
       },
     );

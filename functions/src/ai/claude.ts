@@ -3,7 +3,12 @@
 
 import { logger } from "firebase-functions";
 
-export const CLAUDE_MODEL = "claude-opus-5-5";
+// 기능별 모델 (10/14): 등급 설명은 글만 다뤄 Sonnet(비용을 낮춘다), 사진 분석은 정확도가 중요해 Opus
+export const AI_MODELS = {
+  grades: "claude-sonnet-5-5",
+  photos: "claude-opus-5-5",
+} as const;
+export type AiKind = keyof typeof AI_MODELS;
 const ENDPOINT = "https://api.anthropic.com/v1/messages";
 
 export type ContentBlock =
@@ -36,6 +41,7 @@ export const hasKey = (key: string | undefined) =>
 
 export function claudeCaller(
   apiKey: string,
+  model: string,
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 90_000,
 ): CallClaude {
@@ -53,7 +59,7 @@ export function claudeCaller(
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: CLAUDE_MODEL,
+          model,
           max_tokens: maxTokens,
           system,
           tools: [tool],
