@@ -98,6 +98,8 @@ describe("AI 등급 설명", () => {
     expect(p).toContain("변경 금지");
     expect(p).toContain("3,000만 원");
     expect(p).toContain("1979-11-16");
+    // 주소는 AI에 보내지 않는다 (D8 국외 이전 항목 최소화)
+    expect(p).not.toContain("충절로");
   });
 
   it("AI 응답을 검사하고 A·B·C 순서로 정리한다", async () => {

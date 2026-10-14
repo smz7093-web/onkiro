@@ -25,7 +25,6 @@ const factValue = (facts: Facts, key: keyof Facts) => facts[key]?.value ?? null;
 // 금액은 단가 DB 계산값이다. 'AI 등급 설명'은 등급별 자재 예시와 추천만 보여준다.
 export function FinishTiers({
   assessmentId,
-  address,
   facts,
   checklist,
   estimateInput,
@@ -34,7 +33,6 @@ export function FinishTiers({
   onSelect,
 }: {
   assessmentId: string;
-  address: string | null;
   facts: Facts;
   checklist: ChecklistAnswers;
   estimateInput: EstimateInput;
@@ -55,7 +53,8 @@ export function FinishTiers({
     setAiError(null);
     const input: GradeExplainInput = {
       house: {
-        address,
+        // 주소는 AI에 보내지 않는다 (D8 국외 이전 항목 최소화, 10/15)
+        address: null,
         floorArea: estimateInput.floorArea,
         structure: factValue(facts, "structure") as string | null,
         roofStructure: factValue(facts, "roofStructure") as string | null,

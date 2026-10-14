@@ -88,7 +88,8 @@ export function parseGradeInput(raw: unknown): GradeExplainInput | null {
   if (!tiers.every(okTier)) return null;
   return {
     house: {
-      address: str(h.address, 120),
+      // 주소는 AI에 보내지 않는다 (D8 국외 이전 항목 최소화, 10/15)
+      address: null,
       floorArea,
       structure: str(h.structure, 40),
       roofStructure: str(h.roofStructure, 40),
@@ -171,7 +172,6 @@ export function gradePrompt(input: GradeExplainInput): string {
     `운영 목적: ${input.purpose}`,
     "",
     "[집 정보]",
-    `- 주소: ${h.address ?? "미상"}`,
     `- 연면적: ${h.floorArea ?? "미상"}㎡`,
     `- 구조: ${h.structure ?? "미상"} / 지붕: ${h.roofStructure ?? "미상"}`,
     `- 사용승인일: ${h.approvalDate ?? "미상"} / 용도지역: ${h.zoning ?? "미상"}`,

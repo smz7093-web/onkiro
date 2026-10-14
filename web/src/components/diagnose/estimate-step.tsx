@@ -202,7 +202,6 @@ export function EstimateStep() {
 
       <FinishTiers
         assessmentId={assessment.id}
-        address={assessment.address}
         facts={property.facts}
         checklist={assessment.checklist as ChecklistAnswers}
         estimateInput={estimateInput}
