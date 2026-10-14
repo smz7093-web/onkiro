@@ -92,6 +92,31 @@ export function computeEstimate(
   };
 }
 
+// 실내 마감 등급(하·중·상) = 단가 DB의 실내 모듈 A/B/C (10/14). 금액은 단가 DB로만 계산한다.
+// AI(functions/src/ai/grades.ts)는 등급별 자재 예시·추천만 쓰고 금액을 바꾸지 않는다.
+export const FINISH_TIERS: {
+  module: ModuleType;
+  grade: "하" | "중" | "상";
+  name: string;
+}[] = [
+  { module: "A", grade: "하", name: "기본형" },
+  { module: "B", grade: "중", name: "표준형" },
+  { module: "C", grade: "상", name: "고급형" },
+];
+
+// 같은 집·같은 상태로 실내 모듈만 바꿔 세 등급의 견적을 낸다
+export function tierEstimates(
+  estimateInput: EstimateInput,
+  price: PriceTable,
+): Record<ModuleType, EstimateResult> {
+  return Object.fromEntries(
+    FINISH_TIERS.map((t) => [
+      t.module,
+      calculateEstimate({ ...estimateInput, module: t.module }, price),
+    ]),
+  ) as Record<ModuleType, EstimateResult>;
+}
+
 // 가정값 버전의 기본값에서 시작한다 (SIM-13 "지역 기본값으로")
 export function defaultRevenueInput(assumption: AssumptionSet): RevenueInput {
   return { ...assumption.defaults };

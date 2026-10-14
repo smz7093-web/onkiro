@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
@@ -18,6 +20,15 @@ import {
   parseProxyInput,
   planUpdate,
 } from "./consult.js";
+import { CLAUDE_MODEL, claudeCaller, hasKey } from "./ai/claude.js";
+import {
+  explainGrades as explainGradesService,
+  parseGradeInput,
+} from "./ai/grades.js";
+import {
+  analyzePhotos as analyzePhotosService,
+  PHOTO_PART_LABELS,
+} from "./ai/photos.js";
 import { readCache, writeCache } from "./external/cache.js";
 import { DEMO_FIXTURES } from "./external/demo-fixtures.js";
 import { fetchJson } from "./external/http.js";
@@ -387,6 +398,162 @@ export const lookupProperty = onCall(
       },
       { dataGoKr: DATA_GO_KR_KEY.value(), vworld: VWORLD_API_KEY.value() },
       await externalDeps(),
+    );
+  },
+);
+
+// ── AI (등급 설명·사진 분석) ─────────────────────────────────────────────────
+// 키: Secret Manager ANTHROPIC_API_KEY (임시값 pending이면 AI 기능만 꺼진다).
+// 금액은 단가 DB로 계산한 값을 그대로 쓰고, AI는 설명·제안만 한다.
+// 같은 입력이면 저장된 결과를 돌려준다(assessments/{id}/ai/{kind}). 회원당 하루 호출 수를 제한한다.
+const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
+const AI_DAILY_LIMIT = 30;
+
+const sha = (v: unknown) =>
+  createHash("sha256").update(JSON.stringify(v)).digest("hex").slice(0, 16);
+
+// 진단 주인(또는 관리자)만 쓴다
+async function ownedAssessment(aid: unknown, uid: string, admin: boolean) {
+  if (typeof aid !== "string" || !/^[A-Za-z0-9]{1,40}$/.test(aid))
+    throw new HttpsError("invalid-argument", "진단 id가 올바르지 않습니다");
+  const ref = getFirestore().collection("assessments").doc(aid);
+  const snap = await ref.get();
+  if (!snap.exists || (snap.get("uid") !== uid && !admin))
+    throw new HttpsError("permission-denied", "본인 진단만 쓸 수 있습니다");
+  return ref;
+}
+
+async function countAiUse(uid: string) {
+  const day = new Date().toISOString().slice(0, 10);
+  const ref = getFirestore().collection("aiUsage").doc(`${uid}_${day}`);
+  await getFirestore().runTransaction(async (tx) => {
+    const n = ((await tx.get(ref)).get("count") as number | undefined) ?? 0;
+    if (n >= AI_DAILY_LIMIT)
+      throw new HttpsError(
+        "resource-exhausted",
+        "오늘 AI 사용 횟수를 모두 썼습니다. 내일 다시 시도해 주세요",
+      );
+    tx.set(ref, {
+      uid,
+      day,
+      count: n + 1,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+}
+
+async function cachedAi<T>(
+  aRef: FirebaseFirestore.DocumentReference,
+  kind: "grades" | "photos",
+  key: string,
+  uid: string,
+  run: () => Promise<T>,
+): Promise<{ result: T; cached: boolean; model: string }> {
+  const cRef = aRef.collection("ai").doc(kind);
+  const hit = await cRef.get();
+  if (hit.exists && hit.get("key") === key)
+    return {
+      result: hit.get("result") as T,
+      cached: true,
+      model: hit.get("model"),
+    };
+  if (!hasKey(ANTHROPIC_API_KEY.value()))
+    throw new HttpsError("unavailable", "AI 기능을 준비 중입니다");
+  await countAiUse(uid);
+  try {
+    const result = await run();
+    await cRef.set({
+      key,
+      result,
+      model: CLAUDE_MODEL,
+      createdBy: uid,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    return { result, cached: false, model: CLAUDE_MODEL };
+  } catch (e) {
+    if (e instanceof HttpsError) throw e;
+    logger.warn(`AI ${kind} 실패`, { error: String(e) });
+    throw new HttpsError(
+      "unavailable",
+      "AI가 응답하지 않습니다. 잠시 뒤 다시 시도해 주세요",
+    );
+  }
+}
+
+// 실내 마감 등급(하·중·상) 설명·추천 (화면이 단가 DB로 계산한 등급별 견적을 보낸다)
+export const explainGrades = onCall(
+  { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 120 },
+  async (request) => {
+    if (!request.auth)
+      throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+    const data = (request.data ?? {}) as Record<string, unknown>;
+    const aRef = await ownedAssessment(
+      data.assessmentId,
+      request.auth.uid,
+      request.auth.token.role === "admin",
+    );
+    const input = parseGradeInput(data.input);
+    if (!input)
+      throw new HttpsError(
+        "invalid-argument",
+        "등급 견적 형식이 올바르지 않습니다",
+      );
+    return cachedAi(aRef, "grades", sha(input), request.auth.uid, () =>
+      explainGradesService(input, claudeCaller(ANTHROPIC_API_KEY.value())),
+    );
+  },
+);
+
+// 사진 분석 → 체크리스트 답 제안 (적용은 회원이 화면에서 직접)
+export const analyzeDiagnosisPhotos = onCall(
+  { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 180, memory: "1GiB" },
+  async (request) => {
+    if (!request.auth)
+      throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+    const data = (request.data ?? {}) as Record<string, unknown>;
+    const aRef = await ownedAssessment(
+      data.assessmentId,
+      request.auth.uid,
+      request.auth.token.role === "admin",
+    );
+    const photos = (await aRef.collection("photos").get()).docs
+      .map((d) => ({
+        id: d.id,
+        part: d.get("part") as string,
+        path: d.get("storagePath") as string,
+      }))
+      .filter((p) => p.part in PHOTO_PART_LABELS && typeof p.path === "string")
+      .sort(
+        (a, b) =>
+          Object.keys(PHOTO_PART_LABELS).indexOf(a.part) -
+          Object.keys(PHOTO_PART_LABELS).indexOf(b.part),
+      )
+      .slice(0, 12);
+    if (photos.length === 0)
+      throw new HttpsError(
+        "failed-precondition",
+        "분석할 사진이 없습니다. 사진을 먼저 올려 주세요",
+      );
+    return cachedAi(
+      aRef,
+      "photos",
+      sha(photos.map((p) => p.id)),
+      request.auth.uid,
+      async () => {
+        const bucket = getStorage().bucket();
+        const files = await Promise.all(
+          photos.map(async (p) => ({
+            part: p.part,
+            base64: (await bucket.file(p.path).download())[0].toString(
+              "base64",
+            ),
+          })),
+        );
+        return analyzePhotosService(
+          files,
+          claudeCaller(ANTHROPIC_API_KEY.value()),
+        );
+      },
     );
   },
 );

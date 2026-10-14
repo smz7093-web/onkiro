@@ -6,8 +6,10 @@ import {
   computeScenarios,
   DEFAULT_ESTIMATE_OPTIONS,
   defaultRevenueInput,
+  FINISH_TIERS,
   inputsKey,
   snapshotInputs,
+  tierEstimates,
   type DiagnosisInputs,
 } from "./compute";
 import { manualFact } from "./facts";
@@ -37,6 +39,20 @@ const INPUTS: DiagnosisInputs = {
   options: DEFAULT_ESTIMATE_OPTIONS,
   region: "hongseong",
 };
+
+describe("실내 마감 등급별 견적 (하·중·상 = 모듈 A·B·C)", () => {
+  it("실내 마감만 바뀌고 나머지 공정은 같다", () => {
+    const c = computeEstimate(INPUTS, PRICE_V2026_10_1);
+    const t = tierEstimates(c.estimateInput, PRICE_V2026_10_1);
+    // 72㎡ × (A 165,000 / B 208,000 / C 236,000) + 욕실 250 + 주방 200 + IoT 100만 원
+    expect(t.A.subtotal).toBeCloseTo(72 * 165_000 + 5_500_000, 0);
+    expect(t.B.subtotal).toBeCloseTo(c.estimate.subtotal, 0);
+    expect(t.C.subtotal).toBeCloseTo(72 * 236_000 + 5_500_000, 0);
+    expect(t.A.total).toBeLessThan(t.B.total);
+    expect(t.B.total).toBeLessThan(t.C.total);
+    expect(FINISH_TIERS.map((x) => x.grade)).toEqual(["하", "중", "상"]);
+  });
+});
 
 describe("진단 → 견적", () => {
   it("기본 정보·체크리스트·옵션을 견적 입력으로 옮긴다", () => {

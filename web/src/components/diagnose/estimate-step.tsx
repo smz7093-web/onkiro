@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RISK_FLAG_LABELS } from "@/lib/engine/checklist";
+import {
+  RISK_FLAG_LABELS,
+  type ChecklistAnswers,
+} from "@/lib/engine/checklist";
 import {
   PROCESS_LABELS,
   type ConditionGrade,
@@ -27,6 +30,7 @@ import {
 import { finishStep } from "@/lib/diagnosis/store";
 import { useDiagnosis } from "./diagnosis-context";
 import { Disclaimer } from "./disclaimer";
+import { FinishTiers } from "./finish-tiers";
 import { NextActions } from "./next-actions";
 import { btnPrimary, btnSecondary, card, notice } from "./styles";
 import {
@@ -196,44 +200,33 @@ export function EstimateStep() {
         </details>
       </section>
 
-      <section className={card}>
-        <h2 className="text-lg font-semibold">공사 조건</h2>
-        <div className="flex flex-wrap items-end gap-4">
-          <label className="flex flex-col gap-1 text-sm text-ink-2">
-            내부 마감 모듈
-            <select
-              className="h-12 rounded-md border border-line-2 bg-surface px-3 text-base text-ink"
-              value={options.module}
+      <FinishTiers
+        assessmentId={assessment.id}
+        address={assessment.address}
+        facts={property.facts}
+        checklist={assessment.checklist as ChecklistAnswers}
+        estimateInput={estimateInput}
+        price={basis.price}
+        selected={options.module}
+        onSelect={(module) => setOptions({ ...options, module })}
+      />
+
+      {basis.price.processes.demolition?.baseApplies === "optional" && (
+        <section className={card}>
+          <h2 className="text-lg font-semibold">공사 조건</h2>
+          <label className="flex min-h-12 items-center gap-2 text-base">
+            <input
+              type="checkbox"
+              className="size-5"
+              checked={options.demolition}
               onChange={(e) =>
-                setOptions({
-                  ...options,
-                  module: e.target.value as EstimateOptions["module"],
-                })
+                setOptions({ ...options, demolition: e.target.checked })
               }
-            >
-              {(["A", "B", "C"] as const).map((m) => (
-                <option key={m} value={m}>
-                  모듈 {m} · ㎡당{" "}
-                  {basis.price.moduleUnitPrices[m].toLocaleString("ko-KR")}원
-                </option>
-              ))}
-            </select>
+            />
+            철거 공사 포함
           </label>
-          {basis.price.processes.demolition?.baseApplies === "optional" && (
-            <label className="flex min-h-12 items-center gap-2 text-base">
-              <input
-                type="checkbox"
-                className="size-5"
-                checked={options.demolition}
-                onChange={(e) =>
-                  setOptions({ ...options, demolition: e.target.checked })
-                }
-              />
-              철거 공사 포함
-            </label>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">공정별 비용</h2>
