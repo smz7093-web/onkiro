@@ -23,6 +23,9 @@ export interface BuildingFacts {
   structure: string | null;
   roofStructure: string | null;
   approvalDate: string | null;
+  // 10/14 추가 — 이전 캐시·저장 데이터에는 없을 수 있다
+  floors?: number | null;
+  mainPurpose?: string | null;
 }
 
 export interface LandFacts {
@@ -32,6 +35,9 @@ export interface LandFacts {
   priceYear: string | null;
   // 토지면적(㎡). 10/14 추가 — 이전 캐시·저장 데이터에는 없을 수 있다
   landArea?: number | null;
+  roadSide?: string | null;
+  terrain?: string | null;
+  landUse?: string | null;
 }
 
 export interface TourSpot {
@@ -108,6 +114,8 @@ export function mergeLookup(
       fill(facts, "structure", b.structure, s, at);
       fill(facts, "roofStructure", b.roofStructure, s, at);
       fill(facts, "approvalDate", b.approvalDate, s, at);
+      fill(facts, "floors", b.floors ?? null, s, at);
+      fill(facts, "mainPurpose", b.mainPurpose ?? null, s, at);
     }
   } else failures.push({ source: "building", error: lookup.building.error });
 
@@ -125,6 +133,9 @@ export function mergeLookup(
     );
     // 대장에 대지면적이 없을 때만 토지면적으로 채운다 (대장 값이 먼저 들어가 있으면 건드리지 않는다)
     fill(facts, "landArea", lookup.land.value.landArea ?? null, s, at);
+    fill(facts, "roadSide", lookup.land.value.roadSide ?? null, s, at);
+    fill(facts, "terrain", lookup.land.value.terrain ?? null, s, at);
+    fill(facts, "landUse", lookup.land.value.landUse ?? null, s, at);
   } else failures.push({ source: "land", error: lookup.land.error });
 
   const nearby = lookup.tour.ok

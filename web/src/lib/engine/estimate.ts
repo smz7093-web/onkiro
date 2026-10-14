@@ -15,6 +15,15 @@ import {
 
 export class EstimateInputError extends Error {}
 
+// 지붕이 덮는 바닥 면적 = 연면적 ÷ 지상 층수 (층수가 없거나 1 미만이면 1층)
+export function roofBaseArea(input: EstimateInput) {
+  const floors =
+    input.floors && Number.isInteger(input.floors) && input.floors >= 1
+      ? input.floors
+      : 1;
+  return input.floorArea / floors;
+}
+
 function quantity(
   price: ProcessPrice,
   input: EstimateInput,
@@ -24,7 +33,7 @@ function quantity(
     case "floorArea":
       return input.floorArea;
     case "roofArea":
-      return input.floorArea * table.roofAreaFactor;
+      return roofBaseArea(input) * table.roofAreaFactor;
     case "bathrooms":
       return input.bathrooms;
     case "kitchens":

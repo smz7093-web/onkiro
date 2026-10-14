@@ -91,7 +91,7 @@ describe("건축물대장 표제부", () => {
         },
       ]),
     );
-    expect(r).toEqual({
+    expect(r).toMatchObject({
       found: true,
       facts: {
         floorArea: 72.4,
@@ -107,7 +107,7 @@ describe("건축물대장 표제부", () => {
     const r = parseBuildingTitle(
       wrap({ totArea: "60", platArea: "", strctCdNm: "", useAprDay: "" }),
     );
-    expect(r.facts).toEqual({
+    expect(r.facts).toMatchObject({
       floorArea: 60,
       landArea: null,
       structure: null,
@@ -137,7 +137,7 @@ describe("건축물대장 표제부", () => {
         useAprDay: "19260905",
       }),
     );
-    expect(r.facts).toEqual({
+    expect(r.facts).toMatchObject({
       floorArea: 9453.87,
       landArea: null,
       structure: "철근콘크리트",
@@ -177,7 +177,7 @@ describe("브이월드 토지특성", () => {
         ],
       },
     });
-    expect(r).toEqual({
+    expect(r).toMatchObject({
       landCategory: "대",
       zoning: "계획관리지역",
       officialLandPrice: 48200,
@@ -211,12 +211,63 @@ describe("브이월드 토지특성", () => {
         ],
       },
     });
-    expect(r).toEqual({
+    expect(r).toMatchObject({
       landCategory: "대",
       zoning: "제2종일반주거지역",
       officialLandPrice: 334200,
       priceYear: "2026",
       landArea: 250.6,
+    });
+  });
+});
+
+describe("10/14 추가 항목 (층수·주용도·도로 접면·지형·토지 이용)", () => {
+  it("대장: 지상 층수와 주용도", () => {
+    const r = parseBuildingTitle({
+      response: {
+        header: { resultCode: "00" },
+        body: {
+          items: {
+            item: {
+              totArea: 120,
+              grndFlrCnt: 2,
+              mainPurpsCdNm: "단독주택",
+            },
+          },
+        },
+      },
+    });
+    expect(r.facts).toMatchObject({ floors: 2, mainPurpose: "단독주택" });
+  });
+
+  it("층수 0·빈 주용도는 결측", () => {
+    const r = parseBuildingTitle({
+      response: {
+        header: { resultCode: "00" },
+        body: {
+          items: { item: { totArea: 60, grndFlrCnt: 0, mainPurpsCdNm: " " } },
+        },
+      },
+    });
+    expect(r.facts).toMatchObject({ floors: null, mainPurpose: null });
+  });
+
+  it("토지: 도로 접면, 지형(높이 · 형상), 토지 이용 상황", () => {
+    const r = parseLandCharacteristics({
+      landCharacteristicss: {
+        field: {
+          stdrYear: "2026",
+          roadSideCodeNm: "세로한면(가)",
+          tpgrphHgCodeNm: "평지",
+          tpgrphFrmCodeNm: "부정형",
+          ladUseSittnNm: "단독",
+        },
+      },
+    });
+    expect(r).toMatchObject({
+      roadSide: "세로한면(가)",
+      terrain: "평지 · 부정형",
+      landUse: "단독",
     });
   });
 });

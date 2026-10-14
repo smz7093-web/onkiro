@@ -15,6 +15,12 @@ export interface GradeExplainInput {
     roofStructure: string | null;
     approvalDate: string | null;
     zoning: string | null;
+    // 10/14 추가 (없을 수 있다)
+    floors?: number | null;
+    mainPurpose?: string | null;
+    roadSide?: string | null;
+    terrain?: string | null;
+    landUse?: string | null;
   };
   // 체크리스트 문항·답 (화면 문구 그대로)
   checklist: { question: string; answer: string }[];
@@ -88,6 +94,11 @@ export function parseGradeInput(raw: unknown): GradeExplainInput | null {
       roofStructure: str(h.roofStructure, 40),
       approvalDate: str(h.approvalDate, 10),
       zoning: str(h.zoning, 40),
+      floors: numOrNull(h.floors) ?? null,
+      mainPurpose: str(h.mainPurpose, 40),
+      roadSide: str(h.roadSide, 40),
+      terrain: str(h.terrain, 40),
+      landUse: str(h.landUse, 40),
     },
     checklist,
     tiers,
@@ -164,6 +175,8 @@ export function gradePrompt(input: GradeExplainInput): string {
     `- 연면적: ${h.floorArea ?? "미상"}㎡`,
     `- 구조: ${h.structure ?? "미상"} / 지붕: ${h.roofStructure ?? "미상"}`,
     `- 사용승인일: ${h.approvalDate ?? "미상"} / 용도지역: ${h.zoning ?? "미상"}`,
+    `- 지상 층수: ${h.floors ?? "미상"} / 주용도: ${h.mainPurpose ?? "미상"}`,
+    `- 도로 접면: ${h.roadSide ?? "미상"} / 지형: ${h.terrain ?? "미상"} / 토지 이용: ${h.landUse ?? "미상"}`,
     "",
     "[상태 체크리스트]",
     ...input.checklist.map((c) => `- ${c.question} → ${c.answer}`),

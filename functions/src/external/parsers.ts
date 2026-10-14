@@ -80,6 +80,9 @@ export interface BuildingFacts {
   structure: string | null;
   roofStructure: string | null;
   approvalDate: string | null;
+  // 10/14 추가: 지상 층수(지붕 면적 계산), 주용도(인허가 간이 확인)
+  floors: number | null;
+  mainPurpose: string | null;
 }
 
 // 대장의 구조 이름 → 확인 화면 선택지 (lib/diagnosis/facts.ts FACT_DEFS options와 같게)
@@ -145,6 +148,8 @@ export function parseBuildingTitle(raw: unknown): {
     structure: null,
     roofStructure: null,
     approvalDate: null,
+    floors: null,
+    mainPurpose: null,
   };
   if (items.length === 0) return { found: false, facts: empty };
   const main = items.filter((i) => str(i.mainAtchGbCdNm) !== "부속건축물");
@@ -167,6 +172,8 @@ export function parseBuildingTitle(raw: unknown): {
         str(pick.etcRoof),
       ),
       approvalDate: toDate(str(pick.useAprDay)),
+      floors: num(pick.grndFlrCnt) || null,
+      mainPurpose: str(pick.mainPurpsCdNm) || null,
     },
   };
 }
@@ -180,6 +187,10 @@ export interface LandFacts {
   priceYear: string | null;
   // 토지면적(㎡). 대장에 대지면적이 비어 있을 때 쓴다
   landArea: number | null;
+  // 10/14 추가: 도로 접면(예: 세로한면(가)), 지형 높이·형상(예: 평지 · 부정형), 토지 이용 상황(예: 단독)
+  roadSide: string | null;
+  terrain: string | null;
+  landUse: string | null;
 }
 
 // 여러 해 자료가 오면 가장 최근 기준연도를, 같은 해가 여러 건이면 마지막 갱신일(lastUpdtDt)이 늦은 것을 쓴다
@@ -196,6 +207,9 @@ export function parseLandCharacteristics(raw: unknown): LandFacts {
     officialLandPrice: null,
     priceYear: null,
     landArea: null,
+    roadSide: null,
+    terrain: null,
+    landUse: null,
   };
   if (rows.length === 0) return empty;
   const order = (r: Obj) => `${str(r.stdrYear)}|${str(r.lastUpdtDt)}`;
@@ -206,6 +220,12 @@ export function parseLandCharacteristics(raw: unknown): LandFacts {
     officialLandPrice: num(latest.pblntfPclnd),
     priceYear: str(latest.stdrYear) || null,
     landArea: num(latest.lndpclAr) || null,
+    roadSide: str(latest.roadSideCodeNm) || null,
+    terrain:
+      [str(latest.tpgrphHgCodeNm), str(latest.tpgrphFrmCodeNm)]
+        .filter(Boolean)
+        .join(" · ") || null,
+    landUse: str(latest.ladUseSittnNm) || null,
   };
 }
 

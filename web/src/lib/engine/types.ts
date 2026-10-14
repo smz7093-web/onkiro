@@ -89,6 +89,8 @@ export interface PriceTable {
 
 export interface EstimateInput {
   floorArea: number;
+  // 지상 층수 (건축물대장). 지붕 면적 = 연면적 ÷ 층수 × 계수. 없으면 1층으로 본다 (v1.1)
+  floors?: number;
   bathrooms: number;
   kitchens: number;
   module: ModuleType;

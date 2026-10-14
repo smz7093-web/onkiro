@@ -306,20 +306,22 @@ export function EstimateStep() {
         </div>
         <p className="text-sm text-ink-2">{PERMIT_DISCLAIMER}</p>
         <ul className="flex flex-col gap-2">
-          {permitItems(estimateInput.noRegistry).map((item) => (
-            <li
-              key={item.id}
-              className="flex flex-col gap-1 border-b border-line pb-2 last:border-0"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded bg-warn-soft px-2 py-0.5 text-sm text-warn">
-                  {PERMIT_STATUS_LABELS[item.status]}
-                </span>
-                <span className="text-base">{item.title}</span>
-              </div>
-              <span className="text-sm text-ink-2">{item.nextAction}</span>
-            </li>
-          ))}
+          {permitItems(estimateInput.noRegistry, computation.site).map(
+            (item) => (
+              <li
+                key={item.id}
+                className="flex flex-col gap-1 border-b border-line pb-2 last:border-0"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded bg-warn-soft px-2 py-0.5 text-sm text-warn">
+                    {PERMIT_STATUS_LABELS[item.status]}
+                  </span>
+                  <span className="text-base">{item.title}</span>
+                </div>
+                <span className="text-sm text-ink-2">{item.nextAction}</span>
+              </li>
+            ),
+          )}
         </ul>
       </section>
 
@@ -372,7 +374,9 @@ function ProcessRow({
       case "floorArea":
         return `연면적 ${input.floorArea}㎡`;
       case "roofArea":
-        return `지붕 ${input.floorArea}㎡ × ${price.roofAreaFactor}`;
+        return input.floors && input.floors > 1
+          ? `지붕 연면적 ${input.floorArea}㎡ ÷ ${input.floors}층 × ${price.roofAreaFactor}`
+          : `지붕 ${input.floorArea}㎡ × ${price.roofAreaFactor}`;
       case "bathrooms":
         return `욕실 ${input.bathrooms}개`;
       case "kitchens":

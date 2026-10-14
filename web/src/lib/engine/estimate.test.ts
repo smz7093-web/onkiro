@@ -59,6 +59,27 @@ describe("견적 엔진 · 대표 예시 ① 계산값 (원 단위)", () => {
   });
 });
 
+describe("견적 엔진 · 층수 (계산식 v1.1)", () => {
+  it("2층이면 지붕 면적이 절반, 다른 공정은 그대로", () => {
+    const one = calculateEstimate(representative, PRICE_V2026_10_1);
+    const two = calculateEstimate(
+      { ...representative, floors: 2 },
+      PRICE_V2026_10_1,
+    );
+    expect(costOf(two, "roof")).toBeCloseTo(costOf(one, "roof") / 2, 0);
+    expect(costOf(two, "interior")).toBeCloseTo(costOf(one, "interior"), 0);
+  });
+
+  it("층수가 없거나 0이면 1층으로 본다", () => {
+    const one = calculateEstimate(representative, PRICE_V2026_10_1);
+    const zero = calculateEstimate(
+      { ...representative, floors: 0 },
+      PRICE_V2026_10_1,
+    );
+    expect(costOf(zero, "roof")).toBeCloseTo(costOf(one, "roof"), 0);
+  });
+});
+
 describe("견적 엔진 · 대표 예시 ② 표시값", () => {
   const r = calculateEstimate(representative, PRICE_V2026_10_1);
 

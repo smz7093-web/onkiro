@@ -12,6 +12,11 @@ export interface GradeExplainInput {
     roofStructure: string | null;
     approvalDate: string | null;
     zoning: string | null;
+    floors: number | null;
+    mainPurpose: string | null;
+    roadSide: string | null;
+    terrain: string | null;
+    landUse: string | null;
   };
   checklist: { question: string; answer: string }[];
   tiers: {

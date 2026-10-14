@@ -52,8 +52,10 @@ export function buildEstimateInput(
   inputs: DiagnosisInputs,
   checklist: ChecklistResult,
 ): EstimateInput {
+  const floors = num(inputs.facts, "floors", 1);
   return {
     floorArea: num(inputs.facts, "floorArea", 0),
+    ...(floors > 1 ? { floors } : {}),
     bathrooms: num(inputs.facts, "bathrooms", 1),
     kitchens: num(inputs.facts, "kitchens", 1),
     module: inputs.options.module,
@@ -66,12 +68,31 @@ export function buildEstimateInput(
   };
 }
 
+// 인허가 간이 확인에 쓰는 대장·토지 정보 (계산에는 쓰지 않는다, 10/14)
+export interface SiteSignals {
+  mainPurpose: string | null;
+  roadSide: string | null;
+}
+
+const text = (facts: Facts, key: keyof Facts) => {
+  const v = facts[key]?.value;
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+};
+
+export function siteSignals(facts: Facts): SiteSignals {
+  return {
+    mainPurpose: text(facts, "mainPurpose"),
+    roadSide: text(facts, "roadSide"),
+  };
+}
+
 export interface EstimateComputation {
   checklist: ChecklistResult;
   estimateInput: EstimateInput;
   estimate: EstimateResult;
   // 위험 신호가 있으면 수익보다 현장진단을 먼저 보여준다 (SIM-10)
   expertRequired: boolean;
+  site: SiteSignals;
 }
 
 export function computeEstimate(
@@ -89,6 +110,7 @@ export function computeEstimate(
     estimateInput,
     estimate: calculateEstimate(estimateInput, price),
     expertRequired: checklist.riskFlags.length > 0,
+    site: siteSignals(inputs.facts),
   };
 }
 
@@ -138,6 +160,8 @@ export interface SnapshotInputs {
   priceVersion: string;
   assumptionVersion: string;
   formulaVersion: string;
+  // 리포트의 인허가 간이 확인용 (10/14부터, 이전 스냅샷에는 없다)
+  site?: SiteSignals;
 }
 
 export function snapshotInputs(
@@ -146,6 +170,7 @@ export function snapshotInputs(
   revenueInput: RevenueInput,
   price: PriceTable,
   assumption: AssumptionSet,
+  site?: SiteSignals,
 ): SnapshotInputs {
   return {
     estimateInput,
@@ -154,6 +179,7 @@ export function snapshotInputs(
     priceVersion: price.version,
     assumptionVersion: assumption.version,
     formulaVersion: FORMULA_VERSION,
+    ...(site ? { site } : {}),
   };
 }
 

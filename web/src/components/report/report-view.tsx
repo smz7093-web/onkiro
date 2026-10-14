@@ -258,7 +258,7 @@ export function ReportView({
         </h2>
         <p className="text-sm">{PERMIT_DISCLAIMER}</p>
         <ul className="flex flex-col gap-1 text-sm">
-          {permitItems(ei.noRegistry).map((p) => (
+          {permitItems(ei.noRegistry, inputs.site).map((p) => (
             <li key={p.id}>
               [{PERMIT_STATUS_LABELS[p.status]}] {p.title} — {p.nextAction}
             </li>

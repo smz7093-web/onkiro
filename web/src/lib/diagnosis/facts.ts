@@ -44,9 +44,14 @@ export const FACT_KEYS = [
   "structure",
   "roofStructure",
   "approvalDate",
+  "floors",
+  "mainPurpose",
   "landCategory",
   "zoning",
   "officialLandPrice",
+  "roadSide",
+  "terrain",
+  "landUse",
   "bathrooms",
   "kitchens",
 ] as const;
@@ -82,6 +87,9 @@ export const FACT_DEFS: FactDef[] = [
     options: ["기와", "슬레이트", "금속(강판)", "슬래브", "기타"],
   },
   { key: "approvalDate", label: "사용승인일", kind: "date", group: "building" },
+  // 10/14 추가: 층수는 지붕 면적(견적), 주용도는 인허가 간이 확인에 쓴다
+  { key: "floors", label: "지상 층수", kind: "count", group: "building" },
+  { key: "mainPurpose", label: "주용도", kind: "text", group: "building" },
   { key: "landCategory", label: "지목", kind: "text", group: "land" },
   { key: "zoning", label: "용도지역", kind: "text", group: "land" },
   {
@@ -90,6 +98,10 @@ export const FACT_DEFS: FactDef[] = [
     kind: "won",
     group: "land",
   },
+  // 10/14 추가: 도로 접면은 인허가·공사 차량 확인, 지형·토지 이용은 참고(AI 설명 근거)
+  { key: "roadSide", label: "도로 접면", kind: "text", group: "land" },
+  { key: "terrain", label: "지형 (높이·형상)", kind: "text", group: "land" },
+  { key: "landUse", label: "토지 이용 상황", kind: "text", group: "land" },
   {
     key: "bathrooms",
     label: "욕실 수",

@@ -61,6 +61,11 @@ export function FinishTiers({
         roofStructure: factValue(facts, "roofStructure") as string | null,
         approvalDate: factValue(facts, "approvalDate") as string | null,
         zoning: factValue(facts, "zoning") as string | null,
+        floors: factValue(facts, "floors") as number | null,
+        mainPurpose: factValue(facts, "mainPurpose") as string | null,
+        roadSide: factValue(facts, "roadSide") as string | null,
+        terrain: factValue(facts, "terrain") as string | null,
+        landUse: factValue(facts, "landUse") as string | null,
       },
       checklist: CHECKLIST_QUESTIONS.map((q) => ({
         question: q.label,

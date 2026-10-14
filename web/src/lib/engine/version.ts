@@ -1,2 +1,3 @@
 // 계산식 버전. 견적·수익 계산 규칙이 바뀌면 올리고, 모든 계산 스냅샷에 함께 저장한다 (prd.md 7.3).
-export const FORMULA_VERSION = "v1.0";
+// v1.1 (10/14): 지붕 면적 = 연면적 ÷ 지상 층수 × 지붕 면적 계수 (v1.0은 층수 없이 연면적 × 계수)
+export const FORMULA_VERSION = "v1.1";

@@ -26,6 +26,8 @@ export const DEMO_FIXTURES: DemoFixture[] = [
         structure: "목구조",
         roofStructure: "금속(강판)",
         approvalDate: null,
+        floors: 1,
+        mainPurpose: "단독주택",
       },
     },
     land: {
@@ -34,6 +36,9 @@ export const DEMO_FIXTURES: DemoFixture[] = [
       officialLandPrice: 42700,
       priceYear: "2026",
       landArea: 446,
+      roadSide: "세로한면(가)",
+      terrain: "평지 · 부정형",
+      landUse: "단독",
     },
     tour: [
       { title: "광천생활체육공원", distanceKm: 2.2292774576504573 },
@@ -61,6 +66,8 @@ export const DEMO_FIXTURES: DemoFixture[] = [
         structure: "조적조(벽돌·블록)",
         roofStructure: "기와",
         approvalDate: "1979-11-16",
+        floors: 1,
+        mainPurpose: "단독주택",
       },
     },
     land: {
@@ -69,6 +76,9 @@ export const DEMO_FIXTURES: DemoFixture[] = [
       officialLandPrice: 334200,
       priceYear: "2026",
       landArea: 250.6,
+      roadSide: "세로한면(가)",
+      terrain: "평지 · 부정형",
+      landUse: "단독",
     },
     tour: [
       { title: "조양문", distanceKm: 0.7630453309625996 },
