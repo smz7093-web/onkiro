@@ -4,7 +4,7 @@ import type { DemoFixture } from "./lookup.js";
 // savedAt은 실제로 조회해 저장한 시각이다. 화면에는 출처 '시연용 저장 데이터'와 이 시각이 보인다.
 // 스위치: Firestore config/demo 문서의 useFixtures (true면 이 주소들은 외부를 부르지 않는다).
 // 꺼져 있어도 외부 호출이 실패하면 이 값으로 대신한다.
-// 토지(land)는 브이월드 키 발급 전이라 PM이 직접 입력한 값이다. 키가 오면 실제 조회 값으로 바꾼다.
+// 토지(land)는 10/14 브이월드 실제 조회 값(2026년 기준)이다.
 // keywords는 검색어에서 공백을 뺀 뒤 포함 여부로 비교한다.
 export const DEMO_FIXTURES: DemoFixture[] = [
   {
@@ -29,10 +29,11 @@ export const DEMO_FIXTURES: DemoFixture[] = [
       },
     },
     land: {
-      landCategory: null,
-      zoning: null,
-      officialLandPrice: null,
-      priceYear: null,
+      landCategory: "대",
+      zoning: "자연녹지지역",
+      officialLandPrice: 42700,
+      priceYear: "2026",
+      landArea: 446,
     },
     tour: [
       { title: "광천생활체육공원", distanceKm: 2.2292774576504573 },
@@ -63,10 +64,11 @@ export const DEMO_FIXTURES: DemoFixture[] = [
       },
     },
     land: {
-      landCategory: null,
-      zoning: "제2종 일반주거지역",
-      officialLandPrice: 368900,
-      priceYear: null,
+      landCategory: "대",
+      zoning: "제2종일반주거지역",
+      officialLandPrice: 334200,
+      priceYear: "2026",
+      landArea: 250.6,
     },
     tour: [
       { title: "조양문", distanceKm: 0.7630453309625996 },

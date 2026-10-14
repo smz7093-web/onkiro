@@ -30,6 +30,8 @@ export interface LandFacts {
   zoning: string | null;
   officialLandPrice: number | null;
   priceYear: string | null;
+  // 토지면적(㎡). 10/14 추가 — 이전 캐시·저장 데이터에는 없을 수 있다
+  landArea?: number | null;
 }
 
 export interface TourSpot {
@@ -121,6 +123,8 @@ export function mergeLookup(
       s,
       at,
     );
+    // 대장에 대지면적이 없을 때만 토지면적으로 채운다 (대장 값이 먼저 들어가 있으면 건드리지 않는다)
+    fill(facts, "landArea", lookup.land.value.landArea ?? null, s, at);
   } else failures.push({ source: "land", error: lookup.land.error });
 
   const nearby = lookup.tour.ok

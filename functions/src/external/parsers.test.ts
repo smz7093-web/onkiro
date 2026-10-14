@@ -182,6 +182,41 @@ describe("브이월드 토지특성", () => {
       zoning: "계획관리지역",
       officialLandPrice: 48200,
       priceYear: "2026",
+      landArea: null,
+    });
+  });
+
+  it("실제 응답 형식(10/14 확인): 같은 해 여러 건이면 마지막 갱신분, 토지면적", () => {
+    const row = (
+      stdrYear: string,
+      lastUpdtDt: string,
+      pblntfPclnd: string,
+    ) => ({
+      stdrYear,
+      lastUpdtDt,
+      pblntfPclnd,
+      lndcgrCodeNm: "대",
+      prposArea1Nm: "제2종일반주거지역",
+      lndpclAr: "250.6",
+    });
+    const r = parseLandCharacteristics({
+      landCharacteristicss: {
+        totalCount: "4",
+        resultCode: "",
+        field: [
+          row("2025", "2025-08-06", "331900"),
+          row("2026", "2026-05-12", "334200"),
+          row("2026", "2026-03-01", "300000"),
+          row("2024", "2025-01-16", "328700"),
+        ],
+      },
+    });
+    expect(r).toEqual({
+      landCategory: "대",
+      zoning: "제2종일반주거지역",
+      officialLandPrice: 334200,
+      priceYear: "2026",
+      landArea: 250.6,
     });
   });
 });

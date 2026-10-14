@@ -178,9 +178,12 @@ export interface LandFacts {
   zoning: string | null;
   officialLandPrice: number | null;
   priceYear: string | null;
+  // 토지면적(㎡). 대장에 대지면적이 비어 있을 때 쓴다
+  landArea: number | null;
 }
 
-// 여러 해 자료가 오면 가장 최근 기준연도를 쓴다
+// 여러 해 자료가 오면 가장 최근 기준연도를, 같은 해가 여러 건이면 마지막 갱신일(lastUpdtDt)이 늦은 것을 쓴다
+// (10/14 실제 응답: 2013년부터 해마다 1~3건, 오래된 연도부터 온다)
 export function parseLandCharacteristics(raw: unknown): LandFacts {
   const root = isObj(raw)
     ? (raw.landCharacteristicss ?? raw.landCharacteristics)
@@ -192,16 +195,17 @@ export function parseLandCharacteristics(raw: unknown): LandFacts {
     zoning: null,
     officialLandPrice: null,
     priceYear: null,
+    landArea: null,
   };
   if (rows.length === 0) return empty;
-  const latest = rows.reduce((a, b) =>
-    str(b.stdrYear) > str(a.stdrYear) ? b : a,
-  );
+  const order = (r: Obj) => `${str(r.stdrYear)}|${str(r.lastUpdtDt)}`;
+  const latest = rows.reduce((a, b) => (order(b) > order(a) ? b : a));
   return {
     landCategory: str(latest.lndcgrCodeNm) || null,
     zoning: str(latest.prposArea1Nm) || null,
     officialLandPrice: num(latest.pblntfPclnd),
     priceYear: str(latest.stdrYear) || null,
+    landArea: num(latest.lndpclAr) || null,
   };
 }
 

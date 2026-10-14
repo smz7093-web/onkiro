@@ -33,6 +33,7 @@ const FIXTURE: DemoFixture = {
     zoning: "계획관리지역",
     officialLandPrice: 48200,
     priceYear: "2026",
+    landArea: 330,
   },
   tour: [{ title: "홍주읍성", distanceKm: 8.4 }],
   savedAt: "2026-10-12T00:00:00.000Z",

@@ -23,9 +23,9 @@ export const ENDPOINTS = {
   tour: "https://apis.data.go.kr/B551011/KorService2/locationBasedList2",
 };
 
-// 브이월드 키는 신청할 때 적은 서비스 주소(도메인)에 묶여 있다
-export const VWORLD_DOMAIN =
-  "https://onkiro-web--onkiro-2fe12.asia-east1.hosted.app";
+// 브이월드 키는 신청할 때 적은 서비스 주소(도메인)에 묶여 있다.
+// https://를 붙이면 400 Bad Request가 난다(10/14 확인) — 호스트 이름만 보낸다
+export const VWORLD_DOMAIN = "onkiro-web--onkiro-2fe12.asia-east1.hosted.app";
 
 export type Source =
   "buildingRegistry" | "vworld" | "tourApi" | "juso" | "demoFixture";
@@ -259,7 +259,7 @@ export async function lookupProperty(
         async () =>
           parseLandCharacteristics(
             await deps.fetchJson(
-              `${ENDPOINTS.vworldLand}?${qs({ key: keys.vworld!, domain: VWORLD_DOMAIN, pnu, format: "json", numOfRows: 10, pageNo: 1 })}`,
+              `${ENDPOINTS.vworldLand}?${qs({ key: keys.vworld!, domain: VWORLD_DOMAIN, pnu, format: "json", numOfRows: 100, pageNo: 1 })}`,
               { api: "vworld" },
             ),
           ),
