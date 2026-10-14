@@ -226,7 +226,8 @@ describe("Claude 호출", () => {
     const body = JSON.parse(
       (f.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
     );
-    expect(body.tool_choice).toEqual({ type: "tool", name: "t" });
+    expect(body.tool_choice).toEqual({ type: "auto" });
+    expect(body.system).toContain("t 도구 한 번 호출로만");
     expect(body.model).toBe("claude-sonnet-5-5");
   });
 

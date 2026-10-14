@@ -45,7 +45,7 @@ export function claudeCaller(
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 90_000,
 ): CallClaude {
-  return async ({ system, content, tool, maxTokens = 2000 }) => {
+  return async ({ system, content, tool, maxTokens = 8000 }) => {
     if (!hasKey(apiKey)) throw new AiUnavailable("AI 키가 아직 없습니다");
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -61,9 +61,11 @@ export function claudeCaller(
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
-          system,
+          // 최신 모델은 도구 강제(tool_choice: tool)를 받지 않는다(10/15 확인, 400).
+          // auto로 두고 시스템 지시로 도구 하나로만 답하게 한다. 도구 답이 없으면 아래에서 실패 처리
+          system: `${system}\n\n답은 반드시 ${tool.name} 도구 한 번 호출로만 하세요. 도구 밖에 글을 쓰지 마세요.`,
           tools: [tool],
-          tool_choice: { type: "tool", name: tool.name },
+          tool_choice: { type: "auto" },
           messages: [{ role: "user", content }],
         }),
       });
