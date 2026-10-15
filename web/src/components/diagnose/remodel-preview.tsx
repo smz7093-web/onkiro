@@ -7,6 +7,7 @@ import { FINISH_TIERS } from "@/lib/diagnosis/compute";
 import { listPhotos, photoUrl } from "@/lib/diagnosis/photo-store";
 import { useDiagnosis } from "./diagnosis-context";
 import { btnSecondary } from "./styles";
+import { Pill } from "../ui";
 
 // 리모델링 후 모습 AI 가상 이미지 (10/15). 외관 정면 사진이 있을 때만 보인다.
 // 실제 시공 결과가 아닌 참고 그림이라는 점을 이미지 위·아래에 크게 표시한다.
@@ -56,9 +57,7 @@ export function RemodelPreview({ module }: { module: ModuleType }) {
     <div className="flex flex-col gap-3 border-t border-line pt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-base font-semibold">리모델링 후 모습 미리보기</h3>
-        <span className="rounded bg-warn-soft px-2 py-0.5 text-sm text-warn">
-          AI 가상 이미지 · 실제 시공 결과와 다를 수 있음
-        </span>
+        <Pill tone="warn">AI 가상 이미지 · 실제 시공 결과와 다를 수 있음</Pill>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <figure className="flex flex-col gap-1">

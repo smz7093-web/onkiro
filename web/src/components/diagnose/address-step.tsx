@@ -9,6 +9,7 @@ import {
 import { saveAddress } from "@/lib/diagnosis/store";
 import { useDiagnosis } from "./diagnosis-context";
 import { btnPrimary, btnSecondary, card, info, input, notice } from "./styles";
+import { Pill } from "../ui";
 
 // 1단계 주소 입력 (SIM-01, task.md 6.2). 검색이 안 되면 직접 입력으로 계속 진행한다 (prd.md 1.2 원칙 4).
 export function AddressStep() {
@@ -113,9 +114,7 @@ export function AddressStep() {
         </p>
       )}
       {candidates && candidates.length > 0 && fromDemo && (
-        <p className="w-fit rounded bg-warn-soft px-2 py-0.5 text-sm text-warn">
-          시연용 저장 데이터
-        </p>
+        <Pill tone="warn">시연용 저장 데이터</Pill>
       )}
       {candidates && candidates.length > 0 && (
         <ul className={card}>

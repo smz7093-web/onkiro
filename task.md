@@ -110,7 +110,7 @@
   - [x] 6.4 사진 업로드 (SIM-06, EXIF 제거)
   - [x] 6.5 상태 체크리스트 (SIM-07)
   - [ ] 6.6 `[해순]` D9 촬영 가이드, `[원일]` D7 인허가 항목 (10/14)
-  - [ ] 6.7 `[주연·개발]` 공통 UI 컴포넌트 (10/17)
+  - [x] 6.7 `[주연·개발]` 공통 UI 컴포넌트 (10/17) — 10/15 PM 개발, 주연 디자인 기준 오면 조정
 - [ ] **Phase 7. 결과 화면** (10/16–10/24)
   - [x] 7.1 견적 결과 화면 (SIM-08, 15)
   - [ ] 7.2 위험 신호·인허가 간이 확인 (SIM-10, 11)
@@ -529,6 +529,7 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 - **규칙**: 데이터 읽기·쓰기 없이 화면 모양만 다룬다. 주요 버튼 높이 48px 이상, 본문 16px 이상(9.5 기준). 확인용 견본 페이지 `/ui`(시연 전 삭제)에 모아 보인다.
 - **완료 기준**: `npm run lint`·`npm run typecheck` 통과, PM 검토 후 이후 화면이 이 컴포넌트를 쓴다.
 - **진행 메모**: 2026-10-10 PM 준비 완료: `globals.css`에 목업 밝은 화면 색 토큰(`bg-accent`, `text-ink` 등), `components/ui/index.ts`(만들 목록·규칙), 견본 페이지 `/ui`(색 견본). 글꼴(목업 IBM Plex Sans KR·Hahmlet)과 어두운 화면 색은 주연이 정한다.
+  - 2026-10-15 PM 개발 완료: `components/ui/`에 `Button`·`ButtonLink`(primary·secondary·ghost·danger, md 48px·sm 40px, block), `Card`·`CardHead`(default·flat·highlight), `Notice`(warn·info·crit·neutral, 아이콘), `Pill`(7가지 색, 점), `StepBar`(done·current·todo, 모양만), `DisclaimerBox`. 견본 `/ui`. 연결: `diagnose/styles.ts`의 btnPrimary·card·notice 등을 공통 컴포넌트 클래스로 바꿔 진단·상담·마이페이지 화면이 한 번에 새 모양을 쓰고, 진단 단계 표시줄·면책 문구·상태 배지 5곳(인허가 상태, 시연용 저장 데이터, 결측, AI 가상 이미지, 상담 단계)을 컴포넌트로 교체. 관리자·리포트 화면은 아직 자체 모양. **남은 일**: 주연 디자인 기준(글꼴·어두운 화면·모양) 반영, 새 화면(홈·숙소)은 처음부터 이 컴포넌트로.
 
 ---
 

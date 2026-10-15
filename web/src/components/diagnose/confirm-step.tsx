@@ -20,6 +20,7 @@ import {
 import { saveFacts } from "@/lib/diagnosis/store";
 import { useDiagnosis } from "./diagnosis-context";
 import { btnPrimary, btnSecondary, card, input, notice } from "./styles";
+import { Pill } from "../ui";
 
 const GROUPS: { id: FactDef["group"]; title: string }[] = [
   { id: "building", title: "건축물대장" },
@@ -312,11 +313,7 @@ export function ConfirmStep() {
 
 function FactMeta({ fact }: { fact: Fact | undefined }) {
   if (!fact || fact.value === null) {
-    return (
-      <span className="w-fit rounded bg-warn-soft px-2 py-0.5 text-xs text-warn">
-        결측
-      </span>
-    );
+    return <Pill tone="warn">결측</Pill>;
   }
   return (
     <span className="text-xs text-muted">

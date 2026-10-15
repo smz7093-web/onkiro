@@ -16,6 +16,7 @@ import {
 } from "@/lib/diagnosis/store";
 import { manwon } from "@/components/diagnose/estimate-step";
 import { card } from "@/components/diagnose/styles";
+import { Pill } from "../ui";
 
 const STATUS_LABEL: Record<AssessmentStatus, string> = {
   draft: "입력 중",
@@ -135,9 +136,7 @@ export function MyPage() {
                   <span className="text-base font-semibold">
                     {CONSULT_TYPE_LABELS[c.type]}
                   </span>
-                  <span className="rounded bg-info-soft px-2 py-0.5 text-sm text-info">
-                    {CONSULT_STAGE_LABELS[c.status]}
-                  </span>
+                  <Pill tone="info">{CONSULT_STAGE_LABELS[c.status]}</Pill>
                 </div>
                 <span className="text-sm text-ink-2">
                   신청 {c.createdAt?.toLocaleDateString("ko-KR") ?? ""}

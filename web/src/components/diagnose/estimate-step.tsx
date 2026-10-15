@@ -39,6 +39,7 @@ import {
   useEstimate,
   useResultBasis,
 } from "./use-result";
+import { Pill } from "../ui";
 
 const GRADE_LABEL: Record<ConditionGrade, string> = {
   good: "양호",
@@ -312,9 +313,7 @@ export function EstimateStep() {
                 className="flex flex-col gap-1 border-b border-line pb-2 last:border-0"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded bg-warn-soft px-2 py-0.5 text-sm text-warn">
-                    {PERMIT_STATUS_LABELS[item.status]}
-                  </span>
+                  <Pill tone="warn">{PERMIT_STATUS_LABELS[item.status]}</Pill>
                   <span className="text-base">{item.title}</span>
                 </div>
                 <span className="text-sm text-ink-2">{item.nextAction}</span>
