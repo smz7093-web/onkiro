@@ -63,16 +63,19 @@ export function StayDetail({ id }: { id: string }) {
 
       <Gallery photos={photos} label={c.label} />
 
-      <div className="grid items-start gap-8 md:grid-cols-[1fr_320px]">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold text-accent">{c.label}</p>
-            <h1 className="text-2xl leading-snug font-bold md:text-3xl">
-              {c.headline}
-            </h1>
-            {c.summary && <p className="text-base text-ink-2">{c.summary}</p>}
-          </div>
+      {/* 휴대폰: 제목 → 요금·예약 → 상세 순서(시연 때 바로 보이게). 데스크톱: 요금·예약이 오른쪽에 따라 붙는다 */}
+      <div className="grid items-start gap-6 md:grid-cols-[1fr_320px] md:gap-x-8">
+        <div className="flex flex-col gap-2 md:col-start-1 md:row-start-1">
+          <p className="text-sm font-semibold text-accent">{c.label}</p>
+          <h1 className="text-2xl leading-snug font-bold md:text-3xl">
+            {c.headline}
+          </h1>
+          {c.summary && <p className="text-base text-ink-2">{c.summary}</p>}
+        </div>
 
+        <Reserve branch={branch} />
+
+        <div className="flex flex-col gap-6 md:col-start-1 md:row-start-2">
           {c.cleaning?.headline && (
             <Card variant="flat">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -123,8 +126,6 @@ export function StayDetail({ id }: { id: string }) {
             </Card>
           )}
         </div>
-
-        <Reserve branch={branch} />
       </div>
     </main>
   );
@@ -245,7 +246,7 @@ function Reserve({ branch }: { branch: Branch }) {
   ].filter((l) => l.url);
 
   return (
-    <Card className="md:sticky md:top-4">
+    <Card className="md:sticky md:top-4 md:col-start-2 md:row-span-2 md:row-start-1">
       {high > 0 && (
         <p className="text-base">
           <b className="text-2xl">
