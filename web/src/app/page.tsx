@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BranchCards, HeroPhoto } from "@/components/home/branch-showcase";
-import { ButtonLink, Card, Pill } from "@/components/ui";
+import { ButtonLink, Card, Logo, Pill } from "@/components/ui";
 
 // 서비스 소개 홈 (COM-01, task.md 9.4). 문구는 목업 home·PRD 기준이며 주연의 홈 문구가 오면 바꾼다.
 // 버튼: 내 빈집 진단하기 → /diagnose(로그인·동의 후 주소 입력), 빈집 맡기기 상담 → /consult?type=entrust
@@ -34,9 +34,7 @@ export default function Home() {
     <div className="flex flex-1 flex-col bg-paper text-ink">
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
-          <Link href="/" className="text-xl font-bold text-accent">
-            온기로
-          </Link>
+          <Logo />
           <Link
             href="/me"
             className="inline-flex h-12 items-center px-2 text-base text-ink-2 underline-offset-4 hover:underline"

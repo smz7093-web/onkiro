@@ -6,6 +6,7 @@ export type { ButtonSize, ButtonVariant } from "./button";
 export { Card, CardHead, cardClass } from "./card";
 export type { CardVariant } from "./card";
 export { DisclaimerBox } from "./disclaimer-box";
+export { Logo } from "./logo";
 export { Notice, noticeClass } from "./notice";
 export type { NoticeTone } from "./notice";
 export { Pill } from "./pill";
