@@ -1,6 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 
-// 온기로 로고 (목업 .app-logo: 초록 네모 '온' + 이름). 공식 로고 파일이 오면 이 파일만 바꾼다.
+// 온기로 로고. 원본은 PM 폴더 Work_for_AI/온기로로고.png(1024×1024, 배경 투명, 세로형).
+// 머리말에는 집 아이콘만 잘라 쓴다(public/brand/onkiro-mark.png). 전체 세로형은 public/brand/onkiro-logo.png
 export function Logo({ href = "/" }: { href?: string }) {
   return (
     <Link
@@ -8,12 +10,14 @@ export function Logo({ href = "/" }: { href?: string }) {
       aria-label="온기로 홈"
       className="inline-flex h-12 items-center gap-2 text-xl font-bold text-ink"
     >
-      <span
-        aria-hidden
-        className="grid size-8 place-items-center rounded-lg bg-accent text-base text-accent-ink"
-      >
-        온
-      </span>
+      <Image
+        src="/brand/onkiro-mark.png"
+        alt=""
+        width={159}
+        height={192}
+        priority
+        className="h-9 w-auto"
+      />
       온기로
     </Link>
   );
