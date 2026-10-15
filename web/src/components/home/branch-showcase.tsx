@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { listBranches } from "@/lib/branches/store";
@@ -7,7 +8,6 @@ import type { Branch } from "@/lib/branches/types";
 import { Card, Pill } from "../ui";
 
 // 홈의 숙소 사진·카드 (COM-01). 숙소 문서는 누구나 읽는다(firestore.rules branches).
-// 한 화면에서 두 번 쓰므로 목록은 한 번만 읽는다.
 let branchesOnce: Promise<Branch[]> | null = null;
 function loadBranches() {
   branchesOnce ??= listBranches().catch(() => {
@@ -29,28 +29,29 @@ function useBranches() {
   return branches;
 }
 
-const photoOf = (b: Branch) => b.content.photos.find((p) => p.url) ?? null;
+// 홈에 쓸 사진을 숙소 문서 사진 대신 정한다 (PM 지정, 10/15. 원본 Work_for_AI/onkiro1·2.jpeg → public/home, 1600px·메타데이터 제거)
+const HOME_CARD_PHOTOS: Record<string, { url: string; caption: string }> = {
+  "onkiro-1": { url: "/home/onkiro2.jpg", caption: "다락방" },
+};
 
-// 첫 화면 오른쪽 큰 사진: 1호점 첫 사진 (없으면 색 면)
+const photoOf = (b: Branch) =>
+  HOME_CARD_PHOTOS[b.id] ?? b.content.photos.find((p) => p.url) ?? null;
+
+// 첫 화면 오른쪽 큰 사진: 1호점 거실 (PM 지정 사진)
 export function HeroPhoto() {
-  const branches = useBranches();
-  const first = branches?.[0];
-  const photo = first ? photoOf(first) : null;
   return (
     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-accent-soft md:aspect-[4/5]">
-      {photo && (
-        // eslint-disable-next-line @next/next/no-img-element -- Storage 다운로드 URL(토큰 포함)이라 next/image 최적화를 쓰지 않는다
-        <img
-          src={photo.url}
-          alt={`${first!.content.label} ${photo.caption}`}
-          className="size-full object-cover"
-        />
-      )}
-      {first && (
-        <span className="absolute bottom-3 left-3 rounded-md bg-ink/75 px-2.5 py-1 text-sm text-white">
-          {first.content.label}
-        </span>
-      )}
+      <Image
+        src="/home/onkiro1.jpg"
+        alt="온기로 홍성 1호점 거실"
+        fill
+        priority
+        sizes="(min-width: 768px) 440px, 100vw"
+        className="object-cover"
+      />
+      <span className="absolute bottom-3 left-3 rounded-md bg-ink/75 px-2.5 py-1 text-sm text-white">
+        온기로 홍성 1호점
+      </span>
     </div>
   );
 }
@@ -80,7 +81,7 @@ export function BranchCards() {
             <Card className="h-full group-hover:border-accent">
               <div className="aspect-[16/10] overflow-hidden rounded-md bg-accent-soft">
                 {photo && (
-                  // eslint-disable-next-line @next/next/no-img-element -- 위와 같음
+                  // eslint-disable-next-line @next/next/no-img-element -- Storage 다운로드 URL(토큰 포함)도 올 수 있어 next/image 최적화를 쓰지 않는다
                   <img
                     src={photo.url}
                     alt={`${b.content.label} ${photo.caption}`}
