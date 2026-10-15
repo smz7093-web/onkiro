@@ -34,6 +34,11 @@ const HOME_CARD_PHOTOS: Record<string, { url: string; caption: string }> = {
   "onkiro-1": { url: "/home/onkiro2.jpg", caption: "다락방" },
 };
 
+// 아직 숙소 문서가 없는 호점의 홈 카드 사진 (PM 지정, 10/15. 원본 Work_for_AI/onkiro_sec1.jpg)
+const UPCOMING_PHOTOS: Record<number, { url: string; caption: string }> = {
+  2: { url: "/home/onkiro-sec1.jpg", caption: "외관" },
+};
+
 const photoOf = (b: Branch) =>
   HOME_CARD_PHOTOS[b.id] ?? b.content.photos.find((p) => p.url) ?? null;
 
@@ -99,15 +104,34 @@ export function BranchCards() {
           </Link>
         );
       })}
-      {Array.from({ length: empty }, (_, i) => (
-        <Card key={`empty-${i}`} variant="flat" className="justify-center">
-          <div className="flex aspect-[16/10] items-center justify-center rounded-md border border-dashed border-line-2">
-            <Pill tone="ochre">준비 중</Pill>
-          </div>
-          <b className="text-lg">온기로 홍성 {shown.length + i + 1}호점</b>
-          <p className="text-sm text-ink-2">다음 빈집을 고치고 있습니다.</p>
-        </Card>
-      ))}
+      {Array.from({ length: empty }, (_, i) => {
+        const no = shown.length + i + 1;
+        const photo = UPCOMING_PHOTOS[no];
+        return (
+          <Card key={`empty-${i}`} variant="flat" className="justify-center">
+            {photo ? (
+              <div className="relative aspect-[16/10] overflow-hidden rounded-md">
+                <Image
+                  src={photo.url}
+                  alt={`온기로 홍성 ${no}호점 ${photo.caption}`}
+                  fill
+                  sizes="(min-width: 640px) 460px, 100vw"
+                  className="object-cover"
+                />
+                <Pill tone="ochre" className="absolute top-2 left-2">
+                  준비 중
+                </Pill>
+              </div>
+            ) : (
+              <div className="flex aspect-[16/10] items-center justify-center rounded-md border border-dashed border-line-2">
+                <Pill tone="ochre">준비 중</Pill>
+              </div>
+            )}
+            <b className="text-lg">온기로 홍성 {no}호점</b>
+            <p className="text-sm text-ink-2">다음 빈집을 고치고 있습니다.</p>
+          </Card>
+        );
+      })}
     </div>
   );
 }
