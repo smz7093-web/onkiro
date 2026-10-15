@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { BranchCards, HeroPhoto } from "@/components/home/branch-showcase";
-import { ButtonLink, Card, Logo, Pill } from "@/components/ui";
+import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { ButtonLink, Card, Pill } from "@/components/ui";
 
 // 서비스 소개 홈 (COM-01, task.md 9.4). 문구는 목업 home·PRD 기준이며 주연의 홈 문구가 오면 바꾼다.
 // 버튼: 내 빈집 진단하기 → /diagnose(로그인·동의 후 주소 입력), 빈집 맡기기 상담 → /consult?type=entrust
@@ -32,17 +32,7 @@ const ENTRUST = [
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col bg-paper text-ink">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
-          <Logo />
-          <Link
-            href="/me"
-            className="inline-flex h-12 items-center px-2 text-base text-ink-2 underline-offset-4 hover:underline"
-          >
-            내 진단·상담
-          </Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-4 py-10 md:py-14">
         <section className="grid items-center gap-8 md:grid-cols-[1.2fr_1fr]">
@@ -127,11 +117,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-line bg-surface">
-        <div className="mx-auto w-full max-w-5xl px-4 py-6 text-sm text-ink-2">
-          온기로 · 충남 홍성 빈집 재생 스테이
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
