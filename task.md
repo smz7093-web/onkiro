@@ -7,7 +7,7 @@
 
 ---
 
-## 진행 현황 (2026-10-12 마감 기준)
+## 진행 현황 (2026-10-15 기준)
 
 **10/10 업무분장 조정**: 주연은 행정 → **화면 UI 담당**. 팀원 개발 모듈: 원일 5.7·9.7, 주연 6.7·9.4·9.5, 해순 9.3(1.6). 석원 3.7은 10/11 **코딩 → 관리자 화면 판정표 입력(B안)**으로 바꿨다. 주연의 행정 업무는 D1 → PM, D7·D11·상담 접수·지점 실적 → 원일, D8 → PM 초안·원일 검토. 공유 PRD rev 87. 팀원별 안내 메시지는 `팀원작업내용.md`(10/11 작성, 발송은 PM).
 
@@ -19,12 +19,13 @@
 - AI(7.7, 10/14): 견적 화면에 실내 마감 하·중·상(=모듈 A/B/C) 견적 3개 비교, 'AI 등급 설명·추천'(자재 예시·추천 등급, 금액은 단가 DB 그대로). 체크리스트에 'AI 사진 분석'(누수·균열·기울어짐·욕실·주방 답 제안, 적용은 회원이). 함수 `explainGrades`·`analyzeDiagnosisPhotos` 배포, 결과는 `assessments/{id}/ai/{kind}`에 입력 지문으로 저장, 회원당 하루 30회. 10/15 키 저장·실제 호출 확인(최신 모델은 도구 강제 tool_choice:tool을 거부 → auto + 시스템 지시). D8에 국외 이전(Anthropic, 미국·사진) 추가 필요
 - AI 가상 이미지(7.8, 10/15): 견적 화면 등급 카드 아래 '리모델링 후 모습 미리보기'(외관 정면 사진이 있을 때만). 함수 `renderRemodel`이 Vertex AI(키 없음, 함수 서비스 계정, Vertex AI API 10/15 사용 설정)로 그려 Storage `users/{주인}/assessments/{id}/renders/`에 저장, 같은 사진·등급·프롬프트 버전이면 재사용, 하루 한도는 AI 공통 30회. 1장 약 9초. 중·상급은 지붕 모양을 바꿔 그리기도 해 'AI 가상 이미지·실제와 다를 수 있음' 표시 필수. 시연 전 대표 주소 2곳 미리 생성 권장
 - 조회 항목 확장(10/14): 대장 지상 층수·주용도, 브이월드 도로 접면·지형·토지 이용. 층수는 지붕 면적(계산식 v1.1: 연면적 ÷ 층수 × 1.3), 주용도·도로 접면은 인허가 간이 확인 신호(주택 아님, 맹지·차량 통행 불가), 나머지는 확인 화면 참고와 AI 설명 근거. 캐시 이름을 building-v2·land-v2로 바꿔 이전 캐시를 쓰지 않음. 기존 진단은 이미 조회한 주소라 새 항목이 비어 있음(새 진단부터)
+- AI 정리(10/15 검토 후): 실패한 AI 호출은 하루 사용 수에서 되돌림, 하루 기준을 한국 날짜로. 진단이 지워지면 함수 `cleanupAssessmentAi`가 `ai` 하위 문서와 Storage `renders/`를 지움(회원 화면의 삭제로는 못 지우던 것). **배포 대기**(PM이 직접: `npx firebase deploy --only functions:explainGrades,functions:analyzeDiagnosisPhotos,functions:renderRemodel,functions:cleanupAssessmentAi`). 남은 문제: 진단 사진 동의 문구가 "운영팀 검수에만"이라 Anthropic·Google 전송과 맞지 않음 → D8(원일)에서 문구 결정 후 약관 버전 올림. 팀원 확인 요청은 `팀원작업내용.md` 10/15 추가 안내
 - 화면: 10/12 앱을 밝은 화면으로 고정(다크 모드 PC에서 판정표 글씨가 안 보이던 문제, 어두운 색은 6.7에서)
 - 리포트·상담: 8.1 A4 리포트 / 8.2 마이페이지 / 9.1 상담 신청 / 9.2 상담 관리 칸반·이력·전화 접수
 - 숙소: 9.3 PM 몫(관리 화면 `/admin/branches`, 사진 업로드, 쓰기 규칙, 예약 클릭 기록 함수). 1호점 `onkiro-1` 등록(사진 6장) — 화면 표시는 해순 작업 대기
 - 외부 API: 4.1~4.6 코드·테스트 완료. 10/12 키 3개 저장(`DATA_GO_KR_KEY`·`JUSO_API_KEY`·`KAKAO_REST_API_KEY`) → 건축물대장·TourAPI·도로명주소·카카오 실제 응답 확인, 함수 `searchAddress`·`lookupProperty` 배포. 10/14 브이월드 키 저장·실제 응답 확인(`domain`은 https:// 없이 호스트만, 2013년부터 오래된 순이라 100건 조회 후 최신 연도·갱신분 사용, 토지면적으로 대지면적 보완) → 외부 API 4개 모두 동작
 - 문서: 8.3 D8 초안(https://claude.ai/code/artifact/a76a3595-e6f0-4856-a0d5-260900a38474, 원일 검토 대기) / 1.6 팀원 모듈 뼈대·CONTRIBUTING.md / 팀원작업내용.md
-- 테스트: 웹 96개, 함수 50개, 보안 규칙 37개 통과
+- 테스트: 웹 96개, 함수 69개, 보안 규칙 37개 통과
 
 **다음에 할 일 (권장 순서)**
 1. Phase 4 마무리 — 4.6 대표 주소 2곳(광천읍 상정리 628, 홍성읍 오관리 542-17) 저장 완료(10/13, 토지는 10/14 브이월드 실제 값) — Phase 4 완료
@@ -39,7 +40,8 @@
 - [x] 검토 URL 카카오 로그인 (10/10), 휴대폰 리다이렉트 로그인 (10/11), 카카오 Redirect URI에 검토 도메인 추가 (10/11)
 - [x] Storage 서비스 계정에 'Firebase Rules Firestore Service Agent' 역할 부여 (10/11)
 - [x] Java(JDK 21) 설치 (10/11)
-- [ ] `팀원작업내용.md` 날짜 채워 팀원 4명에게 발송
+- [ ] `팀원작업내용.md` 날짜 채워 팀원 4명에게 발송 (10/15 추가 안내 포함)
+- [ ] AI 함수 4개 배포 (10/15, 명령은 위 'AI 정리')
 - [ ] 석원·원일·주연 첫 로그인 → `/admin/users`에서 권장 설정 적용 (해순은 10/10 완료)
 - [ ] 팀원 GitHub 초대(쓰기 권한) + `main` 브랜치 보호(PR 필수, 비공개 무료 저장소면 규칙으로만 운영) → 팀원 개발 시작 조건
 - [x] D1 API 키 3개 저장 (10/12)
@@ -53,9 +55,9 @@
 **팀원 산출물 대기**: D2·D3·D4(석원·해순, 10/10 지남 — D4는 관리자 화면 판정표로 입력) · D5(석원, 10/14) · D7(원일, 10/14) · D9(해순, 10/14) · D6·D13(원일, 10/17) · D8 검토(원일, 10/21) · D12(해순, 10/21)
 
 **환경·작업 메모**
-- Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`. 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
+- Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`, `searchAddress`, `lookupProperty`, `explainGrades`, `analyzeDiagnosisPhotos`, `renderRemodel`, `cleanupAssessmentAi`(진단 삭제 시 AI 결과 정리). 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/admin/branches`(숙소 콘텐츠), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
-- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(96개 + todo 3개), `functions`에서 `npm test`(48개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
+- 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(96개 + todo 3개), `functions`에서 `npm test`(69개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
 - 규칙 테스트: 루트에서 `npm run test:rules`(Firestore 에뮬레이터 + vitest, Java 21 필요). Java 설치 전에 연 터미널이면 PATH에 `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot\bin`이 없으니 새 터미널을 연다.
 - Firebase SDK는 12 유지(13은 미검토). 규칙 테스트 도구 `@firebase/rules-unit-testing` 5.x가 12에 맞다.

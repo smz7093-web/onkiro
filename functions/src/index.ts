@@ -4,7 +4,10 @@ import { getAuth } from "firebase-admin/auth";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { setGlobalOptions } from "firebase-functions/v2";
-import { onDocumentWritten } from "firebase-functions/v2/firestore";
+import {
+  onDocumentDeleted,
+  onDocumentWritten,
+} from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions";
@@ -430,8 +433,13 @@ async function ownedAssessment(aid: unknown, uid: string, admin: boolean) {
   return ref;
 }
 
+// 하루는 한국 시간 기준 (UTC로 세면 오전 9시에 초기화된다)
+const kstDay = () =>
+  new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+// 하루 사용 수를 하나 올리고, 실패하면 돌려준다(refund)
 async function countAiUse(uid: string) {
-  const day = new Date().toISOString().slice(0, 10);
+  const day = kstDay();
   const ref = getFirestore().collection("aiUsage").doc(`${uid}_${day}`);
   await getFirestore().runTransaction(async (tx) => {
     const n = ((await tx.get(ref)).get("count") as number | undefined) ?? 0;
@@ -447,6 +455,16 @@ async function countAiUse(uid: string) {
       updatedAt: FieldValue.serverTimestamp(),
     });
   });
+  return async () => {
+    await ref
+      .update({
+        count: FieldValue.increment(-1),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+      .catch((e) =>
+        logger.warn("AI 사용 수 되돌리기 실패", { error: String(e) }),
+      );
+  };
 }
 
 async function cachedAi<T>(
@@ -468,18 +486,13 @@ async function cachedAi<T>(
     };
   if (!hasKey(ANTHROPIC_API_KEY.value()))
     throw new HttpsError("unavailable", "AI 기능을 준비 중입니다");
-  await countAiUse(uid);
+  const refund = await countAiUse(uid);
+  let result: T;
   try {
-    const result = await run();
-    await cRef.set({
-      key,
-      result,
-      model,
-      createdBy: uid,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-    return { result, cached: false, model };
+    result = await run();
   } catch (e) {
+    // 실패한 호출은 하루 사용 수에서 빼 준다
+    await refund();
     if (e instanceof HttpsError) throw e;
     logger.warn(`AI ${kind} 실패`, { error: String(e) });
     throw new HttpsError(
@@ -487,6 +500,14 @@ async function cachedAi<T>(
       "AI가 응답하지 않습니다. 잠시 뒤 다시 시도해 주세요",
     );
   }
+  await cRef.set({
+    key,
+    result,
+    model,
+    createdBy: uid,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  return { result, cached: false, model };
 }
 
 // 실내 마감 등급(하·중·상) 설명·추천 (화면이 단가 DB로 계산한 등급별 견적을 보낸다)
@@ -604,7 +625,7 @@ export const renderRemodel = onCall(
     if (hit.exists && hit.get("key") === key)
       return { storagePath: hit.get("storagePath") as string, cached: true };
 
-    await countAiUse(request.auth.uid);
+    const refund = await countAiUse(request.auth.uid);
     const aSnap = await aRef.get();
     const owner = aSnap.get("uid") as string;
     const pid = aSnap.get("propertyId");
@@ -639,11 +660,30 @@ export const renderRemodel = onCall(
       });
       return { storagePath, cached: false };
     } catch (e) {
+      await refund();
       logger.warn("AI 이미지 생성 실패", { error: String(e) });
       throw new HttpsError(
         "unavailable",
         "이미지를 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요",
       );
     }
+  },
+);
+
+// 진단이 지워지면 서버가 만든 AI 결과도 지운다 (task.md 10/12 진단 삭제).
+// 회원은 ai 하위 문서·renders 파일을 쓸 수 없어 화면의 삭제 기능이 지우지 못한다.
+export const cleanupAssessmentAi = onDocumentDeleted(
+  "assessments/{aid}",
+  async (event) => {
+    const aid = event.params.aid;
+    const uid = event.data?.get("uid");
+    await getFirestore().recursiveDelete(
+      getFirestore().collection("assessments").doc(aid).collection("ai"),
+    );
+    if (typeof uid === "string" && uid)
+      await getStorage()
+        .bucket()
+        .deleteFiles({ prefix: `users/${uid}/assessments/${aid}/renders/` });
+    logger.info("진단 AI 결과 삭제", { aid });
   },
 );
