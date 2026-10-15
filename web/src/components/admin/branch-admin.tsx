@@ -9,6 +9,7 @@ import { SAMPLE_BRANCHES } from "@/lib/branches/sample";
 import { isBranchId } from "@/lib/branches/validate";
 import { dateTime } from "./format";
 import { useStaff } from "./staff-context";
+import { DTag } from "./d-tag";
 
 // 숙소 콘텐츠 목록 (STY-01, task.md 9.3). 콘텐츠 편집 권한자(canEditContent)만 쓴다.
 export function BranchList() {
@@ -40,7 +41,9 @@ export function BranchList() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">숙소 콘텐츠</h1>
+      <h1 className="text-2xl font-semibold">
+        숙소 콘텐츠 <DTag ids={["D12"]} />
+      </h1>
       <p className="text-sm text-zinc-600">
         숙소 상세 화면(/stay/주소)에 보이는 내용입니다. 저장하면 바로 공개
         화면에 반영됩니다.

@@ -19,6 +19,7 @@ import {
 import { Button, Card, Notice } from "../ui";
 import { useStaff } from "./staff-context";
 import { SavedBy } from "./saved-by";
+import { DTag } from "./d-tag";
 
 const field =
   "h-12 w-full rounded-md border border-line-2 bg-surface px-3 text-base text-ink";
@@ -104,7 +105,9 @@ export function PermitEditor() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">인허가 간이 확인 항목 (D7)</h1>
+        <h1 className="text-2xl font-semibold">
+          인허가 간이 확인 항목 <DTag ids={["D7"]} />
+        </h1>
         <p className="text-base text-ink-2">
           견적 화면의 &lsquo;숙박 영업 간이 확인&rsquo;과 리포트에 나오는
           문구입니다. 저장하면 바로 반영됩니다.

@@ -13,6 +13,7 @@ import {
 import { Button, Card, Notice } from "../ui";
 import { SavedBy } from "./saved-by";
 import { useStaff } from "./staff-context";
+import { DTag } from "./d-tag";
 
 const area =
   "min-h-20 w-full rounded-md border border-line-2 bg-surface px-3 py-2 text-base text-ink";
@@ -76,7 +77,9 @@ export function PhotoGuideEditor() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">촬영 가이드 (D9)</h1>
+        <h1 className="text-2xl font-semibold">
+          촬영 가이드 <DTag ids={["D9"]} />
+        </h1>
         <p className="text-base text-ink-2">
           진단 사진 단계에서 부위마다 보이는 안내 문구입니다. 비워 두면 회색
           글씨의 기본 문구가 그대로 보입니다. 저장하면 바로 반영됩니다.

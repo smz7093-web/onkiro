@@ -15,6 +15,7 @@ import {
 } from "@/lib/versions/store";
 import { dateTime, STATUS_LABEL, STATUS_STYLE } from "./format";
 import { useStaff } from "./staff-context";
+import { DTag } from "./d-tag";
 
 const TITLE: Record<VersionKind, string> = {
   price: "단가 DB",
@@ -91,7 +92,10 @@ export function VersionList({ kind }: { kind: VersionKind }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{TITLE[kind]} 버전</h1>
+      <h1 className="text-2xl font-semibold">
+        {TITLE[kind]} 버전{" "}
+        <DTag ids={kind === "price" ? ["D2", "D3", "D4", "D5"] : ["D6"]} />
+      </h1>
       {error && (
         <p role="alert" className="break-all text-sm text-red-700">
           {error}

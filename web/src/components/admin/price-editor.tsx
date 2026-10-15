@@ -23,6 +23,7 @@ import {
 import { ChecklistRulesEditor } from "./checklist-rules-editor";
 import { man } from "./format";
 import { NumberField } from "./number-field";
+import { DTag } from "./d-tag";
 
 const BASIS_LABEL: Record<QuantityBasis, string> = {
   floorArea: "연면적(㎡)",
@@ -66,7 +67,9 @@ export function PriceEditor({
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">공정별 단가</h2>
+        <h2 className="text-lg font-semibold">
+          공정별 단가 <DTag ids={["D5"]} />
+        </h2>
         <p className="text-sm text-zinc-600">
           공정별 비용 = 기준수량 × 기본 단가 + 기준수량 × 보수 단가 × 상태계수.
           내부 리모델링의 기본 단가는 아래 모듈 단가를 씁니다.
@@ -203,7 +206,7 @@ export function PriceEditor({
 
       <section className="grid gap-4 sm:grid-cols-3">
         <h2 className="text-lg font-semibold sm:col-span-3">
-          내부 리모델링 모듈 단가 (원/㎡)
+          내부 리모델링 모듈 단가 (원/㎡) <DTag ids={["D3", "D5"]} />
         </h2>
         {(["A", "B", "C"] as ModuleType[]).map((m) => (
           <NumberField
@@ -224,7 +227,7 @@ export function PriceEditor({
 
       <section className="grid gap-4 sm:grid-cols-3">
         <h2 className="text-lg font-semibold sm:col-span-3">
-          상태계수 (보수비에만 곱함)
+          상태계수 (보수비에만 곱함) <DTag ids={["D5"]} />
         </h2>
         {(["good", "partial", "full"] as ConditionGrade[]).map((g) => (
           <NumberField
@@ -247,7 +250,7 @@ export function PriceEditor({
 
       <section className="grid gap-4 sm:grid-cols-4">
         <h2 className="text-lg font-semibold sm:col-span-4">
-          예비비·공기·범위
+          예비비·공기·범위 <DTag ids={["D5"]} />
         </h2>
         <NumberField
           label="예비비"
@@ -282,7 +285,7 @@ export function PriceEditor({
 
       <section className="grid gap-4 sm:grid-cols-4">
         <h2 className="text-lg font-semibold sm:col-span-4">
-          불확실도 (범위 = 합계 × (1 ± 불확실도))
+          불확실도 (범위 = 합계 × (1 ± 불확실도)) <DTag ids={["D5"]} />
         </h2>
         <NumberField
           label="기본"
@@ -336,7 +339,9 @@ export function PriceEditor({
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">지역계수</h2>
+        <h2 className="text-lg font-semibold">
+          지역계수 <DTag ids={["D5"]} />
+        </h2>
         <div className="grid gap-4 sm:grid-cols-4">
           {Object.entries(data.regionFactors).map(([region, factor]) => (
             <NumberField

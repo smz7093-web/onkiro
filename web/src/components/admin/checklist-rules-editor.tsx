@@ -14,6 +14,7 @@ import {
   type ProcessId,
   type RiskFlagId,
 } from "@/lib/engine/types";
+import { DTag } from "./d-tag";
 
 const GRADE_LABEL: Record<ConditionGrade, string> = {
   good: "양호",
@@ -68,7 +69,9 @@ export function ChecklistRulesEditor({
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">체크리스트 판정표 (D4)</h2>
+      <h2 className="text-lg font-semibold">
+        체크리스트 판정표 <DTag ids={["D4"]} />
+      </h2>
       <p className="text-sm text-zinc-600">
         한 줄은 &ldquo;이 문항에 이 답이면 → 이 공정을 이 판정으로&rdquo;입니다.
         위험 신호를 고르면 결과 화면에 &lsquo;전문가 진단 필수&rsquo;가 뜹니다.
