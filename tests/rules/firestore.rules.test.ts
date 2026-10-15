@@ -458,6 +458,72 @@ describe("consultations (상담)", () => {
   });
 });
 
+describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => {
+  const permits = (uid: string) => ({
+    general: [{ id: "g1", title: "민박 신고", nextAction: "문의", agency: "" }],
+    conditional: {},
+    updatedBy: uid,
+    updatedByName: null,
+    updatedAt: serverTimestamp(),
+  });
+  const guides = (uid: string) => ({
+    guides: { front: "집 전체가 나오게" },
+    updatedBy: uid,
+    updatedByName: null,
+    updatedAt: serverTimestamp(),
+  });
+  const wonil = () =>
+    env
+      .authenticatedContext("wonil", {
+        role: "staff",
+        perms: ["canEditAssumptions"],
+      })
+      .firestore();
+  const haesoon = () =>
+    env
+      .authenticatedContext("haesoon", {
+        role: "staff",
+        perms: ["canEditContent"],
+      })
+      .firestore();
+
+  it("누구나 읽고, 인허가는 가정값·콘텐츠 권한, 촬영 가이드는 콘텐츠 권한만 쓴다", async () => {
+    await assertSucceeds(getDoc(doc(anonymous(), "siteContent/permits")));
+    await assertSucceeds(
+      setDoc(doc(wonil(), "siteContent/permits"), permits("wonil")),
+    );
+    await assertSucceeds(
+      setDoc(doc(haesoon(), "siteContent/permits"), permits("haesoon")),
+    );
+    await assertSucceeds(
+      setDoc(doc(haesoon(), "siteContent/photoGuides"), guides("haesoon")),
+    );
+    await assertSucceeds(
+      setDoc(doc(admin(), "siteContent/photoGuides"), guides("pm")),
+    );
+    await assertFails(
+      setDoc(doc(wonil(), "siteContent/photoGuides"), guides("wonil")),
+    );
+    await assertFails(
+      setDoc(doc(member(), "siteContent/permits"), permits("alice")),
+    );
+  });
+
+  it("정해진 문서·필드만, 작성자 위장·삭제 금지", async () => {
+    await assertFails(setDoc(doc(admin(), "siteContent/home"), guides("pm")));
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/permits"), {
+        ...permits("pm"),
+        extra: 1,
+      }),
+    );
+    await assertFails(
+      setDoc(doc(wonil(), "siteContent/permits"), permits("pm")),
+    );
+    await assertFails(deleteDoc(doc(admin(), "siteContent/permits")));
+  });
+});
+
 describe("branches", () => {
   const branch = (uid: string) => ({
     name: "1호점",

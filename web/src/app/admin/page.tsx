@@ -31,6 +31,19 @@ export default function AdminHome() {
           (STY-01·02)
         </li>
         <li>
+          <Link href="/admin/permits" className="underline">
+            인허가 항목
+          </Link>{" "}
+          — 견적 화면·리포트의 숙박 영업 간이 확인 문구(D7), 가정값 또는 콘텐츠
+          편집 권한
+        </li>
+        <li>
+          <Link href="/admin/photo-guides" className="underline">
+            촬영 가이드
+          </Link>{" "}
+          — 진단 사진 단계의 부위별 안내 문구(D9), 콘텐츠 편집 권한
+        </li>
+        <li>
           <Link href="/admin/users" className="underline">
             회원·권한
           </Link>{" "}

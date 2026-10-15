@@ -312,6 +312,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // 관리 화면에서 고치는 화면 문구 (10/15): permits = 인허가 간이 확인(D7), photoGuides = 촬영 가이드(D9).
+    // 누구나 읽는다(진단·리포트 화면). 인허가는 가정값 또는 콘텐츠 편집 권한, 촬영 가이드는 콘텐츠 편집 권한. 삭제하지 않는다
+    match /siteContent/{docId} {
+      allow read: if true;
+      allow create, update: if (
+          (docId == 'permits'
+            && (hasPerm('canEditAssumptions') || hasPerm('canEditContent'))
+            && request.resource.data.keys().hasOnly(['general', 'conditional', 'updatedBy', 'updatedByName', 'updatedAt'])
+            && request.resource.data.general is list
+            && request.resource.data.general.size() <= 12
+            && request.resource.data.conditional is map)
+          || (docId == 'photoGuides'
+            && hasPerm('canEditContent')
+            && request.resource.data.keys().hasOnly(['guides', 'updatedBy', 'updatedByName', 'updatedAt'])
+            && request.resource.data.guides is map))
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
     // 변경 이력: 서버 함수만 쓰고 관리자만 읽는다.
     match /auditLogs/{logId} {
       allow read: if isAdmin();

@@ -22,6 +22,16 @@ const MENU: Item[] = [
     label: "숙소",
     show: (p) => can(p, "canEditContent"),
   },
+  {
+    href: "/admin/permits",
+    label: "인허가 항목",
+    show: (p) => can(p, "canEditAssumptions") || can(p, "canEditContent"),
+  },
+  {
+    href: "/admin/photo-guides",
+    label: "촬영 가이드",
+    show: (p) => can(p, "canEditContent"),
+  },
   { href: "/admin/users", label: "회원·권한", show: (p) => p.role === "admin" },
 ];
 

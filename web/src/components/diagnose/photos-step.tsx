@@ -5,6 +5,7 @@ import {
   MAX_PHOTOS,
   missingPhotoParts,
   PHOTO_PARTS,
+  photoGuide,
   type PhotoPartId,
 } from "@/lib/diagnosis/photos";
 import {
@@ -24,11 +25,13 @@ import {
   info,
   notice,
 } from "./styles";
+import { usePhotoGuides } from "@/lib/site-content/store";
 
 // 3단계 사진 업로드 (SIM-06, task.md 6.4). 사진 없이도 다음으로 갈 수 있다(누락 부위만큼 불확실도 가산).
 // 사진 정책(D8) 확정 전까지는 운영팀 계정에만 업로드를 연다 (시연은 팀 계정으로 진행, task.md 11.2).
 export function PhotosStep() {
   const { user, isTeam, assessment, reload, go } = useDiagnosis();
+  const guides = usePhotoGuides();
   const [photos, setPhotos] = useState<DiagnosisPhoto[] | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState<PhotoPartId | null>(null);
@@ -179,7 +182,9 @@ export function PhotosStep() {
                   </h2>
                   <span className="text-sm text-muted">{mine.length}장</span>
                 </div>
-                <p className="text-sm text-ink-2">{part.guide}</p>
+                <p className="text-sm text-ink-2">
+                  {photoGuide(part.id, guides)}
+                </p>
                 {mine.length > 0 && (
                   <ul className="grid grid-cols-3 gap-2">
                     {mine.map((p) => (

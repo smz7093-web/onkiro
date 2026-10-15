@@ -1,4 +1,5 @@
-// 진단 사진 부위 (SIM-06, task.md 6.4). 촬영 가이드 문구는 D9(해순)이 오면 바꾼다.
+// 진단 사진 부위 (SIM-06, task.md 6.4). 아래 guide는 기본 문구이고, 촬영 가이드(D9, 해순)는
+// 관리 화면 /admin/photo-guides에서 고친다(siteContent/photoGuides). 화면은 photoGuide()로 읽는다.
 // 이 파일은 React·Firebase를 import하지 않는다.
 
 export const PHOTO_PARTS = [
@@ -52,6 +53,14 @@ export const MAX_PHOTOS = 20;
 export const MAX_PHOTO_EDGE = 1600;
 // 저장 용량 상한 (Storage 규칙과 같게 유지)
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
+// 부위별 촬영 안내: 관리 화면에서 고친 문구가 있으면 그것, 없으면 기본 문구
+export type PhotoGuides = Partial<Record<PhotoPartId, string>>;
+
+export function photoGuide(id: PhotoPartId, guides?: PhotoGuides): string {
+  const custom = guides?.[id]?.trim();
+  return custom || PHOTO_PARTS.find((p) => p.id === id)!.guide;
+}
 
 export function isPhotoPartId(v: unknown): v is PhotoPartId {
   return PHOTO_PARTS.some((p) => p.id === v);

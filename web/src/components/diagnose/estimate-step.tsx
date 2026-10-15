@@ -40,6 +40,7 @@ import {
   useResultBasis,
 } from "./use-result";
 import { Pill } from "../ui";
+import { usePermitContent } from "@/lib/site-content/store";
 
 const GRADE_LABEL: Record<ConditionGrade, string> = {
   good: "양호",
@@ -60,6 +61,7 @@ const pctp = (r: number) => `${Math.round(r * 100)}%`;
 // 처음 도달할 때 스냅샷을 저장한다(7.4, 저장을 기다리지 않고 결과를 먼저 보여준다 7.6).
 export function EstimateStep() {
   const { assessment, property, reload, go } = useDiagnosis();
+  const permitContent = usePermitContent();
   const { basis, error: basisError } = useResultBasis();
   const [options, setOptions] = useState<EstimateOptions>(
     assessment.estimateOptions ?? DEFAULT_ESTIMATE_OPTIONS,
@@ -306,20 +308,25 @@ export function EstimateStep() {
         </div>
         <p className="text-sm text-ink-2">{PERMIT_DISCLAIMER}</p>
         <ul className="flex flex-col gap-2">
-          {permitItems(estimateInput.noRegistry, computation.site).map(
-            (item) => (
-              <li
-                key={item.id}
-                className="flex flex-col gap-1 border-b border-line pb-2 last:border-0"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Pill tone="warn">{PERMIT_STATUS_LABELS[item.status]}</Pill>
-                  <span className="text-base">{item.title}</span>
-                </div>
-                <span className="text-sm text-ink-2">{item.nextAction}</span>
-              </li>
-            ),
-          )}
+          {permitItems(
+            estimateInput.noRegistry,
+            computation.site,
+            permitContent,
+          ).map((item) => (
+            <li
+              key={item.id}
+              className="flex flex-col gap-1 border-b border-line pb-2 last:border-0"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Pill tone="warn">{PERMIT_STATUS_LABELS[item.status]}</Pill>
+                <span className="text-base">{item.title}</span>
+              </div>
+              <span className="text-sm text-ink-2">{item.nextAction}</span>
+              {item.agency && (
+                <span className="text-sm text-ink-2">문의: {item.agency}</span>
+              )}
+            </li>
+          ))}
         </ul>
       </section>
 

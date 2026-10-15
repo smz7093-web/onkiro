@@ -24,6 +24,7 @@ import {
 } from "@/lib/diagnosis/store";
 import { manwon } from "@/components/diagnose/estimate-step";
 import { ScenarioTable } from "@/components/diagnose/revenue-step";
+import { usePermitContent } from "@/lib/site-content/store";
 
 const GRADE_LABEL: Record<ConditionGrade, string> = {
   good: "양호",
@@ -63,6 +64,7 @@ export function ReportView({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const permitContent = usePermitContent();
 
   useEffect(() => {
     let cancelled = false;
@@ -258,9 +260,10 @@ export function ReportView({
         </h2>
         <p className="text-sm">{PERMIT_DISCLAIMER}</p>
         <ul className="flex flex-col gap-1 text-sm">
-          {permitItems(ei.noRegistry, inputs.site).map((p) => (
+          {permitItems(ei.noRegistry, inputs.site, permitContent).map((p) => (
             <li key={p.id}>
               [{PERMIT_STATUS_LABELS[p.status]}] {p.title} — {p.nextAction}
+              {p.agency && ` (문의: ${p.agency})`}
             </li>
           ))}
         </ul>
