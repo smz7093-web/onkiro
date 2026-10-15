@@ -34,9 +34,17 @@ const HOME_CARD_PHOTOS: Record<string, { url: string; caption: string }> = {
   "onkiro-1": { url: "/home/onkiro2.jpg", caption: "다락방" },
 };
 
-// 아직 숙소 문서가 없는 호점의 홈 카드 사진 (PM 지정, 10/15. 원본 Work_for_AI/onkiro_sec1.jpg)
-const UPCOMING_PHOTOS: Record<number, { url: string; caption: string }> = {
-  2: { url: "/home/onkiro-sec1.jpg", caption: "외관" },
+// 아직 숙소 문서가 없는 호점의 홈 카드 사진 (PM 지정, 10/15. 원본 Work_for_AI/onkiro_sec2.png, Gemini로 만든 완공 예상 이미지).
+// aiNote가 있으면 실제 사진으로 오해하지 않도록 사진 위에 표시한다
+const UPCOMING_PHOTOS: Record<
+  number,
+  { url: string; caption: string; aiNote?: string }
+> = {
+  2: {
+    url: "/home/onkiro-sec2.jpg",
+    caption: "완공 예상 외관",
+    aiNote: "완공 예상 이미지(AI)",
+  },
 };
 
 const photoOf = (b: Branch) =>
@@ -121,6 +129,11 @@ export function BranchCards() {
                 <Pill tone="ochre" className="absolute top-2 left-2">
                   준비 중
                 </Pill>
+                {photo.aiNote && (
+                  <span className="absolute bottom-2 left-2 rounded-md bg-ink/75 px-2 py-0.5 text-sm text-white">
+                    {photo.aiNote}
+                  </span>
+                )}
               </div>
             ) : (
               <div className="flex aspect-[16/10] items-center justify-center rounded-md border border-dashed border-line-2">
