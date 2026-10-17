@@ -63,11 +63,20 @@ export interface PermitContent {
 }
 
 export const DEFAULT_PERMIT_CONTENT: PermitContent = {
+  // 10/17 권장 초안(팀원결정권장안.md, 원일 확인 전). 관리 화면에서 저장하면 그 문구가 쓰인다
   general: [
     {
       id: "ruralHomestay",
-      title: "농어촌민박업 신고 요건 (주인 거주·연면적 등)",
-      nextAction: "관할 시·군청 담당 부서에 신고 요건을 문의하세요.",
+      title: "농어촌민박업 신고 요건 (주인 거주·연면적 230㎡ 미만 단독주택)",
+      nextAction:
+        "신고자가 그 집에 실제로 거주해야 합니다. 거주 기간 등 세부 요건을 관할 시·군청에 확인하세요.",
+      agency: "",
+    },
+    {
+      id: "operatorModel",
+      title: "운영 방식에 맞는 인허가 (위탁 운영이면 한옥체험업·숙박업 검토)",
+      nextAction:
+        "집주인이 살지 않고 다른 사람이 운영하면 농어촌민박이 아닌 다른 인허가가 필요할 수 있습니다. 상담에서 함께 정합니다.",
       agency: "",
     },
     {
@@ -80,6 +89,28 @@ export const DEFAULT_PERMIT_CONTENT: PermitContent = {
       id: "zoning",
       title: "용도지역·건축물 용도에서 숙박 영업이 허용되는지",
       nextAction: "토지이용계획과 건축물대장의 용도를 함께 확인하세요.",
+      agency: "",
+    },
+    {
+      id: "fireSafety",
+      title:
+        "소방·안전 설비 (소화기·단독경보형 감지기, 가스 사용 시 일산화탄소 경보기)",
+      nextAction:
+        "객실마다 소화기와 감지기를 갖추고, 가스를 쓰면 일산화탄소 경보기를 설치하세요. 세부 기준은 관할 소방서에 확인하세요.",
+      agency: "",
+    },
+    {
+      id: "insurance",
+      title: "영업배상책임보험 가입",
+      nextAction:
+        "숙박 영업 전에 손님 사고에 대비한 배상책임보험 가입이 필요합니다.",
+      agency: "",
+    },
+    {
+      id: "waterSeptic",
+      title: "먹는 물·오수 처리 (지하수 수질검사, 정화조 용량)",
+      nextAction:
+        "지하수를 쓰면 먹는 물 수질검사가, 손님이 늘면 정화조 처리 용량 확인이 필요할 수 있습니다.",
       agency: "",
     },
   ],

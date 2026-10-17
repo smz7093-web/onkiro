@@ -30,11 +30,11 @@ describe("인허가 간이 확인 · 대장 주용도·도로 접면 (10/14)", (
     expect(items.some((i) => /가능합니다|허가 가능/.test(i.title))).toBe(false);
   });
 
-  it("예전 스냅샷(site 없음)은 기존 3항목 그대로", () => {
-    expect(permitItems(false).map((i) => i.id)).toEqual([
-      "ruralHomestay",
-      "hanokExperience",
-      "zoning",
-    ]);
+  it("예전 스냅샷(site 없음)은 모든 집 항목만, 신호 항목 없음", () => {
+    const ids = permitItems(false).map((i) => i.id);
+    expect(ids[0]).toBe("ruralHomestay");
+    expect(ids).toContain("zoning");
+    expect(ids).not.toContain("mainPurpose");
+    expect(ids).not.toContain("roadSide");
   });
 });
