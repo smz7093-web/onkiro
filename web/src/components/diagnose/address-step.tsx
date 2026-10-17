@@ -95,7 +95,7 @@ export function AddressStep() {
         />
         <button
           type="submit"
-          className={btnSecondary}
+          className={`${btnSecondary} shrink-0 whitespace-nowrap`}
           disabled={keyword.trim().length < 2}
         >
           검색

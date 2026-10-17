@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { cx } from "./cx";
 
 // 단계 표시줄 (목업 .stepper). 모양만 다룬다: 어느 단계가 끝났는지·열 수 있는지는 부르는 쪽이 정한다.
@@ -31,8 +34,25 @@ export function StepBar({
   steps: StepItem[];
   label?: string;
 }) {
+  // 휴대폰처럼 좁아서 옆으로 넘칠 때 지금 단계가 보이도록 가로로만 스크롤한다
+  const navRef = useRef<HTMLElement>(null);
+  const currentIndex = steps.findIndex((s) => s.state === "current");
+  useEffect(() => {
+    const nav = navRef.current;
+    const el = nav?.querySelector<HTMLElement>('[aria-current="step"]');
+    if (!nav || !el) return;
+    const left =
+      el.getBoundingClientRect().left -
+      nav.getBoundingClientRect().left +
+      nav.scrollLeft;
+    nav.scrollLeft = Math.max(0, left - (nav.clientWidth - el.offsetWidth) / 2);
+  }, [currentIndex]);
   return (
-    <nav aria-label={label} className="overflow-x-auto border-b border-line">
+    <nav
+      ref={navRef}
+      aria-label={label}
+      className="overflow-x-auto border-b border-line"
+    >
       <ol className="flex min-w-max gap-5">
         {steps.map((s, i) => {
           const cls = cx(

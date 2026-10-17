@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "dev:emu": "node scripts/dev-emulators.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

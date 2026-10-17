@@ -233,14 +233,15 @@ export function EstimateStep() {
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">공정별 비용</h2>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse text-left text-base">
+          {/* 휴대폰: 공정 | 예상 비용 두 칸(판정·구분·근거는 공정 아래), 넓은 화면: 다섯 칸 표 */}
+          <table className="w-full border-collapse text-left text-base sm:min-w-[640px]">
             <thead>
               <tr className="border-b border-line-2 text-sm text-ink-2">
                 <th className="py-2 pr-3">공정</th>
-                <th className="py-2 pr-3">구분</th>
-                <th className="py-2 pr-3">판정</th>
+                <th className="hidden py-2 pr-3 sm:table-cell">구분</th>
+                <th className="hidden py-2 pr-3 sm:table-cell">판정</th>
                 <th className="py-2 pr-3 text-right">예상 비용</th>
-                <th className="py-2">근거</th>
+                <th className="hidden py-2 sm:table-cell">근거</th>
               </tr>
             </thead>
             <tbody>
@@ -253,34 +254,40 @@ export function EstimateStep() {
                 />
               ))}
               <tr className="border-t border-line-2">
-                <td className="py-2 pr-3" colSpan={3}>
+                <td className="py-2 pr-3 sm:hidden">
+                  공정 소계 · 지역계수{" "}
+                  {basis.price.regionFactors[estimateInput.region]}
+                </td>
+                <td className="hidden py-2 pr-3 sm:table-cell" colSpan={3}>
                   공정 소계 · 지역계수{" "}
                   {basis.price.regionFactors[estimateInput.region]}
                 </td>
                 <td className="py-2 pr-3 text-right">
                   {manwon(estimate.subtotal)}
                 </td>
-                <td />
+                <td className="hidden sm:table-cell" />
               </tr>
               <tr>
-                <td className="py-2 pr-3" colSpan={3}>
+                <td className="py-2 pr-3 sm:hidden">예비비</td>
+                <td className="hidden py-2 pr-3 sm:table-cell" colSpan={3}>
                   예비비
                 </td>
                 <td className="py-2 pr-3 text-right">
                   {manwon(estimate.contingency)}
                 </td>
-                <td className="py-2 text-sm text-ink-2">
+                <td className="hidden py-2 text-sm text-ink-2 sm:table-cell">
                   공정 소계의 {pctp(basis.price.contingencyRate)}
                 </td>
               </tr>
               <tr className="border-t-2 border-ink font-semibold">
-                <td className="py-2 pr-3" colSpan={3}>
+                <td className="py-2 pr-3 sm:hidden">합계</td>
+                <td className="hidden py-2 pr-3 sm:table-cell" colSpan={3}>
                   합계
                 </td>
                 <td className="py-2 pr-3 text-right">
                   {manwon(estimate.total)}
                 </td>
-                <td />
+                <td className="hidden sm:table-cell" />
               </tr>
             </tbody>
           </table>
@@ -394,47 +401,52 @@ function ProcessRow({
     p.id === "interior"
       ? price.moduleUnitPrices[input.module]
       : def?.baseUnitPrice;
+  const grade =
+    p.repairCost > 0 || p.grade !== "good" ? (
+      <span className={`rounded px-2 py-0.5 text-sm ${GRADE_STYLE[p.grade]}`}>
+        {GRADE_LABEL[p.grade]}
+      </span>
+    ) : null;
+  const basisDetails = (
+    <details>
+      <summary className="min-h-11 cursor-pointer py-2">ⓘ 근거</summary>
+      <ul className="flex flex-col gap-1 pb-2">
+        <li>기준수량: {qty}</li>
+        {p.baseCost > 0 && baseUnit !== undefined && (
+          <li>기본 단가 {baseUnit.toLocaleString("ko-KR")}원</li>
+        )}
+        {p.repairCost > 0 && def?.repairUnitPrice !== undefined && (
+          <li>
+            보수 단가 {def.repairUnitPrice.toLocaleString("ko-KR")}원 × 상태계수{" "}
+            {price.conditionCoefficients[p.grade]} (체크리스트 판정)
+          </li>
+        )}
+        <li>작업일 {Math.ceil(p.days)}일</li>
+        <li>단가 DB {price.version}</li>
+        {p.id === "iot" && (
+          <li>설치비만 추정 · 자동 연동·관제는 Phase 2 이후</li>
+        )}
+      </ul>
+    </details>
+  );
   return (
     <tr className="border-b border-line align-top">
       <td className="py-2 pr-3">
         {PROCESS_LABELS[p.id]}
         {p.id === "interior" && ` (모듈 ${input.module})`}
+        <div className="flex flex-wrap items-center gap-2 pt-1 text-sm text-ink-2 sm:hidden">
+          {grade}
+          <span>{kind}</span>
+        </div>
+        <div className="text-sm text-ink-2 sm:hidden">{basisDetails}</div>
       </td>
-      <td className="py-2 pr-3 text-sm">{kind}</td>
-      <td className="py-2 pr-3">
-        {p.repairCost > 0 || p.grade !== "good" ? (
-          <span
-            className={`rounded px-2 py-0.5 text-sm ${GRADE_STYLE[p.grade]}`}
-          >
-            {GRADE_LABEL[p.grade]}
-          </span>
-        ) : (
-          "–"
-        )}
+      <td className="hidden py-2 pr-3 text-sm sm:table-cell">{kind}</td>
+      <td className="hidden py-2 pr-3 sm:table-cell">{grade ?? "–"}</td>
+      <td className="py-2 pr-3 text-right whitespace-nowrap">
+        {manwon(p.cost)}
       </td>
-      <td className="py-2 pr-3 text-right">{manwon(p.cost)}</td>
-      <td className="py-2 text-sm text-ink-2">
-        <details>
-          <summary className="min-h-11 cursor-pointer py-2">ⓘ 근거</summary>
-          <ul className="flex flex-col gap-1 pb-2">
-            <li>기준수량: {qty}</li>
-            {p.baseCost > 0 && baseUnit !== undefined && (
-              <li>기본 단가 {baseUnit.toLocaleString("ko-KR")}원</li>
-            )}
-            {p.repairCost > 0 && def?.repairUnitPrice !== undefined && (
-              <li>
-                보수 단가 {def.repairUnitPrice.toLocaleString("ko-KR")}원 ×
-                상태계수 {price.conditionCoefficients[p.grade]} (체크리스트
-                판정)
-              </li>
-            )}
-            <li>작업일 {Math.ceil(p.days)}일</li>
-            <li>단가 DB {price.version}</li>
-            {p.id === "iot" && (
-              <li>설치비만 추정 · 자동 연동·관제는 Phase 2 이후</li>
-            )}
-          </ul>
-        </details>
+      <td className="hidden py-2 text-sm text-ink-2 sm:table-cell">
+        {basisDetails}
       </td>
     </tr>
   );

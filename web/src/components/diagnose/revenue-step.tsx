@@ -328,14 +328,15 @@ export function ScenarioTable({
   ];
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[520px] border-collapse text-left text-base">
+      {/* 휴대폰에서도 3안이 한 화면에 보이게: 작은 글자·좁은 여백, 넓은 화면은 기존 크기 */}
+      <table className="w-full border-collapse text-left text-sm sm:min-w-[520px] sm:text-base">
         <thead>
           <tr className="border-b border-line-2 text-sm text-ink-2">
-            <th className="py-2 pr-3" />
+            <th className="py-2 pr-2 sm:pr-3" />
             {SCENARIOS.map((s) => (
               <th
                 key={s.id}
-                className={`py-2 pr-3 text-right ${s.id === "base" ? "text-ink" : ""}`}
+                className={`py-2 pr-2 text-right whitespace-nowrap sm:pr-3 ${s.id === "base" ? "text-ink" : ""}`}
               >
                 {s.label}
               </th>
@@ -345,11 +346,13 @@ export function ScenarioTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.label} className="border-b border-line">
-              <td className="py-2 pr-3 text-sm text-ink-2">{row.label}</td>
+              <td className="py-2 pr-2 text-sm text-ink-2 sm:pr-3">
+                {row.label}
+              </td>
               {SCENARIOS.map((s) => (
                 <td
                   key={s.id}
-                  className={`py-2 pr-3 text-right ${s.id === "base" ? "bg-accent-soft font-semibold" : ""}`}
+                  className={`py-2 pr-2 text-right whitespace-nowrap sm:pr-3 ${s.id === "base" ? "bg-accent-soft font-semibold" : ""}`}
                 >
                   {row.value(scenarios[s.id])}
                 </td>

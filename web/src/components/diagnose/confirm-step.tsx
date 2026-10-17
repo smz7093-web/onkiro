@@ -21,6 +21,7 @@ import { saveFacts } from "@/lib/diagnosis/store";
 import { useDiagnosis } from "./diagnosis-context";
 import { btnPrimary, btnSecondary, card, input, notice } from "./styles";
 import { Pill } from "../ui";
+import { objectParticle } from "@/lib/korean";
 
 const GROUPS: { id: FactDef["group"]; title: string }[] = [
   { id: "building", title: "건축물대장" },
@@ -151,11 +152,14 @@ export function ConfirmStep() {
           {lookup.result.failures.filter((f) => f.source !== "tour").length >
             0 && (
             <p className={notice}>
-              {lookup.result.failures
-                .filter((f) => f.source !== "tour")
-                .map((f) => FAIL_LABEL[f.source])
-                .join(", ")}
-              을(를) 불러오지 못했습니다. 아는 값을 직접 입력해 주세요.
+              {(() => {
+                const names = lookup.result.failures
+                  .filter((f) => f.source !== "tour")
+                  .map((f) => FAIL_LABEL[f.source])
+                  .join(", ");
+                return `${names}${objectParticle(names)}`;
+              })()}{" "}
+              불러오지 못했습니다. 아는 값을 직접 입력해 주세요.
             </p>
           )}
           {lookup.result.registryNotFound && (
@@ -279,10 +283,13 @@ export function ConfirmStep() {
 
       {missing.length > 0 && (
         <p className="text-base text-crit">
-          {missing
-            .map((k) => FACT_DEFS.find((d) => d.key === k)!.label)
-            .join(", ")}
-          을(를) 입력해야 다음 단계로 갈 수 있어요.
+          {(() => {
+            const names = missing
+              .map((k) => FACT_DEFS.find((d) => d.key === k)!.label)
+              .join(", ");
+            return `${names}${objectParticle(names)}`;
+          })()}{" "}
+          입력해야 다음 단계로 갈 수 있어요.
         </p>
       )}
       {error && (

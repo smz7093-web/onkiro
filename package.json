@@ -4,7 +4,9 @@
   "scripts": {
     "emulators": "firebase emulators:start --project demo-onkiro",
     "firebase": "firebase",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-onkiro \"vitest run\""
+    "test:rules": "firebase emulators:exec --only firestore --project demo-onkiro \"vitest run\"",
+    "emulators:app": "firebase emulators:start --only auth,firestore,storage --project demo-onkiro",
+    "seed:emulator": "vitest run --config seed/vitest.seed.config.mts"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",

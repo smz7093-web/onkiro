@@ -167,7 +167,9 @@ export function ReportView({
           <thead>
             <tr className="border-b border-ink">
               <th className="py-1 pr-2">공정</th>
-              <th className="py-1 pr-2">구분</th>
+              <th className="hidden sm:table-cell print:table-cell py-1 pr-2">
+                구분
+              </th>
               <th className="py-1 pr-2">판정</th>
               <th className="py-1 text-right">예상 비용</th>
             </tr>
@@ -179,7 +181,7 @@ export function ReportView({
                   {PROCESS_LABELS[p.id]}
                   {p.id === "iot" && " (설치비만 추정)"}
                 </td>
-                <td className="py-1 pr-2">
+                <td className="hidden sm:table-cell print:table-cell py-1 pr-2">
                   {p.baseCost > 0 && p.repairCost > 0
                     ? "기본 공사 + 상태별 보수"
                     : p.baseCost > 0
@@ -189,28 +191,52 @@ export function ReportView({
                 <td className="py-1 pr-2">
                   {p.repairCost > 0 ? GRADE_LABEL[p.grade] : "–"}
                 </td>
-                <td className="py-1 text-right">{manwon(p.cost)}</td>
+                <td className="py-1 text-right whitespace-nowrap">
+                  {manwon(p.cost)}
+                </td>
               </tr>
             ))}
             <tr>
-              <td className="py-1 pr-2" colSpan={3}>
+              <td className="py-1 pr-2 sm:hidden print:hidden" colSpan={2}>
                 공정 소계
               </td>
-              <td className="py-1 text-right">{manwon(estimate.subtotal)}</td>
+              <td
+                className="hidden sm:table-cell print:table-cell py-1 pr-2"
+                colSpan={3}
+              >
+                공정 소계
+              </td>
+              <td className="py-1 text-right whitespace-nowrap">
+                {manwon(estimate.subtotal)}
+              </td>
             </tr>
             <tr>
-              <td className="py-1 pr-2" colSpan={3}>
+              <td className="py-1 pr-2 sm:hidden print:hidden" colSpan={2}>
                 예비비
               </td>
-              <td className="py-1 text-right">
+              <td
+                className="hidden sm:table-cell print:table-cell py-1 pr-2"
+                colSpan={3}
+              >
+                예비비
+              </td>
+              <td className="py-1 text-right whitespace-nowrap">
                 {manwon(estimate.contingency)}
               </td>
             </tr>
             <tr className="border-t border-ink font-semibold">
-              <td className="py-1 pr-2" colSpan={3}>
+              <td className="py-1 pr-2 sm:hidden print:hidden" colSpan={2}>
                 합계
               </td>
-              <td className="py-1 text-right">{manwon(estimate.total)}</td>
+              <td
+                className="hidden sm:table-cell print:table-cell py-1 pr-2"
+                colSpan={3}
+              >
+                합계
+              </td>
+              <td className="py-1 text-right whitespace-nowrap">
+                {manwon(estimate.total)}
+              </td>
             </tr>
           </tbody>
         </table>
