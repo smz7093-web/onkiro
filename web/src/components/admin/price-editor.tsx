@@ -20,6 +20,7 @@ import {
   type ProcessPrice,
   type QuantityBasis,
 } from "@/lib/engine/types";
+import { RECOMMENDED_PROCESS_PRICES } from "@/lib/engine/defaults";
 import { ChecklistRulesEditor } from "./checklist-rules-editor";
 import { man } from "./format";
 import { NumberField } from "./number-field";
@@ -202,6 +203,38 @@ export function PriceEditor({
             </tbody>
           </table>
         </div>
+        {!readOnly && (
+          <div>
+            <button
+              type="button"
+              className="h-11 rounded-lg border border-accent px-4 text-base text-accent"
+              onClick={() => {
+                const empty = (
+                  Object.keys(RECOMMENDED_PROCESS_PRICES) as ProcessId[]
+                ).filter((id) => !data.processes[id]);
+                if (empty.length === 0) {
+                  window.alert(
+                    "권장 단가가 있는 공정은 이미 모두 입력되어 있습니다.",
+                  );
+                  return;
+                }
+                const names = empty.map((id) => PROCESS_LABELS[id]).join(", ");
+                if (
+                  !window.confirm(
+                    `비어 있는 공정(${names})에 권장 단가(팀원결정권장안.md D5)를 넣습니다. 이미 입력한 공정은 그대로 둡니다. 저장해야 초안에 들어갑니다.`,
+                  )
+                )
+                  return;
+                const processes = { ...data.processes };
+                for (const id of empty)
+                  processes[id] = { ...RECOMMENDED_PROCESS_PRICES[id]! };
+                setData({ ...data, processes });
+              }}
+            >
+              빈 공정에 권장 단가 채우기
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">

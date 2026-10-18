@@ -1,5 +1,10 @@
 import { DEFAULT_CHECKLIST_RULES } from "./checklist";
-import type { AssumptionSet, PriceTable } from "./types";
+import type {
+  AssumptionSet,
+  PriceTable,
+  ProcessId,
+  ProcessPrice,
+} from "./types";
 
 // 임시 기준값. 단가는 목업 adm-price-db, 가정값은 MVP_기능명세서.md 5절 기준이다.
 // D5(석원)·D6(원일)이 오면 task.md 5.6 절차로 새 버전을 만들고, 이 값은 시드(seed/)와 테스트용으로만 남긴다.
@@ -86,4 +91,23 @@ export const ASSUMPTION_V0_3: AssumptionSet = {
   scenarioDeltas: { conservative: -0.15, optimistic: 0.1 },
   occupancyRange: { min: 0.25, max: 0.85 },
   seasonalOccupancy: { peak: 0.8, offPeak: 0.4 },
+};
+
+// D5 권장 단가 (10/17 팀원결정권장안.md, 석원 확인 전): 임시 단가 DB에 없던 공정.
+// 관리 화면 '빈 공정에 권장 단가 채우기'가 비어 있는 공정에만 넣는다(이미 입력한 값은 그대로).
+export const RECOMMENDED_PROCESS_PRICES: Partial<
+  Record<ProcessId, ProcessPrice>
+> = {
+  // 외벽 내단열 + 창호 교체 기준, 연면적 ㎡당
+  insulation: {
+    quantityBasis: "floorArea",
+    repairUnitPrice: 120_000,
+    repairDays: 7,
+  },
+  // 배선·분전반·급배수·보일러, 연면적 ㎡당
+  electrical: {
+    quantityBasis: "floorArea",
+    repairUnitPrice: 80_000,
+    repairDays: 7,
+  },
 };
