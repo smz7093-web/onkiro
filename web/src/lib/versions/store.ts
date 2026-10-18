@@ -105,7 +105,7 @@ export async function createDraft<K extends VersionKind>(
   }
   await setDoc(ref, {
     status: "draft",
-    data: { ...data, version },
+    data: withoutUndefined({ ...data, version }),
     note: "",
     basedOn,
     createdBy: user.uid,
@@ -117,6 +117,23 @@ export async function createDraft<K extends VersionKind>(
   });
 }
 
+// 편집 화면은 비운 칸을 undefined로 둔다. Firestore는 undefined를 저장하지 못하므로(10/19 오류)
+// 저장 직전에 그런 칸을 뺀다. 배열 안의 undefined는 null 대신 항목째 뺀다
+export function withoutUndefined<T>(value: T): T {
+  if (Array.isArray(value))
+    return value
+      .filter((v) => v !== undefined)
+      .map((v) => withoutUndefined(v)) as T;
+  if (value && typeof value === "object" && !(value instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, withoutUndefined(v)]),
+    ) as T;
+  }
+  return value;
+}
+
 export async function saveDraft<K extends VersionKind>(
   kind: K,
   version: string,
@@ -126,7 +143,7 @@ export async function saveDraft<K extends VersionKind>(
   userName: string | null,
 ) {
   await updateDoc(doc(db, COLLECTION[kind], version), {
-    data: { ...data, version },
+    data: withoutUndefined({ ...data, version }),
     note,
     updatedBy: user.uid,
     updatedByName: userName,
