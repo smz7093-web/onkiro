@@ -6,6 +6,8 @@ import {
   worse,
   type ChecklistAnswers,
   type ChecklistRule,
+  RECOMMENDED_CHECKLIST_RULES,
+  CHECKLIST_QUESTIONS,
 } from "./checklist";
 
 // 모든 답이 "문제 없음"인 기본 답안. 테스트마다 바꿀 문항만 덮어쓴다.
@@ -119,5 +121,32 @@ describe("체크리스트 · 관리자 판정표 적용 (task.md 3.7)", () => {
       question: "leak",
       answer: "yes",
     });
+  });
+});
+
+describe("D4 권장 판정표 (10/17 권장안)", () => {
+  it("모든 문항·답 id가 실제 체크리스트에 있고, 판정·공정은 짝으로 있다", () => {
+    for (const r of RECOMMENDED_CHECKLIST_RULES) {
+      const q = CHECKLIST_QUESTIONS.find((x) => x.id === r.question);
+      expect(q, r.question).toBeDefined();
+      expect(
+        q!.options.some((o) => o.id === r.answer),
+        `${r.question}:${r.answer}`,
+      ).toBe(true);
+      expect(r.process === null).toBe(r.grade === null);
+    }
+  });
+
+  it("10년 넘게 빈 집, 큰 균열이면 설비·단열 전면 교체와 위험 신호", () => {
+    const res = evaluateChecklist(
+      { lastOccupied: "over10y", crack: "wide", leak: "no" } as never,
+      RECOMMENDED_CHECKLIST_RULES,
+    );
+    expect(res.conditions).toMatchObject({
+      electrical: "full",
+      insulation: "full",
+      structure: "full",
+    });
+    expect(res.riskFlags.map((f) => f.id)).toEqual(["majorCrack"]);
   });
 });

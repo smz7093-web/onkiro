@@ -3,6 +3,7 @@
 import {
   CHECKLIST_QUESTIONS,
   DEFAULT_CHECKLIST_RULES,
+  RECOMMENDED_CHECKLIST_RULES,
   RISK_FLAG_LABELS,
   uncoveredAnswers,
 } from "@/lib/engine/checklist";
@@ -213,13 +214,27 @@ export function ChecklistRulesEditor({
         </table>
       </div>
       {!readOnly && (
-        <div>
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             className="h-11 rounded-lg border border-zinc-300 px-4 text-base"
             onClick={() => add()}
           >
             + 줄 추가
+          </button>
+          <button
+            type="button"
+            className="h-11 rounded-lg border border-accent px-4 text-base text-accent"
+            onClick={() => {
+              if (
+                window.confirm(
+                  "지금 판정표를 권장안(팀원결정권장안.md D4, 22줄)으로 바꿉니다. 저장해야 초안에 들어갑니다. 계속할까요?",
+                )
+              )
+                setRules(RECOMMENDED_CHECKLIST_RULES.map((r) => ({ ...r })));
+            }}
+          >
+            권장안 불러오기
           </button>
         </div>
       )}

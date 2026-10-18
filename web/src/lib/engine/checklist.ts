@@ -205,6 +205,41 @@ function labelOf(questionId: string, answerId: string) {
   return `${q?.label ?? questionId} → ${a?.label ?? answerId}`;
 }
 
+// D4 권장 판정표 (10/17 팀원결정권장안.md, 석원 확인 전). 관리 화면 '권장안 불러오기'로 초안에 넣는다.
+// 10년 이상 빈 집은 배선·배관·단열이 수명을 다했다고 보고, '모름'은 보수 쪽으로 판정해 견적이 낮게 나오는 것을 막는다.
+const rule = (
+  question: string,
+  answer: string,
+  process: ProcessId | null,
+  grade: ConditionGrade | null,
+  risk: RiskFlagId | null = null,
+): ChecklistRule => ({ question, answer, process, grade, risk });
+
+export const RECOMMENDED_CHECKLIST_RULES: ChecklistRule[] = [
+  rule("leak", "yes", "roof", "partial"),
+  rule("leak", "unknown", "roof", "partial"),
+  rule("water", "no", "electrical", "partial"),
+  rule("power", "no", "electrical", "partial"),
+  rule("septic", "no", "electrical", "full"),
+  rule("septic", "unknown", "electrical", "partial"),
+  rule("lastOccupied", "5to10y", "electrical", "partial"),
+  rule("lastOccupied", "5to10y", "insulation", "partial"),
+  rule("lastOccupied", "over10y", "electrical", "full"),
+  rule("lastOccupied", "over10y", "insulation", "full"),
+  rule("crack", "hairline", "structure", "partial"),
+  rule("crack", "wide", "structure", "full", "majorCrack"),
+  rule("tilt", "slight", "structure", "partial"),
+  rule("tilt", "severe", "structure", "full", "severeTilt"),
+  rule("bathroom", "usable", "bathroom", "good"),
+  rule("bathroom", "partial", "bathroom", "partial"),
+  rule("bathroom", "full", "bathroom", "full"),
+  rule("kitchen", "usable", "kitchen", "good"),
+  rule("kitchen", "partial", "kitchen", "partial"),
+  rule("kitchen", "full", "kitchen", "full"),
+  rule("heating", "briquette", "electrical", "partial"),
+  rule("heating", "none", "electrical", "partial"),
+];
+
 // 10문항 답 + 판정표 → 공정별 상태·위험 신호.
 // 답과 맞는 줄을 모두 적용하고, 한 공정에 여러 줄이 걸리면 가장 나쁜 판정을 쓴다.
 export function evaluateChecklist(
