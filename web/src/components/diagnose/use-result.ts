@@ -21,7 +21,7 @@ import {
 import { listPhotos } from "@/lib/diagnosis/photo-store";
 import { PHOTO_PARTS, type PhotoPartId } from "@/lib/diagnosis/photos";
 import type { SnapshotPayload } from "@/lib/diagnosis/snapshot-store";
-import { loadActiveVersion } from "@/lib/versions/store";
+import { loadActiveVersionCached } from "@/lib/versions/store";
 import { useDiagnosis } from "./diagnosis-context";
 
 export interface ResultBasis {
@@ -41,8 +41,8 @@ export function useResultBasis() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      loadActiveVersion("price"),
-      loadActiveVersion("assumption"),
+      loadActiveVersionCached("price"),
+      loadActiveVersionCached("assumption"),
       // 사진 단계를 쓸 수 없는 회원은 모든 부위가 누락이다
       isTeam ? listPhotos(assessment.id) : Promise.resolve([]),
     ])

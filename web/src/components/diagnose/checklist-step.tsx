@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CHECKLIST_QUESTIONS,
   type ChecklistAnswers,
@@ -11,7 +11,9 @@ import {
   type PhotoSuggestion,
 } from "@/lib/ai/store";
 import { PHOTO_PARTS } from "@/lib/diagnosis/photos";
-import { finishStep, saveChecklist } from "@/lib/diagnosis/store";
+import { finishChecklist, saveChecklist } from "@/lib/diagnosis/store";
+import { startResultTimer } from "@/lib/analytics";
+import { loadActiveVersionCached } from "@/lib/versions/store";
 import { useDiagnosis } from "./diagnosis-context";
 import { btnPrimary, btnSecondary, card } from "./styles";
 
@@ -65,11 +67,17 @@ export function ChecklistStep() {
     }
   }
 
+  // 견적 화면이 바로 뜨도록 기준값(적용 버전)을 미리 읽어 둔다 (7.6 응답 속도)
+  useEffect(() => {
+    loadActiveVersionCached("price").catch(() => {});
+    loadActiveVersionCached("assumption").catch(() => {});
+  }, []);
+
   async function done() {
     setBusy(true);
+    startResultTimer();
     try {
-      await saveChecklist(assessment.id, answers);
-      await finishStep(assessment, "checklist");
+      await finishChecklist(assessment, answers);
       await reload();
       go("estimate");
     } catch {

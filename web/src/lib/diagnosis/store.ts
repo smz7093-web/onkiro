@@ -221,7 +221,19 @@ export async function saveChecklist(
   });
 }
 
-// 내용 저장 없이 단계만 마칠 때 (사진 단계, 체크리스트 완료)
+// 체크리스트 완료: 답과 도달 단계를 한 번에 저장한다 (7.6 응답 속도, 쓰기 2번 → 1번)
+export async function finishChecklist(
+  assessment: Assessment,
+  checklist: Partial<ChecklistAnswers>,
+): Promise<void> {
+  await updateDoc(doc(db, "assessments", assessment.id), {
+    checklist,
+    reached: advanceReached(assessment.reached, "checklist"),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// 내용 저장 없이 단계만 마칠 때 (사진 단계)
 export async function finishStep(
   assessment: Assessment,
   step: StepId,

@@ -79,6 +79,22 @@ export async function getVersion<K extends VersionKind>(kind: K, id: string) {
 }
 
 // 시뮬레이터 계산용 적용 버전 (회원도 읽을 수 있다)
+// 결과 화면용: 적용 버전을 잠시(2분) 기억해 체크리스트 화면에서 미리 읽어 둔다 (7.6 응답 속도)
+const activeCache = new Map<VersionKind, { at: number; p: Promise<unknown> }>();
+export function loadActiveVersionCached<K extends VersionKind>(
+  kind: K,
+): Promise<VersionDoc<K> | null> {
+  const hit = activeCache.get(kind);
+  if (hit && Date.now() - hit.at < 120_000)
+    return hit.p as Promise<VersionDoc<K> | null>;
+  const p = loadActiveVersion(kind).catch((e) => {
+    activeCache.delete(kind);
+    throw e;
+  });
+  activeCache.set(kind, { at: Date.now(), p });
+  return p;
+}
+
 export async function loadActiveVersion<K extends VersionKind>(kind: K) {
   const snap = await getDocs(
     query(

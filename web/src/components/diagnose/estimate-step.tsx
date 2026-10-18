@@ -41,6 +41,7 @@ import {
 } from "./use-result";
 import { Pill } from "../ui";
 import { usePermitContent } from "@/lib/site-content/store";
+import { stopResultTimer } from "@/lib/analytics";
 
 const GRADE_LABEL: Record<ConditionGrade, string> = {
   good: "양호",
@@ -86,6 +87,12 @@ export function EstimateStep() {
     assessment.revenueInput,
     options,
   ]);
+
+  // 체크리스트 '견적 계산하기'부터 결과가 보일 때까지 걸린 시간 (7.6, 처음 한 번만 기록된다)
+  const ready = Boolean(basis && computation && property);
+  useEffect(() => {
+    if (ready) stopResultTimer();
+  }, [ready]);
 
   // ① 견적 화면에 처음 도달할 때 스냅샷 (같은 입력이면 만들지 않는다)
   const firstView = useRef(false);
