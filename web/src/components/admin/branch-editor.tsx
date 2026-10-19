@@ -15,9 +15,10 @@ import { useStaff } from "./staff-context";
 import { buttonClass } from "../ui";
 import { NumberInput } from "./number-input";
 
-const field = "h-11 w-full rounded-md border border-line-2 px-3 text-base";
+const field =
+  "h-11 w-full rounded-md border border-line-2 bg-surface px-3 text-base text-ink";
 const area =
-  "min-h-20 w-full rounded-md border border-line-2 px-3 py-2 text-base";
+  "min-h-20 w-full rounded-md border border-line-2 bg-surface px-3 py-2 text-base text-ink";
 const btn = buttonClass();
 const btnDark = buttonClass({ variant: "primary" });
 const small = buttonClass({ variant: "ghost", size: "sm" });
@@ -479,7 +480,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-line p-4">
+    <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
       <h2 className="text-lg font-semibold">{title}</h2>
       {children}
     </section>

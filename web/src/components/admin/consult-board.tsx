@@ -252,7 +252,7 @@ function ConsultDetail({
   const nextStages = CONSULT_STAGES.filter((s) => canTransition(c.status, s));
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-line-2 p-4">
+    <section className="flex flex-col gap-4 rounded-lg border border-line-2 bg-surface p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold">
           {CONSULT_TYPE_LABELS[c.type]} · {c.applicantName}
@@ -341,7 +341,7 @@ function ConsultDetail({
       <label className="flex flex-col gap-1 text-sm text-ink-2">
         상담 메모 (운영팀만 봄)
         <textarea
-          className="min-h-24 w-full rounded-md border border-line-2 px-3 py-2 text-base"
+          className="min-h-24 w-full rounded-md border border-line-2 px-3 py-2 text-base bg-surface text-ink"
           maxLength={2000}
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
@@ -419,7 +419,7 @@ function ProxyForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-line-2 p-4">
+    <section className="flex flex-col gap-3 rounded-lg border border-line-2 bg-surface p-4">
       <h2 className="text-lg font-semibold">전화 접수 대리 입력</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm text-ink-2">

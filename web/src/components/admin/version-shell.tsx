@@ -196,7 +196,7 @@ export function VersionShell<K extends VersionKind>({
       <label className="flex flex-col gap-1 text-sm text-ink-2">
         변경 메모 (무엇을 왜 바꿨는지)
         <textarea
-          className="min-h-20 rounded-md border border-line-2 p-3 text-base read-only:bg-surface-2"
+          className="min-h-20 rounded-md border border-line-2 p-3 text-base read-only:bg-surface-2 bg-surface text-ink"
           value={note}
           readOnly={!canEdit}
           onChange={(e) => {
@@ -214,7 +214,9 @@ export function VersionShell<K extends VersionKind>({
           ) : info ? (
             <span className="text-good">{info}</span>
           ) : dirty ? (
-            <span className="text-warn">저장하지 않은 변경이 있습니다</span>
+            <span className="text-warn">
+              저장하지 않은 변경이 있습니다 (저장해야 적용할 수 있습니다)
+            </span>
           ) : null}
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -232,7 +234,8 @@ export function VersionShell<K extends VersionKind>({
             <button
               type="button"
               onClick={activate}
-              disabled={busy}
+              disabled={busy || dirty}
+              title={dirty ? "먼저 저장해야 적용할 수 있습니다" : undefined}
               className={buttonClass()}
             >
               적용 (운영 견적에 반영)

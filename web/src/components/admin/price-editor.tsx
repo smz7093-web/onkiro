@@ -387,14 +387,14 @@ export function PriceEditor({
             <label className="flex flex-col gap-1 text-sm text-ink-2">
               지역 추가 (영문 코드)
               <input
-                className="h-10 rounded-md border border-line-2 px-2 text-base"
+                className="h-10 rounded-md border border-line-2 px-2 text-base bg-surface text-ink"
                 value={newRegion}
                 onChange={(e) => setNewRegion(e.target.value.trim())}
               />
             </label>
             <button
               type="button"
-              className="h-10 rounded-md border border-line-2 px-3 text-sm"
+              className="h-10 rounded-md border border-line-2 px-3 text-sm bg-surface text-ink"
               disabled={
                 !/^[a-z][a-z0-9-]*$/.test(newRegion) ||
                 newRegion in data.regionFactors
@@ -462,7 +462,7 @@ function PriceCheck({ data }: { data: PriceTable }) {
     failure = e instanceof EstimateInputError ? e.message : String(e);
   }
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-line p-4">
+    <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
       <h2 className="text-lg font-semibold">검증 사례 · 대표 예시</h2>
       <p className="text-sm text-ink-2">
         72㎡ 목구조·모듈 B, 지붕·구조 부분 보수, 욕실·주방 전면 교체 (prd.md

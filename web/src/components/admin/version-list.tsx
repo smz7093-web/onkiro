@@ -156,13 +156,13 @@ export function VersionList({ kind }: { kind: VersionKind }) {
       )}
 
       {canEdit && versions && (
-        <section className="flex flex-col gap-3 rounded-lg border border-line p-4">
+        <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
           <h2 className="text-lg font-semibold">새 초안 만들기</h2>
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-sm text-ink-2">
               버전 이름
               <input
-                className="h-11 rounded-md border border-line-2 px-3 font-mono text-base"
+                className="h-11 rounded-md border border-line-2 px-3 font-mono text-base bg-surface text-ink"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
               />
@@ -170,7 +170,7 @@ export function VersionList({ kind }: { kind: VersionKind }) {
             <label className="flex flex-col gap-1 text-sm text-ink-2">
               복사할 값
               <select
-                className="h-11 rounded-md border border-line-2 px-3 text-base"
+                className="h-11 rounded-md border border-line-2 px-3 text-base bg-surface text-ink"
                 value={base}
                 onChange={(e) => setBase(e.target.value)}
               >

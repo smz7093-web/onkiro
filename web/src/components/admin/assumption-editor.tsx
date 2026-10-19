@@ -241,7 +241,7 @@ function AssumptionCheck({ data }: { data: AssumptionSet }) {
     failure = e instanceof RevenueInputError ? e.message : String(e);
   }
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-line p-4">
+    <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
       <h2 className="text-lg font-semibold">검증 사례 · 수익 검증표</h2>
       <p className="text-sm text-ink-2">
         총투자금 3,300만 원으로 이 버전의 기본값을 계산합니다 (prd.md 7.2). 확정

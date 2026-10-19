@@ -92,7 +92,7 @@ export function BranchList() {
         </ul>
       )}
 
-      <section className="flex flex-col gap-3 rounded-lg border border-line p-4">
+      <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
         <h2 className="text-lg font-semibold">새 숙소</h2>
         <form
           className="flex flex-wrap items-end gap-3"
@@ -104,7 +104,7 @@ export function BranchList() {
           <label className="flex flex-col gap-1 text-sm text-ink-2">
             주소에 쓸 이름 (영문 소문자·숫자·하이픈)
             <input
-              className="h-11 rounded-md border border-line-2 px-3 font-mono text-base"
+              className="h-11 rounded-md border border-line-2 px-3 font-mono text-base bg-surface text-ink"
               placeholder="hongseong-1"
               value={newId}
               onChange={(e) => setNewId(e.target.value.trim())}
