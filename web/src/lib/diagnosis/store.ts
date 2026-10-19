@@ -1,3 +1,4 @@
+import { httpsCallable } from "firebase/functions";
 import {
   collection,
   doc,
@@ -12,7 +13,7 @@ import {
 } from "firebase/firestore";
 import type { ChecklistAnswers } from "../engine/checklist";
 import type { RevenueInput } from "../engine/types";
-import { db } from "../firebase/client";
+import { db, functions } from "../firebase/client";
 import type { EstimateOptions } from "./compute";
 import { initialFacts, type Facts } from "./facts";
 import type { Nearby } from "./lookup";
@@ -275,4 +276,19 @@ export async function getAssessment(id: string): Promise<Assessment | null> {
 // 화면·리포트에 보이는 진단 번호 (예: DX-3F2A9C1E)
 export function diagnosisCode(id: string) {
   return `DX-${id.slice(0, 8).toUpperCase()}`;
+}
+
+// 관리자 삭제: 견적이 나온 진단도 지운다(서버 함수 deleteAssessmentAdmin, 처리 기록 auditLogs). 되돌릴 수 없다
+export async function deleteAssessmentAsAdmin(
+  assessmentId: string,
+  deleteConsults: boolean,
+): Promise<{ deletedConsults: number }> {
+  const res = await httpsCallable<
+    { assessmentId: string; deleteConsults: boolean },
+    { ok: boolean; deletedConsults: number }
+  >(functions, "deleteAssessmentAdmin", { timeout: 120_000 })({
+    assessmentId,
+    deleteConsults,
+  });
+  return { deletedConsults: res.data.deletedConsults };
 }

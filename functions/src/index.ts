@@ -711,3 +711,52 @@ export const cleanupAssessmentAi = onDocumentDeleted(
     logger.info("진단 AI 결과 삭제", { aid });
   },
 );
+
+// 관리자 진단 삭제 (prd.md 8절: 견적이 나온 진단은 삭제 요청을 받아 운영팀이 관리자 화면에서 지우고 기록을 남긴다, 10/19).
+// 진단과 하위 기록(스냅샷·사진·AI), 빈집 문서, Storage 파일(사진·가상 이미지)을 지운다. 연결 상담은 고를 때만 지운다.
+export const deleteAssessmentAdmin = onCall(
+  { timeoutSeconds: 120 },
+  async (request) => {
+    if (request.auth?.token.role !== "admin")
+      throw new HttpsError("permission-denied", "관리자만 삭제할 수 있습니다");
+    const data = (request.data ?? {}) as Record<string, unknown>;
+    const aid = data.assessmentId;
+    if (typeof aid !== "string" || !/^[A-Za-z0-9]{1,40}$/.test(aid))
+      throw new HttpsError("invalid-argument", "진단 id가 올바르지 않습니다");
+    const withConsults = data.deleteConsults === true;
+    const db = getFirestore();
+    const ref = db.collection("assessments").doc(aid);
+    const snap = await ref.get();
+    if (!snap.exists)
+      throw new HttpsError("not-found", "진단을 찾을 수 없습니다");
+    const owner = snap.get("uid") as string;
+    const propertyId = snap.get("propertyId");
+    const address = (snap.get("address") as string | null) ?? null;
+
+    let consultIds: string[] = [];
+    if (withConsults) {
+      const cs = await db
+        .collection("consultations")
+        .where("assessmentId", "==", aid)
+        .get();
+      consultIds = cs.docs.map((d) => d.id);
+      for (const d of cs.docs) await db.recursiveDelete(d.ref);
+    }
+    await getStorage()
+      .bucket()
+      .deleteFiles({ prefix: `users/${owner}/assessments/${aid}/` });
+    await db.recursiveDelete(ref);
+    if (typeof propertyId === "string" && propertyId)
+      await db.collection("properties").doc(propertyId).delete();
+    await db.collection("auditLogs").add({
+      path: ref.path,
+      actorUid: request.auth.uid,
+      action: "deleteAssessment",
+      before: { owner, propertyId: propertyId ?? null, address },
+      after: { deletedConsults: consultIds },
+      at: FieldValue.serverTimestamp(),
+    });
+    logger.info("관리자 진단 삭제", { aid, consults: consultIds.length });
+    return { ok: true, deletedConsults: consultIds.length };
+  },
+);

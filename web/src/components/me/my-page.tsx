@@ -9,6 +9,7 @@ import {
 } from "@/lib/consult/status";
 import { listMyConsultations, type Consultation } from "@/lib/consult/store";
 import {
+  deleteAssessmentAsAdmin,
   diagnosisCode,
   listMyAssessments,
   type Assessment,
@@ -16,7 +17,8 @@ import {
 } from "@/lib/diagnosis/store";
 import { manwon } from "@/components/diagnose/estimate-step";
 import { card } from "@/components/diagnose/styles";
-import { Pill } from "../ui";
+import { buttonClass, Pill } from "../ui";
+import { usePermissions } from "@/lib/auth/use-permissions";
 
 const STATUS_LABEL: Record<AssessmentStatus, string> = {
   draft: "입력 중",
@@ -36,7 +38,47 @@ const linkBtn =
 
 // 마이페이지 (COM-03, task.md 8.2). 리포트 다시 보기는 저장된 스냅샷으로 연다(재계산 아님).
 export function MyPage() {
-  const uid = useAuthUser()?.uid;
+  const user = useAuthUser();
+  const uid = user?.uid;
+  const { permissions } = usePermissions(user);
+  const isAdmin = permissions?.role === "admin";
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // 관리자 삭제 (견적이 나온 진단도). 두 번 확인한다
+  async function removeAsAdmin(a: Assessment) {
+    const code = diagnosisCode(a.id);
+    if (
+      !window.confirm(
+        `${code} ${a.address ?? ""} 진단을 지웁니다. 스냅샷·사진·AI 결과·빈집 정보가 함께 지워지고 되돌릴 수 없습니다. 계속할까요?`,
+      )
+    )
+      return;
+    const withConsults = window.confirm(
+      "이 진단에 연결된 상담 신청도 함께 지울까요? (확인 = 함께 삭제, 취소 = 상담은 남김)",
+    );
+    setDeleting(a.id);
+    setNotice(null);
+    try {
+      const r = await deleteAssessmentAsAdmin(a.id, withConsults);
+      setAssessments((list) => list?.filter((x) => x.id !== a.id) ?? null);
+      if (withConsults)
+        setConsults(
+          (list) => list?.filter((c) => c.assessmentId !== a.id) ?? null,
+        );
+      setNotice(
+        `${code}을 지웠습니다${r.deletedConsults > 0 ? ` (상담 ${r.deletedConsults}건 함께 삭제)` : ""}.`,
+      );
+    } catch (e) {
+      setNotice(
+        e instanceof Error
+          ? `지우지 못했습니다: ${e.message}`
+          : "지우지 못했습니다.",
+      );
+    } finally {
+      setDeleting(null);
+    }
+  }
   const [assessments, setAssessments] = useState<Assessment[] | null>(null);
   const [consults, setConsults] = useState<Consultation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +109,11 @@ export function MyPage() {
         </Link>
       </div>
       {error && <p className="text-base text-crit">{error}</p>}
+      {notice && (
+        <p role="status" className="text-base">
+          {notice}
+        </p>
+      )}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">내 진단</h2>
@@ -115,6 +162,16 @@ export function MyPage() {
                   >
                     {a.status === "draft" ? "이어서 하기" : "결과·입력 보기"}
                   </Link>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className={`${buttonClass({ variant: "danger" })} ml-auto`}
+                      disabled={deleting !== null}
+                      onClick={() => removeAsAdmin(a)}
+                    >
+                      {deleting === a.id ? "지우는 중…" : "삭제(관리자)"}
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
