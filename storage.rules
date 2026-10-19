@@ -44,7 +44,9 @@ service firebase.storage {
         || (role() == 'staff'
           && request.auth.token.get('photoAccess', 'none') == 'assigned'
           && assigneeOf(aid) == request.auth.uid);
+      // 같은 이름 파일이 이미 있으면 막는다(덮어쓰기 금지, 10/19 규칙 테스트에서 발견)
       allow create: if signedIn() && request.auth.uid == uid
+        && resource == null
         && fileName.matches('[A-Za-z0-9]+[.]jpg')
         && request.resource.contentType == 'image/jpeg'
         && request.resource.size < 5 * 1024 * 1024;
@@ -72,6 +74,7 @@ service firebase.storage {
     match /branches/{branchId}/photos/{fileName} {
       allow read: if true;
       allow create: if canEditContent()
+        && resource == null
         && fileName.matches('[a-z0-9]+[.]jpg')
         && request.resource.contentType == 'image/jpeg'
         && request.resource.size < 5 * 1024 * 1024;
