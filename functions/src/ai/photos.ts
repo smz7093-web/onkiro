@@ -10,8 +10,10 @@ export const PHOTO_PART_LABELS: Record<string, string> = {
   left: "외관 좌측",
   right: "외관 우측",
   roof: "지붕",
+  yard: "외부 조경",
   kitchen: "주방",
   bathroom: "욕실",
+  room: "대표 방",
   crack: "벽체 균열 부위",
 };
 

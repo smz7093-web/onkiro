@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import {
   MAX_PHOTOS,
   missingPhotoParts,
+  isOptionalPart,
   PHOTO_PARTS,
   photoGuide,
+  REQUIRED_PHOTO_PARTS,
   type PhotoPartId,
 } from "@/lib/diagnosis/photos";
 import {
@@ -154,15 +156,15 @@ export function PhotosStep() {
   }
 
   const parts = (photos ?? []).map((p) => p.part);
-  const doneParts = PHOTO_PARTS.length - missingPhotoParts(parts);
+  const doneParts = REQUIRED_PHOTO_PARTS.length - missingPhotoParts(parts);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <h1 className="text-2xl font-semibold">부위별 사진을 올려주세요</h1>
         <span className="text-base text-ink-2">
-          {doneParts} / {PHOTO_PARTS.length} 부위 · 사진 {photos?.length ?? 0}장
-          (최대 {MAX_PHOTOS}장)
+          필수 {doneParts} / {REQUIRED_PHOTO_PARTS.length} 부위 · 사진{" "}
+          {photos?.length ?? 0}장 (최대 {MAX_PHOTOS}장)
         </span>
       </div>
 
@@ -179,6 +181,11 @@ export function PhotosStep() {
                   <h2 className="text-base font-semibold">
                     {mine.length > 0 ? "✓ " : ""}
                     {part.label}
+                    {isOptionalPart(part.id) && (
+                      <span className="ml-2 text-sm font-normal text-ink-2">
+                        (선택)
+                      </span>
+                    )}
                   </h2>
                   <span className="text-sm text-muted">{mine.length}장</span>
                 </div>

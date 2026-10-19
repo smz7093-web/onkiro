@@ -19,7 +19,7 @@ import {
   type EstimateOptions,
 } from "@/lib/diagnosis/compute";
 import { listPhotos } from "@/lib/diagnosis/photo-store";
-import { PHOTO_PARTS, type PhotoPartId } from "@/lib/diagnosis/photos";
+import { REQUIRED_PHOTO_PARTS, type PhotoPartId } from "@/lib/diagnosis/photos";
 import type { SnapshotPayload } from "@/lib/diagnosis/snapshot-store";
 import { loadActiveVersionCached } from "@/lib/versions/store";
 import { useDiagnosis } from "./diagnosis-context";
@@ -53,7 +53,8 @@ export function useResultBasis() {
           price: (p?.data as PriceTable) ?? PRICE_V2026_10_1,
           assumption: (a?.data as AssumptionSet) ?? ASSUMPTION_V0_3,
           provisional: !p || !a,
-          missingParts: PHOTO_PARTS.filter((x) => !have.has(x.id)).map(
+          // 필수 부위만 센다 (선택 부위는 견적 범위에 넣지 않는다)
+          missingParts: REQUIRED_PHOTO_PARTS.filter((x) => !have.has(x.id)).map(
             (x) => x.id,
           ),
         });

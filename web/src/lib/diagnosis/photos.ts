@@ -33,6 +33,14 @@ export const PHOTO_PARTS = [
       "지붕 전체가 보이는 위치에서 찍어 주세요(올라가지 마세요). 비가 샌 천장 얼룩도 함께 올려 주세요.",
   },
   {
+    // 10/19 추가(선택): 외부·조경 공사 범위와 숙소 기획 참고. 견적 범위·'현장 확인 필요'에는 넣지 않는다
+    id: "yard",
+    label: "외부 조경",
+    guide:
+      "마당·텃밭·담장 등 집 주변 바깥 공간이 넓게 나오게 찍어 주세요. 외부·조경 공사 범위를 정하는 데 씁니다.",
+    optional: true,
+  },
+  {
     id: "kitchen",
     label: "주방",
     guide:
@@ -42,6 +50,14 @@ export const PHOTO_PARTS = [
     id: "bathroom",
     label: "욕실",
     guide: "변기·세면대·바닥 타일이 한 장에 나오게 찍어 주세요.",
+  },
+  {
+    // 10/19 추가(선택): 객실 구성·실내 마감 등급 판단 참고
+    id: "room",
+    label: "대표 방",
+    guide:
+      "손님이 쓸 대표 방 전체가 나오게, 문 앞에서 방 안쪽을 향해 찍어 주세요. 바닥·벽·천장 상태가 보이면 좋습니다.",
+    optional: true,
   },
   {
     id: "crack",
@@ -71,11 +87,18 @@ export function isPhotoPartId(v: unknown): v is PhotoPartId {
   return PHOTO_PARTS.some((p) => p.id === v);
 }
 
-// 사진이 하나도 없는 부위 수 → 견적 불확실도 가산 (EstimateInput.missingPhotoParts)
+// 사진이 하나도 없는 필수 부위 수 → 견적 불확실도 가산 (EstimateInput.missingPhotoParts)
 export function missingPhotoParts(parts: PhotoPartId[]): number {
   const have = new Set(parts);
-  return PHOTO_PARTS.filter((p) => !have.has(p.id)).length;
+  return REQUIRED_PHOTO_PARTS.filter((p) => !have.has(p.id)).length;
 }
+
+// 견적에 쓰는 필수 부위 (선택 부위 '대표 방'·'외부 조경'은 빠져도 견적 범위를 넓히지 않는다)
+export const isOptionalPart = (id: PhotoPartId) =>
+  PHOTO_PARTS.some((p) => p.id === id && "optional" in p && p.optional);
+export const REQUIRED_PHOTO_PARTS = PHOTO_PARTS.filter(
+  (p) => !isOptionalPart(p.id),
+);
 
 // 긴 변이 maxEdge를 넘으면 비율을 유지해 줄인다
 export function fitWithin(

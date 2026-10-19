@@ -226,7 +226,7 @@ service cloud.firestore {
         allow create: if ownsAssessment(aid)
           && request.resource.data.keys().hasOnly(['part', 'storagePath', 'exifStripped', 'consentModelUse',
                                                    'deleteAfter', 'width', 'height', 'size', 'createdAt'])
-          && request.resource.data.part in ['front', 'back', 'left', 'right', 'roof', 'kitchen', 'bathroom', 'crack']
+          && request.resource.data.part in ['front', 'back', 'left', 'right', 'roof', 'yard', 'kitchen', 'bathroom', 'room', 'crack']
           && request.resource.data.storagePath == 'users/' + request.auth.uid + '/assessments/' + aid + '/photos/' + photoId + '.jpg'
           && request.resource.data.exifStripped == true
           && request.resource.data.consentModelUse is bool
