@@ -1,6 +1,7 @@
-// 공통 UI 컴포넌트 견본 (task.md 6.7). 개발 중 확인용이며 시연 전에 지운다.
+// 공통 UI 컴포넌트 견본 (task.md 6.7). 개발 중 확인용이며 배포본에서는 404로 숨긴다.
 // 주소: /ui. 컴포넌트를 만들 때마다 아래에 "이름 + 쓰임새 + 실제 모양" 칸을 하나씩 추가한다.
 
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   Button,
@@ -53,6 +54,8 @@ function Sample({
 }
 
 export default function UiSamplesPage() {
+  // 시연 준비(10/19): 배포본(검토 URL)에서는 숨기고 로컬 개발 서버에서만 보인다
+  if (process.env.NODE_ENV === "production") notFound();
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 bg-paper px-4 py-8 text-ink">
       <h1 className="text-2xl font-semibold">UI 견본</h1>

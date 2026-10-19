@@ -7,14 +7,16 @@ import { readFileSync } from "node:fs";
 import { it } from "vitest";
 import { CONSENT_ITEMS } from "../web/src/lib/consent/definitions";
 import {
-  ASSUMPTION_V0_3,
-  PRICE_V2026_10_1,
+  RECOMMENDED_ASSUMPTION,
+  RECOMMENDED_PRICE_TABLE,
 } from "../web/src/lib/engine/defaults";
 import { SAMPLE_BRANCHES } from "../web/src/lib/branches/sample";
 
 const PROJECT = "demo-onkiro";
 const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1";
 export const DEMO_PASSWORD = "onkiro-demo";
+const SEED_PRICE = "v2026.10-2";
+const SEED_ASSUMPTION = "v0.4";
 export const DEMO_ACCOUNTS = [
   {
     email: "pm@onkiro.test",
@@ -34,7 +36,10 @@ async function authCall(path: string, body: unknown, owner = false) {
     },
     body: JSON.stringify(body),
   });
-  return (await res.json()) as { localId?: string; error?: { message: string } };
+  return (await res.json()) as {
+    localId?: string;
+    error?: { message: string };
+  };
 }
 
 async function ensureUser(email: string, name: string, claims: object) {
@@ -48,7 +53,8 @@ async function ensureUser(email: string, name: string, claims: object) {
       email,
       password: DEMO_PASSWORD,
     });
-  if (!r.localId) throw new Error(`계정 생성 실패 ${email}: ${r.error?.message}`);
+  if (!r.localId)
+    throw new Error(`계정 생성 실패 ${email}: ${r.error?.message}`);
   await authCall(
     `projects/${PROJECT}/accounts:update`,
     { localId: r.localId, customAttributes: JSON.stringify(claims) },
@@ -86,7 +92,7 @@ it("에뮬레이터 시드", async () => {
     const version = (data: object, id: string) => ({
       status: "active",
       data,
-      note: "에뮬레이터 시드 (임시 기준값)",
+      note: "에뮬레이터 시드 (10/19 팀 확정안)",
       basedOn: null,
       createdBy: "seed",
       createdByName: "시드",
@@ -99,13 +105,17 @@ it("에뮬레이터 시드", async () => {
       effectiveFrom: serverTimestamp(),
       id,
     });
+    // 10/19: 시연 대본 금액과 같도록 팀 확정안을 적용 중 버전으로 넣는다 (예전 시드는 임시 기준값 v2026.10-1·v0.3)
     await setDoc(
-      doc(db, "priceVersions", PRICE_V2026_10_1.version),
-      version(PRICE_V2026_10_1, PRICE_V2026_10_1.version),
+      doc(db, "priceVersions", SEED_PRICE),
+      version({ ...RECOMMENDED_PRICE_TABLE, version: SEED_PRICE }, SEED_PRICE),
     );
     await setDoc(
-      doc(db, "assumptionVersions", ASSUMPTION_V0_3.version),
-      version(ASSUMPTION_V0_3, ASSUMPTION_V0_3.version),
+      doc(db, "assumptionVersions", SEED_ASSUMPTION),
+      version(
+        { ...RECOMMENDED_ASSUMPTION, version: SEED_ASSUMPTION },
+        SEED_ASSUMPTION,
+      ),
     );
     // 1호점: 샘플 내용에 홈 화면과 같은 사진(web/public/home)을 붙인다
     const s = SAMPLE_BRANCHES[0];

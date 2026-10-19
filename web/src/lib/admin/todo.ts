@@ -1,7 +1,53 @@
 // 관리자 첫 화면 '아직 할 일' (UX기준 21 목표 경사·22 자이가르닉, 10/19).
 // 읽은 상태로 할 일 목록을 만든다. 이 파일은 React·Firebase를 import하지 않는다.
-import type { PriceTable, ProcessId } from "../engine/types";
+import { calculateEstimate, roundForDisplay } from "../engine/estimate";
+import {
+  REFERENCE_ESTIMATE,
+  REFERENCE_ESTIMATE_INPUT,
+  REFERENCE_INVESTMENT,
+  REFERENCE_REVENUE,
+} from "../engine/reference";
+import { calculateScenarios } from "../engine/revenue";
+import type { AssumptionSet, PriceTable, ProcessId } from "../engine/types";
 import { PROCESS_LABELS } from "../engine/types";
+
+// 적용 중 버전이 10/19 확정안과 같은 결과를 내는지 (관리 화면 검증 사례와 같은 기준). 시연 대본 금액이 이 값을 전제로 한다
+export function priceMatchesReference(price: PriceTable | null): boolean {
+  if (!price) return false;
+  try {
+    const r = calculateEstimate(REFERENCE_ESTIMATE_INPUT, price);
+    return (
+      roundForDisplay(r.subtotal) === REFERENCE_ESTIMATE.subtotal &&
+      roundForDisplay(r.total) === REFERENCE_ESTIMATE.total &&
+      r.rangeLow === REFERENCE_ESTIMATE.rangeLow &&
+      r.rangeHigh === REFERENCE_ESTIMATE.rangeHigh &&
+      r.days === REFERENCE_ESTIMATE.days
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function assumptionMatchesReference(
+  assumption: AssumptionSet | null | undefined,
+): boolean {
+  if (!assumption) return false;
+  const man = (won: number) => Math.round(won / 10_000);
+  try {
+    const s = calculateScenarios(
+      assumption.defaults,
+      REFERENCE_INVESTMENT,
+      assumption,
+    );
+    return (["conservative", "base", "optimistic"] as const).every(
+      (id) =>
+        man(s[id].revenue) === REFERENCE_REVENUE[id].revenue &&
+        man(s[id].net) === REFERENCE_REVENUE[id].net,
+    );
+  } catch {
+    return false;
+  }
+}
 
 // 초안 하나: 이름과 만든 시각
 export interface DraftInfo {
@@ -23,6 +69,7 @@ export function splitDrafts(drafts: DraftInfo[], activeSince: Date | null) {
 
 export interface TodoState {
   activePrice: PriceTable | null;
+  activeAssumption?: AssumptionSet | null;
   priceDrafts: string[];
   assumptionDrafts: string[];
   // 적용 중 버전보다 먼저 만든, 남겨진 초안 (할 일이 아니라 정리 안내)
@@ -109,6 +156,24 @@ export function buildTodo(s: TodoState): TodoItem[] {
         : "적용 중 판정표가 기본(욕실·주방)뿐 — 지붕·구조·설비 보수가 견적에서 빠짐",
       href: "/admin/prices",
       d: ["D4"],
+    },
+    {
+      id: "confirmedPrice",
+      done: priceMatchesReference(s.activePrice),
+      text: priceMatchesReference(s.activePrice)
+        ? "적용 중 단가가 확정안과 같음 (검증 사례 3,700만·25일, 시연 대본 금액과 일치)"
+        : "적용 중 단가가 확정안과 다름 — 단가 DB에서 '확정안 전체 불러오기' → 저장 → 적용 (시연 대본 금액이 달라짐)",
+      href: "/admin/prices",
+      d: ["D5"],
+    },
+    {
+      id: "confirmedAssumption",
+      done: assumptionMatchesReference(s.activeAssumption),
+      text: assumptionMatchesReference(s.activeAssumption)
+        ? "적용 중 가정값이 확정안과 같음 (가동률 35·50·65%)"
+        : "적용 중 가정값이 확정안과 다름 — 가정값에서 '확정안 불러오기' → 저장 → 적용",
+      href: "/admin/assumptions",
+      d: ["D6"],
     },
     {
       id: "assumptionDraft",

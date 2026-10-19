@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { buildTodo, splitDrafts, type TodoItem } from "@/lib/admin/todo";
 import { listBranches } from "@/lib/branches/store";
 import { countReceived } from "@/lib/consult/store";
-import type { PriceTable } from "@/lib/engine/types";
+import type { AssumptionSet, PriceTable } from "@/lib/engine/types";
 import { loadPermitContent, loadPhotoGuides } from "@/lib/site-content/store";
 import { listVersions } from "@/lib/versions/store";
 import { Card, Pill } from "../ui";
@@ -48,6 +48,7 @@ export function AdminTodo() {
         setItems(
           buildTodo({
             activePrice: (active?.data as PriceTable) ?? null,
+            activeAssumption: (activeAssumption?.data as AssumptionSet) ?? null,
             priceDrafts: p.pending,
             assumptionDrafts: a.pending,
             stalePriceDrafts: p.stale,
