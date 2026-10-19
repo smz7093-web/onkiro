@@ -29,13 +29,17 @@
   --color-crit-soft: #fbe4e1;
   --color-info: #2a58a6;
   --color-info-soft: #e2eaf8;
+  /* 로고 주황 (10/19 주연 확정 보조색). 글자 대비가 낮아 장식(선·점·배경)에만 쓴다 */
+  --color-brand: #c8693f;
+  --color-brand-soft: #f8e9e1;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans:
+    var(--font-plex), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-display: var(--font-hahmlet), var(--font-plex), serif;
 }
 
 /* 어두운 화면 색은 아직 없다(6.7에서 정한다). 그 전까지는 기기가 다크 모드여도 밝은 화면으로 고정한다.
@@ -47,7 +51,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* A4 인쇄 (PDF 리포트, task.md 8.1). 화면 전용 요소는 print:hidden으로 숨긴다 */

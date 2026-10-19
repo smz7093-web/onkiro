@@ -71,7 +71,7 @@ service cloud.firestore {
         allow read: if isSelf(uid) || isAdmin();
         allow create: if isSelf(uid)
           && request.resource.data.keys().hasOnly(['type', 'version', 'agreed', 'agreedAt'])
-          && request.resource.data.type in ['terms', 'privacy', 'estimateDisclaimer', 'photoReview', 'photoModel']
+          && request.resource.data.type in ['terms', 'privacy', 'estimateDisclaimer', 'photoReview', 'photoModel', 'aiProcessing']
           && request.resource.data.version is string
           && request.resource.data.agreed is bool
           && request.resource.data.agreedAt == request.time;

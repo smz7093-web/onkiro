@@ -16,6 +16,7 @@ import { startResultTimer } from "@/lib/analytics";
 import { loadActiveVersionCached } from "@/lib/versions/store";
 import { useDiagnosis } from "./diagnosis-context";
 import { btnPrimary, btnSecondary, card } from "./styles";
+import { AiConsentGate } from "./ai-consent";
 
 // 4단계 상태 체크리스트 (SIM-07, task.md 6.5). 답을 고를 때마다 저장한다.
 // 10문항 모두 답해야 "견적 계산하기"가 켜진다. 판정 규칙은 석원의 evaluateChecklist(3.7)가 맡는다.
@@ -107,20 +108,22 @@ export function ChecklistStep() {
             제안합니다. 제안은 참고용이며, 적용할지는 직접 고릅니다. 분석을 위해
             사진이 AI 서비스(Anthropic, 미국)로 전송됩니다.
           </p>
-          <div>
-            <button
-              type="button"
-              className={btnSecondary}
-              disabled={aiBusy}
-              onClick={analyze}
-            >
-              {aiBusy
-                ? "사진을 분석하는 중… (20~60초)"
-                : suggestions
-                  ? "다시 분석하기"
-                  : "사진으로 답 제안받기"}
-            </button>
-          </div>
+          <AiConsentGate>
+            <div>
+              <button
+                type="button"
+                className={btnSecondary}
+                disabled={aiBusy}
+                onClick={analyze}
+              >
+                {aiBusy
+                  ? "사진을 분석하는 중… (20~60초)"
+                  : suggestions
+                    ? "다시 분석하기"
+                    : "사진으로 답 제안받기"}
+              </button>
+            </div>
+          </AiConsentGate>
           {aiError && (
             <p role="alert" className="text-base text-crit">
               {aiError}

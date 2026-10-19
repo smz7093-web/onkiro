@@ -150,6 +150,22 @@ describe("users/{uid}", () => {
 });
 
 describe("users/{uid}/consents", () => {
+  it("AI 이용 선택 동의(aiProcessing, 10/19)를 본인이 남길 수 있고, 모르는 종류는 막는다", async () => {
+    await assertSucceeds(
+      addDoc(collection(member(), "users/alice/consents"), {
+        ...consent,
+        type: "aiProcessing",
+        version: "draft-2026-10-19",
+      }),
+    );
+    await assertFails(
+      addDoc(collection(member(), "users/alice/consents"), {
+        ...consent,
+        type: "marketing",
+      }),
+    );
+  });
+
   it("본인은 동의 기록을 추가할 수 있다", async () => {
     await assertSucceeds(
       addDoc(collection(member(), "users/alice/consents"), consent),

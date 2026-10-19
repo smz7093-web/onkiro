@@ -56,6 +56,21 @@ export async function saveConsents(
   await batch.commit();
 }
 
+// 선택 동의를 나중에 따로 할 때 (예: AI 기능 앞에서 'AI 이용에 동의'). 기록을 하나 추가한다
+export async function agreeOptionalConsent(uid: string, type: ConsentType) {
+  const item = CONSENT_ITEMS.find((i) => i.type === type);
+  if (!item || item.required)
+    throw new Error("선택 동의 항목만 따로 동의할 수 있습니다");
+  const batch = writeBatch(db);
+  batch.set(doc(consentsOf(uid)), {
+    type,
+    version: item.version,
+    agreed: true,
+    agreedAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
 // 선택 동의 철회 (마이페이지에서 사용, task.md 8.2).
 export async function withdrawOptionalConsent(uid: string, type: ConsentType) {
   const item = CONSENT_ITEMS.find((i) => i.type === type);

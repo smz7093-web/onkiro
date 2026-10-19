@@ -40,7 +40,7 @@ export default function Home() {
             <p className="text-sm font-semibold tracking-wide text-accent">
               빈집 진단 · 재생 · 스테이 운영
             </p>
-            <h1 className="text-3xl leading-tight font-bold md:text-4xl">
+            <h1 className="border-l-4 border-brand pl-4 font-display text-3xl leading-tight font-bold md:text-4xl">
               빈집을 발견한 순간부터
               <br />첫 손님을 맞는 날까지
             </h1>
@@ -100,7 +100,8 @@ export default function Home() {
           </dl>
           <p className="text-sm text-ink-2">
             집 상태·위치·계약 기간에 따라 위탁 가능 여부와 조건이 달라집니다.
-            상담에서 함께 확인합니다.
+            숙박 영업 인허가 방식(농어촌민박·한옥체험업 등)도 집에 맞춰 상담에서
+            함께 정합니다.
           </p>
           <div>
             <ButtonLink href="/consult?type=entrust">

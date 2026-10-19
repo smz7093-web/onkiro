@@ -20,6 +20,7 @@ import {
 import type { Facts } from "@/lib/diagnosis/facts";
 import { RemodelPreview } from "./remodel-preview";
 import { btnSecondary, card } from "./styles";
+import { AiConsentGate } from "./ai-consent";
 
 const manwon = (won: number) =>
   `${Math.round(won / 10_000).toLocaleString("ko-KR")}만 원`;
@@ -159,49 +160,51 @@ export function FinishTiers({
         })}
       </div>
 
-      {!ai && (
-        <div className="flex flex-col gap-2">
-          <div>
-            <button
-              type="button"
-              className={btnSecondary}
-              disabled={aiBusy}
-              onClick={askAi}
-            >
-              {aiBusy
-                ? "AI가 분석하는 중… (10~30초)"
-                : "AI 등급 설명·추천 받기"}
-            </button>
+      <AiConsentGate>
+        {!ai && (
+          <div className="flex flex-col gap-2">
+            <div>
+              <button
+                type="button"
+                className={btnSecondary}
+                disabled={aiBusy}
+                onClick={askAi}
+              >
+                {aiBusy
+                  ? "AI가 분석하는 중… (10~30초)"
+                  : "AI 등급 설명·추천 받기"}
+              </button>
+            </div>
+            {aiError && (
+              <p role="alert" className="text-base text-crit">
+                {aiError}
+              </p>
+            )}
           </div>
-          {aiError && (
-            <p role="alert" className="text-base text-crit">
-              {aiError}
+        )}
+        {ai && (
+          <div className="flex flex-col gap-2 rounded-lg bg-surface-2 p-4">
+            <h3 className="text-base font-semibold">
+              AI 추천:{" "}
+              {FINISH_TIERS.find((t) => t.module === ai.recommended)?.grade} ·{" "}
+              {FINISH_TIERS.find((t) => t.module === ai.recommended)?.name}
+            </h3>
+            <p className="text-base">{ai.reason}</p>
+            {ai.cautions.length > 0 && (
+              <ul className="list-disc pl-5 text-base">
+                {ai.cautions.map((c) => (
+                  <li key={c}>{c}</li>
+                ))}
+              </ul>
+            )}
+            <p className="text-sm text-ink-2">
+              AI가 집 정보와 체크리스트를 보고 쓴 참고 설명입니다. 금액은 온기로
+              단가 DB로 계산했고, 자재는 예시이며 현장진단에서 확정합니다.
             </p>
-          )}
-        </div>
-      )}
-      {ai && (
-        <div className="flex flex-col gap-2 rounded-lg bg-surface-2 p-4">
-          <h3 className="text-base font-semibold">
-            AI 추천:{" "}
-            {FINISH_TIERS.find((t) => t.module === ai.recommended)?.grade} ·{" "}
-            {FINISH_TIERS.find((t) => t.module === ai.recommended)?.name}
-          </h3>
-          <p className="text-base">{ai.reason}</p>
-          {ai.cautions.length > 0 && (
-            <ul className="list-disc pl-5 text-base">
-              {ai.cautions.map((c) => (
-                <li key={c}>{c}</li>
-              ))}
-            </ul>
-          )}
-          <p className="text-sm text-ink-2">
-            AI가 집 정보와 체크리스트를 보고 쓴 참고 설명입니다. 금액은 온기로
-            단가 DB로 계산했고, 자재는 예시이며 현장진단에서 확정합니다.
-          </p>
-        </div>
-      )}
-      <RemodelPreview module={selected} />
+          </div>
+        )}
+        <RemodelPreview module={selected} />
+      </AiConsentGate>
     </section>
   );
 }

@@ -438,6 +438,28 @@ const kstDay = () =>
   new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 // 하루 사용 수를 하나 올리고, 실패하면 돌려준다(refund)
+// 해외 AI 전송 선택 동의 (D8 10/19 확정): 진단 주인의 가장 최근 aiProcessing 기록이 동의여야 새로 부른다.
+// 저장된 결과(같은 입력)는 이미 동의 후 만든 것이라 그대로 돌려준다
+async function assertAiConsent(owner: string) {
+  const snap = await getFirestore()
+    .collection("users")
+    .doc(owner)
+    .collection("consents")
+    .where("type", "==", "aiProcessing")
+    .get();
+  const latest = snap.docs
+    .map((d) => ({
+      agreed: d.get("agreed") === true,
+      at: (d.get("agreedAt")?.toMillis?.() as number | undefined) ?? 0,
+    }))
+    .sort((a, b) => b.at - a.at)[0];
+  if (!latest?.agreed)
+    throw new HttpsError(
+      "failed-precondition",
+      "AI 기능을 쓰려면 'AI 사진 분석·등급 설명·가상 이미지 이용' 동의가 필요합니다",
+    );
+}
+
 async function countAiUse(uid: string) {
   const day = kstDay();
   const ref = getFirestore().collection("aiUsage").doc(`${uid}_${day}`);
@@ -486,6 +508,7 @@ async function cachedAi<T>(
     };
   if (!hasKey(ANTHROPIC_API_KEY.value()))
     throw new HttpsError("unavailable", "AI 기능을 준비 중입니다");
+  await assertAiConsent((await aRef.get()).get("uid") as string);
   const refund = await countAiUse(uid);
   let result: T;
   try {
@@ -625,9 +648,10 @@ export const renderRemodel = onCall(
     if (hit.exists && hit.get("key") === key)
       return { storagePath: hit.get("storagePath") as string, cached: true };
 
-    const refund = await countAiUse(request.auth.uid);
     const aSnap = await aRef.get();
     const owner = aSnap.get("uid") as string;
+    await assertAiConsent(owner);
+    const refund = await countAiUse(request.auth.uid);
     const pid = aSnap.get("propertyId");
     const property =
       typeof pid === "string"

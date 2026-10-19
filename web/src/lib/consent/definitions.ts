@@ -3,7 +3,12 @@
 // 필수 항목의 version이 바뀌면 다음 로그인 때 재동의를 받는다.
 
 export type ConsentType =
-  "terms" | "privacy" | "estimateDisclaimer" | "photoReview" | "photoModel";
+  | "terms"
+  | "privacy"
+  | "estimateDisclaimer"
+  | "photoReview"
+  | "photoModel"
+  | "aiProcessing";
 
 export interface ConsentItem {
   type: ConsentType;
@@ -54,5 +59,14 @@ export const CONSENT_ITEMS: readonly ConsentItem[] = [
     label: "진단 사진을 견적 모델 개선에 이용",
     detail:
       "식별 정보를 제거한 뒤 견적 정확도 개선에 이용합니다. 동의하지 않아도 서비스를 이용할 수 있고, 나중에 철회할 수 있습니다.",
+  },
+  {
+    // 10/19 D8 확정(원일): 해외 AI 전송은 필수가 아닌 선택 동의로. 동의하지 않으면 AI 기능만 꺼진다
+    type: "aiProcessing",
+    required: false,
+    version: "draft-2026-10-19",
+    label: "AI 사진 분석·등급 설명·가상 이미지 이용 (국외 이전)",
+    detail:
+      "AI 기능을 쓰면 진단 사진과 집 정보(면적·구조·연식·상태 답, 주소 제외)가 Anthropic(미국)과 Google(Vertex AI)로 보내져 분석됩니다. AI 결과는 참고용입니다. 동의하지 않아도 서비스를 이용할 수 있고 AI 기능만 꺼지며, 언제든 철회할 수 있습니다.",
   },
 ];
