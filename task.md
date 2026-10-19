@@ -56,7 +56,7 @@
 **팀원 산출물 대기**: D2·D3·D4(석원·해순, 10/10 지남 — D4는 관리자 화면 판정표로 입력) · D5(석원, 10/14) · D7(원일, 10/14) · D9(해순, 10/14) · D6·D13(원일, 10/17) · D8 검토(원일, 10/21) · D12(해순, 10/21)
 
 **환경·작업 메모**
-- Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`, `searchAddress`, `lookupProperty`, `explainGrades`, `analyzeDiagnosisPhotos`, `renderRemodel`, `cleanupAssessmentAi`(진단 삭제 시 AI 결과 정리). 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
+- Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`, `searchAddress`, `lookupProperty`, `explainGrades`, `analyzeDiagnosisPhotos`, `renderRemodel`, `cleanupAssessmentAi`(진단 삭제 시 AI 결과 정리), `deleteAssessmentAdmin`(관리자 진단 삭제, 10/19). 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/admin/branches`(숙소 콘텐츠), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
 - 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(96개 + todo 3개), `functions`에서 `npm test`(69개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.
 - Next.js 16: 코드 작성 전 `web/node_modules/next/dist/docs/` 확인(`searchParams`·`params`는 Promise, `PageProps<"/경로">` 전역 타입). 새 라우트 추가 후 타입 검사 전에 `npx next typegen`.
