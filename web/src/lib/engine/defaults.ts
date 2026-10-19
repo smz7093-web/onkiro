@@ -164,4 +164,6 @@ export const RECOMMENDED_ASSUMPTION: AssumptionSet = {
     unavailableDays: 2,
   },
   scenarioDeltas: { conservative: -0.15, optimistic: 0.15 },
+  // 서버 검사: 상한 + 낙관 편차 ≤ 95%, 하한 + 보수 편차 ≥ 10% (낙관 +15%p라 상한을 85 → 80%로)
+  occupancyRange: { min: 0.25, max: 0.8 },
 };

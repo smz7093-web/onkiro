@@ -4,7 +4,11 @@ import {
   REFERENCE_INVESTMENT,
   REFERENCE_REVENUE,
 } from "@/lib/engine/reference";
-import { calculateScenarios, RevenueInputError } from "@/lib/engine/revenue";
+import {
+  calculateScenarios,
+  RevenueInputError,
+  scenarioRangeErrors,
+} from "@/lib/engine/revenue";
 import type {
   AssumptionSet,
   RevenueInput,
@@ -60,6 +64,8 @@ export function AssumptionEditor({
   readOnly: boolean;
 }) {
   const num = (v: number | undefined) => v ?? 0;
+  // 서버 적용 검사와 같은 규칙을 미리 보여준다 (UX기준: 오류를 누르기 전에)
+  const rangeErrors = scenarioRangeErrors(data);
   return (
     <div className="flex flex-col gap-8">
       {!readOnly && (
@@ -169,10 +175,25 @@ export function AssumptionEditor({
             })
           }
         />
-        <p className="text-xs text-muted sm:col-span-4">
-          하한 + 보수안 편차는 10% 이상, 상한 + 낙관안 편차는 95% 이하여야
-          적용할 수 있습니다.
-        </p>
+        {rangeErrors.length > 0 ? (
+          <Notice
+            tone="crit"
+            role="alert"
+            title="이대로는 적용할 수 없습니다"
+            className="sm:col-span-4"
+          >
+            <ul className="list-disc pl-5 text-sm">
+              {rangeErrors.map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          </Notice>
+        ) : (
+          <p className="text-xs text-muted sm:col-span-4">
+            하한 + 보수안 편차는 10% 이상, 상한 + 낙관안 편차는 95% 이하여야
+            적용할 수 있습니다.
+          </p>
+        )}
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">

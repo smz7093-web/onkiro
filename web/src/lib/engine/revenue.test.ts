@@ -5,6 +5,7 @@ import {
   calculateRevenue,
   calculateScenarios,
   RevenueInputError,
+  scenarioRangeErrors,
 } from "./revenue";
 
 // 수익 검증표 (prd.md 7.2, task.md 3.4): 총투자금 3,300만 원, 가정값 v0.3 기본값
@@ -117,5 +118,17 @@ describe("10/19 확정 가정값 (관리 화면 수익 검증표와 같아야 �
       expect(Math.round(s[id].paybackMonths!)).toBe(ref.paybackMonths);
       expect(Math.round(s[id].breakEvenOccupancy! * 100)).toBe(ref.bep);
     }
+  });
+});
+
+describe("3안 가동률 범위 검사 (서버 적용 검사와 같음)", () => {
+  it("확정 가정값은 통과, 상한 85% + 낙관 15%p는 막는다", () => {
+    expect(scenarioRangeErrors(RECOMMENDED_ASSUMPTION)).toEqual([]);
+    expect(
+      scenarioRangeErrors({
+        ...RECOMMENDED_ASSUMPTION,
+        occupancyRange: { min: 0.25, max: 0.85 },
+      })[0],
+    ).toContain("80% 이하");
   });
 });

@@ -115,3 +115,24 @@ export function calculateScenarios(
     optimistic: at(input.occupancy + optimistic, "optimistic"),
   };
 }
+
+// 3안 가동률이 현실 범위 안에 있는지 (서버 activateVersion 검사와 같다: functions/src/versions.ts)
+// 하한 + 보수 편차 ≥ 10%, 상한 + 낙관 편차 ≤ 95%. 문제가 없으면 빈 배열
+export const SCENARIO_OCCUPANCY_LIMITS = { min: 0.1, max: 0.95 };
+export function scenarioRangeErrors(
+  a: Pick<AssumptionSet, "scenarioDeltas" | "occupancyRange">,
+): string[] {
+  const pct = (v: number) => `${Math.round(v * 1000) / 10}%`;
+  const low = a.occupancyRange.min + a.scenarioDeltas.conservative;
+  const high = a.occupancyRange.max + a.scenarioDeltas.optimistic;
+  const errors: string[] = [];
+  if (low < SCENARIO_OCCUPANCY_LIMITS.min - 1e-9)
+    errors.push(
+      `하한 ${pct(a.occupancyRange.min)} + 보수 편차 = ${pct(low)} → 10% 이상이 되게 하한을 올리세요`,
+    );
+  if (high > SCENARIO_OCCUPANCY_LIMITS.max + 1e-9)
+    errors.push(
+      `상한 ${pct(a.occupancyRange.max)} + 낙관 편차 = ${pct(high)} → 95% 이하가 되게 상한을 ${pct(SCENARIO_OCCUPANCY_LIMITS.max - a.scenarioDeltas.optimistic)} 이하로 낮추세요`,
+    );
+  return errors;
+}
