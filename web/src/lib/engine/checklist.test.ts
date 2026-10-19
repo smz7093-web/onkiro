@@ -13,6 +13,7 @@ import {
 // 모든 답이 "문제 없음"인 기본 답안. 테스트마다 바꿀 문항만 덮어쓴다.
 const OK: ChecklistAnswers = {
   leak: "no",
+  roofHole: "no",
   water: "yes",
   power: "yes",
   septic: "yes",

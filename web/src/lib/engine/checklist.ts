@@ -12,12 +12,22 @@ import type {
 
 export type { ChecklistRule, RiskFlagId } from "./types";
 
-// 10문항과 선택지 (목업 sim-check). 화면(6.5)이 이 목록을 그대로 그린다.
+// 11문항과 선택지 (목업 sim-check 10문항 + 10/19 지붕 붕괴). 화면(6.5)이 이 목록을 그대로 그린다.
 // 문구를 바꿀 때는 id는 그대로 두고 label만 바꾼다. id는 저장된 진단 데이터에 남는다.
 export const CHECKLIST_QUESTIONS = [
   {
     id: "leak",
     label: "비가 새는 곳이 있나요?",
+    options: [
+      { id: "yes", label: "예" },
+      { id: "no", label: "아니오" },
+      { id: "unknown", label: "모름" },
+    ],
+  },
+  {
+    // 10/19 추가(석원 확정): 위험 신호 '지붕 붕괴'를 판정하는 문항
+    id: "roofHole",
+    label: "지붕이 내려앉거나 구멍 난 곳이 있나요?",
     options: [
       { id: "yes", label: "예" },
       { id: "no", label: "아니오" },
@@ -205,7 +215,7 @@ function labelOf(questionId: string, answerId: string) {
   return `${q?.label ?? questionId} → ${a?.label ?? answerId}`;
 }
 
-// D4 권장 판정표 (10/17 팀원결정권장안.md, 석원 확인 전). 관리 화면 '권장안 불러오기'로 초안에 넣는다.
+// D4 판정표 (10/19 석원 확정, 팀원결정권장안.md). 관리 화면 '권장안 불러오기'로 초안에 넣는다.
 // 10년 이상 빈 집은 배선·배관·단열이 수명을 다했다고 보고, '모름'은 보수 쪽으로 판정해 견적이 낮게 나오는 것을 막는다.
 const rule = (
   question: string,
@@ -218,6 +228,8 @@ const rule = (
 export const RECOMMENDED_CHECKLIST_RULES: ChecklistRule[] = [
   rule("leak", "yes", "roof", "partial"),
   rule("leak", "unknown", "roof", "partial"),
+  rule("roofHole", "yes", "roof", "full", "roofCollapse"),
+  rule("roofHole", "unknown", "roof", "partial"),
   rule("water", "no", "electrical", "partial"),
   rule("power", "no", "electrical", "partial"),
   rule("septic", "no", "electrical", "full"),
@@ -240,7 +252,7 @@ export const RECOMMENDED_CHECKLIST_RULES: ChecklistRule[] = [
   rule("heating", "none", "electrical", "partial"),
 ];
 
-// 10문항 답 + 판정표 → 공정별 상태·위험 신호.
+// 체크리스트 답 + 판정표 → 공정별 상태·위험 신호.
 // 답과 맞는 줄을 모두 적용하고, 한 공정에 여러 줄이 걸리면 가장 나쁜 판정을 쓴다.
 export function evaluateChecklist(
   answers: ChecklistAnswers,

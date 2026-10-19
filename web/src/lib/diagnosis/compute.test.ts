@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ASSUMPTION_V0_3, PRICE_V2026_10_1 } from "../engine/defaults";
+import {
+  ASSUMPTION_V0_3,
+  PRICE_V2026_10_1,
+  RECOMMENDED_PRICE_TABLE,
+} from "../engine/defaults";
 import type { ChecklistAnswers } from "../engine/checklist";
 import {
   computeEstimate,
@@ -16,6 +20,7 @@ import { manualFact } from "./facts";
 
 const CHECKLIST: ChecklistAnswers = {
   leak: "no",
+  roofHole: "no",
   water: "yes",
   power: "yes",
   septic: "yes",
@@ -44,10 +49,10 @@ describe("실내 마감 등급별 견적 (하·중·상 = 모듈 A·B·C)", () =
   it("실내 마감만 바뀌고 나머지 공정은 같다", () => {
     const c = computeEstimate(INPUTS, PRICE_V2026_10_1);
     const t = tierEstimates(c.estimateInput, PRICE_V2026_10_1);
-    // 72㎡ × (A 165,000 / B 208,000 / C 236,000) + 욕실 250 + 주방 200 + IoT 100만 원
-    expect(t.A.subtotal).toBeCloseTo(72 * 165_000 + 5_500_000, 0);
+    // 72㎡ × (A 165,000 / B 208,000 / C 236,000) + 욕실 250 + 주방 200 + IoT 100 + 철거 180만 원(전면 교체 → 자동 포함)
+    expect(t.A.subtotal).toBeCloseTo(72 * 165_000 + 7_300_000, 0);
     expect(t.B.subtotal).toBeCloseTo(c.estimate.subtotal, 0);
-    expect(t.C.subtotal).toBeCloseTo(72 * 236_000 + 5_500_000, 0);
+    expect(t.C.subtotal).toBeCloseTo(72 * 236_000 + 7_300_000, 0);
     expect(t.A.total).toBeLessThan(t.B.total);
     expect(t.B.total).toBeLessThan(t.C.total);
     expect(FINISH_TIERS.map((x) => x.grade)).toEqual(["하", "중", "상"]);
@@ -61,11 +66,12 @@ describe("진단 → 견적", () => {
       floorArea: 72,
       bathrooms: 1,
       module: "B",
-      optionalBaseWork: [],
+      // 욕실·주방 '전면 교체'가 있으니 철거를 자동 포함 (10/19)
+      optionalBaseWork: ["demolition"],
       conditions: { bathroom: "full", kitchen: "full" },
     });
-    // 욕실 250 + 주방 200 + 모듈 B 72㎡ 1,497.6 + IoT 100 = 2,047.6만 원
-    expect(c.estimate.subtotal).toBeCloseTo(20_476_000, 0);
+    // 욕실 250 + 주방 200 + 모듈 B 72㎡ 1,497.6 + IoT 100 + 철거 180 = 2,227.6만 원
+    expect(c.estimate.subtotal).toBeCloseTo(22_276_000, 0);
     expect(c.expertRequired).toBe(false);
   });
 
@@ -127,5 +133,47 @@ describe("스냅샷 입력 지문 (SIM-20)", () => {
     expect(inputsKey(make({ missingPhotoParts: 1 }))).not.toBe(
       inputsKey(make()),
     );
+  });
+});
+
+describe("10/19 확정 규칙", () => {
+  it("모두 양호하고 1년 안에 살던 집은 철거를 자동으로 넣지 않는다", () => {
+    const good = {
+      ...INPUTS,
+      checklist: { ...INPUTS.checklist, bathroom: "usable", kitchen: "usable" },
+    } as typeof INPUTS;
+    const c = computeEstimate(good, PRICE_V2026_10_1);
+    expect(c.estimateInput.optionalBaseWork).toEqual([]);
+  });
+
+  it("5년 넘게 빈 집은 철거 자동 포함, 외부·조경은 고를 때만", () => {
+    const old = {
+      ...INPUTS,
+      checklist: { ...INPUTS.checklist, lastOccupied: "over10y" },
+      options: { module: "B", demolition: false, exterior: true },
+    } as typeof INPUTS;
+    const c = computeEstimate(old, RECOMMENDED_PRICE_TABLE);
+    expect(c.estimateInput.optionalBaseWork).toEqual([
+      "demolition",
+      "exterior",
+    ]);
+    // 확정 판정표: 10년 이상 → 설비·단열 전면 교체
+    expect(c.checklist.conditions).toMatchObject({
+      electrical: "full",
+      insulation: "full",
+    });
+  });
+
+  it("확인 화면 지붕이 슬레이트면 slateRoof", () => {
+    const slate = {
+      ...INPUTS,
+      facts: {
+        ...INPUTS.facts,
+        roofStructure: { value: "슬레이트", source: "manual" },
+      },
+    } as typeof INPUTS;
+    expect(
+      computeEstimate(slate, PRICE_V2026_10_1).estimateInput.slateRoof,
+    ).toBe(true);
   });
 });

@@ -1,4 +1,7 @@
-import { DEFAULT_CHECKLIST_RULES } from "./checklist";
+import {
+  DEFAULT_CHECKLIST_RULES,
+  RECOMMENDED_CHECKLIST_RULES,
+} from "./checklist";
 import type {
   AssumptionSet,
   PriceTable,
@@ -93,8 +96,7 @@ export const ASSUMPTION_V0_3: AssumptionSet = {
   seasonalOccupancy: { peak: 0.8, offPeak: 0.4 },
 };
 
-// D5 권장 단가 (10/17 팀원결정권장안.md, 석원 확인 전): 임시 단가 DB에 없던 공정.
-// 관리 화면 '빈 공정에 권장 단가 채우기'가 비어 있는 공정에만 넣는다(이미 입력한 값은 그대로).
+// D5 단가 (10/19 석원 확정, 팀원결정권장안.md). 관리 화면 '빈 공정에 권장 단가 채우기'가 비어 있는 공정에만 넣는다.
 export const RECOMMENDED_PROCESS_PRICES: Partial<
   Record<ProcessId, ProcessPrice>
 > = {
@@ -110,4 +112,55 @@ export const RECOMMENDED_PROCESS_PRICES: Partial<
     repairUnitPrice: 80_000,
     repairDays: 7,
   },
+  // 마당 정리·데크·담장 일부, 1식 (선택 공사)
+  exterior: {
+    quantityBasis: "lumpSum",
+    baseUnitPrice: 5_000_000,
+    baseDays: 5,
+    baseApplies: "optional",
+  },
+};
+
+// 단가 DB 확정안 전체 (10/19). 관리 화면 '확정안 전체 불러오기'로 초안에 넣고 PM이 적용한다
+export const RECOMMENDED_PRICE_TABLE: PriceTable = {
+  ...PRICE_V2026_10_1,
+  version: "recommended-2026-10-19",
+  processes: {
+    ...PRICE_V2026_10_1.processes,
+    // 폐기물 운반·처리 포함
+    demolition: {
+      quantityBasis: "floorArea",
+      baseUnitPrice: 35_000,
+      baseDays: 3,
+      baseApplies: "optional",
+    },
+    bathroom: {
+      quantityBasis: "bathrooms",
+      repairUnitPrice: 4_500_000,
+      repairDays: 6,
+    },
+    kitchen: {
+      quantityBasis: "kitchens",
+      repairUnitPrice: 3_500_000,
+      repairDays: 5,
+    },
+    ...RECOMMENDED_PROCESS_PRICES,
+  },
+  uncertainty: { ...PRICE_V2026_10_1.uncertainty, perUnknownAnswer: 0.03 },
+  slateDisposalCost: 3_000_000,
+  checklistRules: RECOMMENDED_CHECKLIST_RULES,
+};
+
+// D6 가정값 확정안 (10/19 원일 확정). 관리 화면 '확정안 불러오기'로 새 초안에 넣고 PM이 적용한다
+export const RECOMMENDED_ASSUMPTION: AssumptionSet = {
+  ...ASSUMPTION_V0_3,
+  version: "recommended-2026-10-19",
+  defaults: {
+    ...ASSUMPTION_V0_3.defaults,
+    occupancy: 0.4,
+    otaShare: 0.7,
+    utilities: 350_000,
+    unavailableDays: 2,
+  },
+  scenarioDeltas: { conservative: -0.15, optimistic: 0.15 },
 };

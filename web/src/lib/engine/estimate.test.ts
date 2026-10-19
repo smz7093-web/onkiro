@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PRICE_V2026_10_1 } from "./defaults";
+import { PRICE_V2026_10_1, RECOMMENDED_PRICE_TABLE } from "./defaults";
+import { REFERENCE_ESTIMATE, REFERENCE_ESTIMATE_INPUT } from "./reference";
 import {
   calculateEstimate,
   EstimateInputError,
@@ -93,8 +94,9 @@ describe("견적 엔진 · 대표 예시 ② 표시값", () => {
     expect(r.rangeHigh).toBe(38_000_000);
   });
 
-  it("공기 40일", () => {
-    expect(r.days).toBe(40);
+  // v1.2 병행: 구조·지붕 max(3.2, 4.8) + 실내 max(15, 6, 5, 1) = 19.8 → 20 + 고정 5 (v1.1은 단순 합 40일)
+  it("공기 25일 (v1.2 병행 묶음)", () => {
+    expect(r.days).toBe(25);
   });
 });
 
@@ -106,7 +108,8 @@ describe("견적 엔진 · 규칙", () => {
     );
     expect(r.processes.map((p) => p.id)).toEqual(["interior", "iot"]);
     expect(r.subtotal).toBeCloseTo(14_976_000 + 1_000_000, 0);
-    expect(r.days).toBe(15 + 1 + 5);
+    // 내부·IoT는 같은 묶음 → 15 + 고정 5
+    expect(r.days).toBe(15 + 5);
   });
 
   it("철거를 고르면 기본 공사비와 작업일이 더해진다", () => {
@@ -115,7 +118,26 @@ describe("견적 엔진 · 규칙", () => {
       PRICE_V2026_10_1,
     );
     expect(costOf(r, "demolition")).toBeCloseTo(72 * 25_000, 0);
-    expect(r.days).toBe(43);
+    // 철거 3 + 구조·지붕 4.8 + 실내 15 = 22.8 → 23 + 고정 5
+    expect(r.days).toBe(28);
+  });
+
+  it("v1.2: 석면 슬레이트 지붕을 고치면 처리비, 지붕이 양호면 더하지 않는다", () => {
+    const table = { ...PRICE_V2026_10_1, slateDisposalCost: 3_000_000 };
+    const fix = calculateEstimate(
+      { ...representative, slateRoof: true },
+      table,
+    );
+    const base = calculateEstimate(representative, table);
+    expect(costOf(fix, "roof") - costOf(base, "roof")).toBeCloseTo(
+      3_000_000,
+      0,
+    );
+    const good = calculateEstimate(
+      { ...representative, slateRoof: true, conditions: {} },
+      table,
+    );
+    expect(good.processes.some((p) => p.id === "roof")).toBe(false);
   });
 
   it("사진 누락·대장 없음은 불확실도를 넓힌다", () => {
@@ -162,5 +184,19 @@ describe("견적 엔진 · 규칙", () => {
         PRICE_V2026_10_1,
       ),
     ).toThrow(EstimateInputError);
+  });
+});
+
+describe("10/19 확정안 대표 예시 (관리 화면 검증 사례와 같아야 한다)", () => {
+  it("확정 단가·v1.2로 소계 3,300만·합계 3,700만·범위 3,100~4,300만·25일", () => {
+    const r = calculateEstimate(
+      REFERENCE_ESTIMATE_INPUT,
+      RECOMMENDED_PRICE_TABLE,
+    );
+    expect(roundForDisplay(r.subtotal)).toBe(REFERENCE_ESTIMATE.subtotal);
+    expect(roundForDisplay(r.total)).toBe(REFERENCE_ESTIMATE.total);
+    expect(r.rangeLow).toBe(REFERENCE_ESTIMATE.rangeLow);
+    expect(r.rangeHigh).toBe(REFERENCE_ESTIMATE.rangeHigh);
+    expect(r.days).toBe(REFERENCE_ESTIMATE.days);
   });
 });

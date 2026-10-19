@@ -25,14 +25,29 @@ import type { Facts } from "./facts";
 // 견적 화면에서 고르는 값
 export interface EstimateOptions {
   module: ModuleType;
-  // 철거 기본 공사를 넣을지 (단가 DB에서 optional인 공정)
+  // 철거 기본 공사를 넣을지 (단가 DB에서 optional인 공정). 조건에 맞으면 자동 포함(demolitionRequired)
   demolition: boolean;
+  // 외부·조경(선택 공사)을 넣을지 (10/19)
+  exterior?: boolean;
 }
 
 export const DEFAULT_ESTIMATE_OPTIONS: EstimateOptions = {
   module: "B",
   demolition: false,
+  exterior: false,
 };
+
+// 철거를 기본 포함하는 조건 (10/19 석원 확정): '전면 교체' 판정이 하나라도 있거나, 마지막 거주가 5년 이상
+export function demolitionRequired(
+  answers: Partial<ChecklistAnswers>,
+  checklist: ChecklistResult,
+): boolean {
+  return (
+    Object.values(checklist.conditions).includes("full") ||
+    answers.lastOccupied === "5to10y" ||
+    answers.lastOccupied === "over10y"
+  );
+}
 
 export interface DiagnosisInputs {
   facts: Facts;
@@ -61,10 +76,19 @@ export function buildEstimateInput(
     module: inputs.options.module,
     region: inputs.region,
     conditions: checklist.conditions,
-    optionalBaseWork: inputs.options.demolition ? ["demolition"] : [],
+    optionalBaseWork: [
+      ...(inputs.options.demolition ||
+      demolitionRequired(inputs.checklist, checklist)
+        ? (["demolition"] as const)
+        : []),
+      ...(inputs.options.exterior ? (["exterior"] as const) : []),
+    ],
     missingPhotoParts: inputs.missingPhotoParts,
     noRegistry: inputs.noRegistry,
     unknownAnswers: checklist.unknownAnswers,
+    ...(inputs.facts.roofStructure?.value === "슬레이트"
+      ? { slateRoof: true }
+      : {}),
   };
 }
 

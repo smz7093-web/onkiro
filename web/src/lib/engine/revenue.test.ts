@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ASSUMPTION_V0_3 } from "./defaults";
+import { ASSUMPTION_V0_3, RECOMMENDED_ASSUMPTION } from "./defaults";
+import { REFERENCE_INVESTMENT, REFERENCE_REVENUE } from "./reference";
 import {
   calculateRevenue,
   calculateScenarios,
@@ -98,5 +99,23 @@ describe("수익 엔진 · 규칙", () => {
     expect(() =>
       calculateRevenue({ ...input, avgStayNights: 0 }, TOTAL),
     ).toThrow(RevenueInputError);
+  });
+});
+
+describe("10/19 확정 가정값 (관리 화면 수익 검증표와 같아야 한다)", () => {
+  it("기본안 월 매출 256만·차감 후 92만·회수 40개월", () => {
+    const s = calculateScenarios(
+      RECOMMENDED_ASSUMPTION.defaults,
+      REFERENCE_INVESTMENT,
+      RECOMMENDED_ASSUMPTION,
+    );
+    for (const id of ["conservative", "base", "optimistic"] as const) {
+      const ref = REFERENCE_REVENUE[id];
+      expect(Math.round(s[id].revenue / 10_000)).toBe(ref.revenue);
+      expect(Math.round(s[id].operatingCost / 10_000)).toBe(ref.operatingCost);
+      expect(Math.round(s[id].net / 10_000)).toBe(ref.net);
+      expect(Math.round(s[id].paybackMonths!)).toBe(ref.paybackMonths);
+      expect(Math.round(s[id].breakEvenOccupancy! * 100)).toBe(ref.bep);
+    }
   });
 });

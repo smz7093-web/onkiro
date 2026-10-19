@@ -83,6 +83,8 @@ export interface PriceTable {
   };
   // 범위 반올림 단위 (원)
   rangeRoundingUnit: number;
+  // 석면 슬레이트 지붕을 보수·교체할 때 더하는 처리비(원, 1동). 없으면 더하지 않는다 (v1.2)
+  slateDisposalCost?: number;
   // 체크리스트 판정표. 없으면 DEFAULT_CHECKLIST_RULES(checklist.ts)를 쓴다
   checklistRules?: ChecklistRule[];
 }
@@ -102,6 +104,8 @@ export interface EstimateInput {
   missingPhotoParts: number;
   noRegistry: boolean;
   unknownAnswers: number;
+  // 지붕이 석면 슬레이트 (확인 화면 지붕 = 슬레이트, v1.2)
+  slateRoof?: boolean;
 }
 
 export interface ProcessCost {
@@ -109,7 +113,9 @@ export interface ProcessCost {
   grade: ConditionGrade;
   baseCost: number;
   repairCost: number;
-  // (기본 + 보수) × 지역계수
+  // 추가 비용 (지붕의 석면 슬레이트 처리비, v1.2)
+  extraCost?: number;
+  // (기본 + 보수 + 추가) × 지역계수
   cost: number;
   days: number;
 }
