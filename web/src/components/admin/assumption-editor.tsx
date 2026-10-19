@@ -10,6 +10,8 @@ import type {
   RevenueInput,
   ScenarioId,
 } from "@/lib/engine/types";
+import { RECOMMENDED_ASSUMPTION } from "@/lib/engine/defaults";
+import { buttonClass, Notice } from "../ui";
 import { NumberField } from "./number-field";
 import { CheckTable } from "./price-editor";
 
@@ -60,6 +62,34 @@ export function AssumptionEditor({
   const num = (v: number | undefined) => v ?? 0;
   return (
     <div className="flex flex-col gap-8">
+      {!readOnly && (
+        <Notice tone="info" title="10/19 팀원 회의 확정안">
+          가동률 기본 40%(보수 25%·낙관 55%), OTA 경유 70%, 공과금 35만 원, 판매
+          불가일 2일을 한 번에 넣습니다. 위탁 운영 사례는 임차료를 0원으로 두고
+          보세요. 넣은 뒤 아래 검증표가 &lsquo;일치&rsquo;인지 보고
+          저장·적용하세요.
+          <div>
+            <button
+              type="button"
+              className={buttonClass({ variant: "primary" })}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "이 초안의 기본값·3안 편차를 확정안으로 바꿉니다. 저장해야 초안에 들어갑니다. 계속할까요?",
+                  )
+                )
+                  setData({
+                    ...structuredClone(RECOMMENDED_ASSUMPTION),
+                    version: data.version,
+                    region: data.region,
+                  });
+              }}
+            >
+              확정안 불러오기
+            </button>
+          </div>
+        </Notice>
+      )}
       <section className="grid gap-4 sm:grid-cols-3">
         <h2 className="text-lg font-semibold sm:col-span-3">
           지역{" "}

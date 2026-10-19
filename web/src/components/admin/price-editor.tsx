@@ -20,13 +20,16 @@ import {
   type ProcessPrice,
   type QuantityBasis,
 } from "@/lib/engine/types";
-import { RECOMMENDED_PROCESS_PRICES } from "@/lib/engine/defaults";
+import {
+  RECOMMENDED_PRICE_TABLE,
+  RECOMMENDED_PROCESS_PRICES,
+} from "@/lib/engine/defaults";
 import { ChecklistRulesEditor } from "./checklist-rules-editor";
 import { man } from "./format";
 import { NumberField } from "./number-field";
 import { NumberInput } from "./number-input";
 import { DTag } from "./d-tag";
-import { buttonClass } from "../ui";
+import { Notice, buttonClass } from "../ui";
 
 const BASIS_LABEL: Record<QuantityBasis, string> = {
   floorArea: "연면적(㎡)",
@@ -69,6 +72,33 @@ export function PriceEditor({
 
   return (
     <div className="flex flex-col gap-8">
+      {!readOnly && (
+        <Notice tone="info" title="10/19 팀원 회의 확정안">
+          단가(욕실·주방·철거·단열·설비·외부), 판정표 24줄, &lsquo;모름&rsquo;
+          가산 3%p, 석면 슬레이트 처리비를 한 번에 넣습니다. 넣은 뒤 아래 검증
+          사례가 &lsquo;일치&rsquo;인지 보고 저장·적용하세요.
+          <div>
+            <button
+              type="button"
+              className={buttonClass({ variant: "primary" })}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "이 초안의 단가·판정표·불확실도·석면 처리비를 확정안으로 바꿉니다. 저장해야 초안에 들어갑니다. 계속할까요?",
+                  )
+                )
+                  setData({
+                    ...structuredClone(RECOMMENDED_PRICE_TABLE),
+                    version: data.version,
+                    regionFactors: data.regionFactors,
+                  });
+              }}
+            >
+              확정안 전체 불러오기
+            </button>
+          </div>
+        </Notice>
+      )}
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">
           공정별 단가 <DTag ids={["D5"]} />
@@ -304,6 +334,14 @@ export function PriceEditor({
           readOnly={readOnly}
           value={data.rangeRoundingUnit}
           onChange={(v) => setData({ ...data, rangeRoundingUnit: num(v) })}
+        />
+        <NumberField
+          label="석면 슬레이트 처리비 (1동)"
+          unit="원"
+          hint="지붕이 슬레이트이고 지붕을 고칠 때 더함 (v1.2)"
+          readOnly={readOnly}
+          value={data.slateDisposalCost}
+          onChange={(v) => setData({ ...data, slateDisposalCost: v })}
         />
       </section>
 

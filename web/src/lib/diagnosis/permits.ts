@@ -53,6 +53,7 @@ export const CONDITIONAL_PERMITS = [
     when: "차량 통행이 어려운 길에 접한 땅(세로(불) 등)",
     placeholder: "{도로}",
   },
+  { id: "slateRoof", when: "지붕이 석면 슬레이트인 집", placeholder: null },
 ] as const;
 export type ConditionalPermitId = (typeof CONDITIONAL_PERMITS)[number]["id"];
 
@@ -133,6 +134,12 @@ export const DEFAULT_PERMIT_CONTENT: PermitContent = {
         "증·개축 허가와 공사 차량 진입이 어려울 수 있습니다. 진입로 확보 방법을 현장진단에서 함께 확인하세요.",
       agency: "",
     },
+    slateRoof: {
+      title: "석면 슬레이트 지붕 — 처리 절차·지원사업 확인",
+      nextAction:
+        "슬레이트 철거는 신고된 전문 업체가 처리해야 합니다. 지자체 슬레이트 처리 지원사업 대상인지 관할 시·군청에 확인하세요.",
+      agency: "",
+    },
     roadNarrow: {
       title: "차량 통행이 어려운 좁은 길 ({도로})",
       nextAction:
@@ -184,6 +191,9 @@ export function permitItems(
   const signals = [
     purposeSignal(site?.mainPurpose ?? null, content),
     roadSignal(site?.roadSide ?? null, content),
+    site?.roofStructure === "슬레이트"
+      ? item("slateRoof", content.conditional.slateRoof)
+      : null,
   ].filter((x): x is PermitItem => x !== null);
   items.unshift(...signals);
   if (noRegistry)

@@ -12,7 +12,11 @@ import {
   type ChecklistAnswers,
 } from "@/lib/engine/checklist";
 import type { EstimateInput, ModuleType, PriceTable } from "@/lib/engine/types";
-import { FINISH_TIERS, tierEstimates } from "@/lib/diagnosis/compute";
+import {
+  FINISH_TIERS,
+  MODULE_SCOPE,
+  tierEstimates,
+} from "@/lib/diagnosis/compute";
 import type { Facts } from "@/lib/diagnosis/facts";
 import { RemodelPreview } from "./remodel-preview";
 import { btnSecondary, card } from "./styles";
@@ -100,6 +104,7 @@ export function FinishTiers({
           같은 집·같은 상태에서 실내 마감만 바꾼 금액
         </span>
       </div>
+      <p className="text-sm text-ink-2">실내 마감 범위: {MODULE_SCOPE}</p>
       <div
         role="radiogroup"
         aria-label="실내 마감 등급"
@@ -132,6 +137,8 @@ export function FinishTiers({
                   </span>
                 )}
               </span>
+              <span className="text-sm text-ink-2">{t.concept}</span>
+              <span className="text-sm">{t.finishes}</span>
               <span className="text-sm text-ink-2">
                 모듈 {t.module} · 실내 ㎡당{" "}
                 {price.moduleUnitPrices[t.module].toLocaleString("ko-KR")}원

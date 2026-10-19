@@ -15,6 +15,7 @@ import {
 import {
   DEFAULT_ESTIMATE_OPTIONS,
   defaultRevenueInput,
+  demolitionRequired,
   type EstimateOptions,
 } from "@/lib/diagnosis/compute";
 import {
@@ -87,6 +88,11 @@ export function EstimateStep() {
     assessment.revenueInput,
     options,
   ]);
+
+  // 철거 자동 포함 여부 (전면 교체 공정 또는 5년 이상 빈 집, 10/19)
+  const demolitionAuto =
+    computation !== null &&
+    demolitionRequired(assessment.checklist, computation.checklist);
 
   // 체크리스트 '견적 계산하기'부터 결과가 보일 때까지 걸린 시간 (7.6, 처음 한 번만 기록된다)
   const ready = Boolean(basis && computation && property);
@@ -220,20 +226,52 @@ export function EstimateStep() {
         onSelect={(module) => setOptions({ ...options, module })}
       />
 
-      {basis.price.processes.demolition?.baseApplies === "optional" && (
+      {(basis.price.processes.demolition?.baseApplies === "optional" ||
+        basis.price.processes.exterior?.baseApplies === "optional") && (
         <section className={card}>
           <h2 className="text-lg font-semibold">공사 조건</h2>
-          <label className="flex min-h-12 items-center gap-2 text-base">
-            <input
-              type="checkbox"
-              className="size-5"
-              checked={options.demolition}
-              onChange={(e) =>
-                setOptions({ ...options, demolition: e.target.checked })
-              }
-            />
-            철거 공사 포함
-          </label>
+          {basis.price.processes.demolition?.baseApplies === "optional" &&
+            (demolitionAuto ? (
+              <p className="flex min-h-12 items-center gap-2 text-base">
+                <input
+                  type="checkbox"
+                  className="size-5"
+                  checked
+                  disabled
+                  aria-label="철거 공사 포함(자동)"
+                />
+                철거 공사 포함
+                <span className="text-sm text-ink-2">
+                  — 전면 교체 공정이 있거나 5년 넘게 빈 집이라 자동으로
+                  넣었습니다
+                </span>
+              </p>
+            ) : (
+              <label className="flex min-h-12 items-center gap-2 text-base">
+                <input
+                  type="checkbox"
+                  className="size-5"
+                  checked={options.demolition}
+                  onChange={(e) =>
+                    setOptions({ ...options, demolition: e.target.checked })
+                  }
+                />
+                철거 공사 포함
+              </label>
+            ))}
+          {basis.price.processes.exterior?.baseApplies === "optional" && (
+            <label className="flex min-h-12 items-center gap-2 text-base">
+              <input
+                type="checkbox"
+                className="size-5"
+                checked={options.exterior ?? false}
+                onChange={(e) =>
+                  setOptions({ ...options, exterior: e.target.checked })
+                }
+              />
+              외부·조경 포함 (마당 정리·데크 등, 숙소 운영이면 권장)
+            </label>
+          )}
         </section>
       )}
 
@@ -426,6 +464,12 @@ function ProcessRow({
           <li>
             보수 단가 {def.repairUnitPrice.toLocaleString("ko-KR")}원 × 상태계수{" "}
             {price.conditionCoefficients[p.grade]} (체크리스트 판정)
+          </li>
+        )}
+        {p.extraCost !== undefined && p.extraCost > 0 && (
+          <li>
+            석면 슬레이트 처리비 {manwon(p.extraCost)} 포함 (전문 업체 처리,
+            지자체 지원사업 확인)
           </li>
         )}
         <li>작업일 {Math.ceil(p.days)}일</li>

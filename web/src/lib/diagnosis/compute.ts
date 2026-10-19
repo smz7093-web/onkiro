@@ -96,6 +96,8 @@ export function buildEstimateInput(
 export interface SiteSignals {
   mainPurpose: string | null;
   roadSide: string | null;
+  // 10/19: 지붕이 석면 슬레이트면 처리·지원사업 안내
+  roofStructure?: string | null;
 }
 
 const text = (facts: Facts, key: keyof Facts) => {
@@ -107,6 +109,7 @@ export function siteSignals(facts: Facts): SiteSignals {
   return {
     mainPurpose: text(facts, "mainPurpose"),
     roadSide: text(facts, "roadSide"),
+    roofStructure: text(facts, "roofStructure"),
   };
 }
 
@@ -140,14 +143,38 @@ export function computeEstimate(
 
 // 실내 마감 등급(하·중·상) = 단가 DB의 실내 모듈 A/B/C (10/14). 금액은 단가 DB로만 계산한다.
 // AI(functions/src/ai/grades.ts)는 등급별 자재 예시·추천만 쓰고 금액을 바꾸지 않는다.
+// 등급별 콘셉트·대표 마감 (10/19 해순·석원 확정, D3). 모듈 단가에는 바닥·벽·천장 마감, 도배·도장, 실내 문, 조명만 들어가고
+// 욕실·주방·창호·설비는 별도 공정으로 계산한다
+export const MODULE_SCOPE =
+  "바닥·벽·천장 마감, 도배·도장, 실내 문, 조명 (욕실·주방·창호·설비는 별도 공정)";
 export const FINISH_TIERS: {
   module: ModuleType;
   grade: "하" | "중" | "상";
   name: string;
+  concept: string;
+  finishes: string;
 }[] = [
-  { module: "A", grade: "하", name: "기본형" },
-  { module: "B", grade: "중", name: "표준형" },
-  { module: "C", grade: "상", name: "고급형" },
+  {
+    module: "A",
+    grade: "하",
+    name: "기본형",
+    concept: "깨끗하게 고쳐 바로 운영",
+    finishes: "장판·실크벽지, 기본 조명",
+  },
+  {
+    module: "B",
+    grade: "중",
+    name: "표준형",
+    concept: "시골 독채 숙소의 평균 기대치",
+    finishes: "강마루, 합지 + 포인트 도장, 간접조명 일부",
+  },
+  {
+    module: "C",
+    grade: "상",
+    name: "고급형",
+    concept: "사진이 잘 나오는 감성 독채",
+    finishes: "원목마루, 도장 마감, 노출 서까래 살리기, 간접조명",
+  },
 ];
 
 // 같은 집·같은 상태로 실내 모듈만 바꿔 세 등급의 견적을 낸다

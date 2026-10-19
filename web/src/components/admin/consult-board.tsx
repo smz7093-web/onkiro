@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   canTransition,
+  isBackward,
+  suggestAssignee,
   CONSULT_STAGE_LABELS,
   CONSULT_STAGES,
   CONSULT_TYPE_LABELS,
@@ -249,7 +251,36 @@ function ConsultDetail({
     }
   }
 
-  const nextStages = CONSULT_STAGES.filter((s) => canTransition(c.status, s));
+  // 보류 직전 단계: 변경 이력에서 마지막으로 보류로 옮긴 기록 (D13)
+  const heldFrom =
+    c.status === "onHold"
+      ? ((events ?? []).find((e) => e.kind === "status" && e.after === "onHold")
+          ?.before as ConsultStage | undefined)
+      : undefined;
+  const nextStages = CONSULT_STAGES.filter((s) =>
+    canTransition(c.status, s, heldFrom),
+  );
+  const suggested =
+    manageAll && !c.assigneeUid
+      ? suggestAssignee(
+          c.type,
+          staff.map((m) => ({ uid: m.uid, name: m.name ?? "", handles: [] })),
+        )
+      : null;
+
+  // 되돌릴 때는 운영팀 메모에 이유를 적어야 한다 (D13)
+  function moveTo(to: ConsultStage) {
+    if (isBackward(c.status, to)) {
+      if (memo.trim() === c.staffMemo.trim()) {
+        setError(
+          "단계를 되돌릴 때는 아래 운영팀 메모에 이유를 적은 뒤 다시 골라 주세요.",
+        );
+        return;
+      }
+      return change({ status: to, memo });
+    }
+    return change({ status: to });
+  }
 
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-line-2 bg-surface p-4">
@@ -306,18 +337,28 @@ function ConsultDetail({
             value=""
             disabled={busy}
             onChange={(e) =>
-              e.target.value &&
-              change({ status: e.target.value as ConsultStage })
+              e.target.value && moveTo(e.target.value as ConsultStage)
             }
           >
             <option value="">{CONSULT_STAGE_LABELS[c.status]} → …</option>
             {nextStages.map((s) => (
               <option key={s} value={s}>
                 {CONSULT_STAGE_LABELS[s]}
+                {isBackward(c.status, s) ? " (되돌리기·메모 필요)" : ""}
               </option>
             ))}
           </select>
         </label>
+        {suggested && (
+          <button
+            type="button"
+            className={buttonClass()}
+            disabled={busy}
+            onClick={() => change({ assigneeUid: suggested })}
+          >
+            추천 담당 배정: {staff.find((m) => m.uid === suggested)?.name}
+          </button>
+        )}
         {manageAll && (
           <label className="flex flex-col gap-1 text-sm text-ink-2">
             담당자
