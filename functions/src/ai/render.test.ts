@@ -19,6 +19,20 @@ describe("AI 리모델링 가상 이미지", () => {
     }
   });
 
+  it("실내(대표 방·욕실·주방)는 구조를 바꾸지 않고 개인 물건을 지우게 한다 (10/19)", () => {
+    for (const t of ["room", "bathroom", "kitchen"] as const) {
+      const p = renderPrompt("B", { roofStructure: "기와" }, t);
+      expect(p).toContain("positions of walls, windows and doors");
+      expect(p).toContain("do not remove walls");
+      expect(p).toContain("personal items");
+      expect(p).toContain("no reflections of people");
+      expect(p).not.toContain("clay tile");
+    }
+    expect(renderPrompt("A", { roofStructure: null }, "bathroom")).toContain(
+      "bathroom",
+    );
+  });
+
   it("응답에서 첫 이미지를 꺼내고, 없으면 오류", () => {
     const img = parseImageResponse({
       candidates: [

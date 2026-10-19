@@ -73,19 +73,29 @@ export async function explainGrades(
 }
 
 // 리모델링 후 모습 AI 가상 이미지 (외관 정면 사진 → 등급별). Storage 경로를 돌려준다
-// photoId: 그릴 외관 정면 사진 (없으면 서버가 가장 최근 사진을 쓴다)
+// 그릴 대상 (10/19): 전체 외관(정면 사진)·대표 방·욕실·주방 (functions/src/ai/render.ts RENDER_TARGETS)
+export type RenderTarget = "exterior" | "room" | "bathroom" | "kitchen";
+
+// photoId: 그릴 사진 (없으면 서버가 그 부위의 가장 최근 사진을 쓴다)
 export async function renderRemodel(
   assessmentId: string,
   module: ModuleType,
   photoId?: string,
+  target: RenderTarget = "exterior",
 ): Promise<{ storagePath: string; cached: boolean; photoId?: string }> {
   return (
     await httpsCallable<
-      { assessmentId: string; module: ModuleType; photoId?: string },
+      {
+        assessmentId: string;
+        module: ModuleType;
+        photoId?: string;
+        target: RenderTarget;
+      },
       { storagePath: string; cached: boolean; photoId?: string }
     >(functions, "renderRemodel", { timeout: 120_000 })({
       assessmentId,
       module,
+      target,
       ...(photoId ? { photoId } : {}),
     })
   ).data;

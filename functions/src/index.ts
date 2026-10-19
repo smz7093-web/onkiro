@@ -33,8 +33,10 @@ import {
   PHOTO_PART_LABELS,
 } from "./ai/photos.js";
 import {
+  isRenderTarget,
   metadataToken,
   RENDER_MODEL,
+  RENDER_TARGETS,
   RENDER_PROMPT_VERSION,
   renderPrompt,
   vertexImageCaller,
@@ -631,9 +633,14 @@ export const renderRemodel = onCall(
       request.auth.uid,
       request.auth.token.role === "admin",
     );
-    // 그릴 사진: 화면에서 고른 외관 정면 사진(photoId), 없으면 가장 최근에 올린 정면 사진 (10/19)
+    // 대상(10/19): 전체 외관(정면 사진)·대표 방·욕실·주방. 없으면 외관
+    const target = data.target ?? "exterior";
+    if (!isRenderTarget(target))
+      throw new HttpsError("invalid-argument", "그릴 대상이 올바르지 않습니다");
+    const part = RENDER_TARGETS[target].part;
+    // 그릴 사진: 화면에서 고른 사진(photoId), 없으면 그 부위에서 가장 최근에 올린 사진
     const fronts = (
-      await aRef.collection("photos").where("part", "==", "front").get()
+      await aRef.collection("photos").where("part", "==", part).get()
     ).docs.sort(
       (a, b) =>
         (b.createTime?.toMillis() ?? 0) - (a.createTime?.toMillis() ?? 0),
@@ -646,12 +653,14 @@ export const renderRemodel = onCall(
       throw new HttpsError(
         "failed-precondition",
         wanted
-          ? "고른 사진이 외관 정면 사진이 아닙니다"
-          : "외관 정면 사진이 없습니다. 사진 단계에서 먼저 올려 주세요",
+          ? `고른 사진이 ${RENDER_TARGETS[target].label} 사진이 아닙니다`
+          : `${RENDER_TARGETS[target].label} 사진이 없습니다. 사진 단계에서 먼저 올려 주세요`,
       );
     // 사진마다 따로 저장해 사진을 바꿔 골라도 다시 그리지 않는다
-    const cRef = aRef.collection("ai").doc(`render-${module}-${front.id}`);
-    const key = `${front.id}:${module}:${RENDER_PROMPT_VERSION}:${RENDER_MODEL}`;
+    const cRef = aRef
+      .collection("ai")
+      .doc(`render-${target}-${module}-${front.id}`);
+    const key = `${target}:${front.id}:${module}:${RENDER_PROMPT_VERSION}:${RENDER_MODEL}`;
     const hit = await cRef.get();
     if (hit.exists && hit.get("key") === key)
       return {
@@ -678,12 +687,14 @@ export const renderRemodel = onCall(
       const projectId = process.env.GCLOUD_PROJECT ?? "onkiro-2fe12";
       const img = await vertexImageCaller(projectId, () => metadataToken())(
         photo,
-        renderPrompt(module, {
-          roofStructure: typeof roof === "string" ? roof : null,
-        }),
+        renderPrompt(
+          module,
+          { roofStructure: typeof roof === "string" ? roof : null },
+          target,
+        ),
       );
       const ext = img.mimeType.split("/")[1];
-      const storagePath = `users/${owner}/assessments/${aRef.id}/renders/${module}-${front.id}.${ext}`;
+      const storagePath = `users/${owner}/assessments/${aRef.id}/renders/${target}-${module}-${front.id}.${ext}`;
       await bucket
         .file(storagePath)
         .save(img.data, { contentType: img.mimeType, resumable: false });
