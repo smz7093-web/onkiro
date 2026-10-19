@@ -631,22 +631,34 @@ export const renderRemodel = onCall(
       request.auth.uid,
       request.auth.token.role === "admin",
     );
-    const front = (
+    // 그릴 사진: 화면에서 고른 외관 정면 사진(photoId), 없으면 가장 최근에 올린 정면 사진 (10/19)
+    const fronts = (
       await aRef.collection("photos").where("part", "==", "front").get()
     ).docs.sort(
       (a, b) =>
         (b.createTime?.toMillis() ?? 0) - (a.createTime?.toMillis() ?? 0),
-    )[0];
+    );
+    const wanted = data.photoId;
+    if (wanted !== undefined && typeof wanted !== "string")
+      throw new HttpsError("invalid-argument", "사진 id가 올바르지 않습니다");
+    const front = wanted ? fronts.find((d) => d.id === wanted) : fronts[0];
     if (!front)
       throw new HttpsError(
         "failed-precondition",
-        "외관 정면 사진이 없습니다. 사진 단계에서 먼저 올려 주세요",
+        wanted
+          ? "고른 사진이 외관 정면 사진이 아닙니다"
+          : "외관 정면 사진이 없습니다. 사진 단계에서 먼저 올려 주세요",
       );
-    const cRef = aRef.collection("ai").doc(`render-${module}`);
+    // 사진마다 따로 저장해 사진을 바꿔 골라도 다시 그리지 않는다
+    const cRef = aRef.collection("ai").doc(`render-${module}-${front.id}`);
     const key = `${front.id}:${module}:${RENDER_PROMPT_VERSION}:${RENDER_MODEL}`;
     const hit = await cRef.get();
     if (hit.exists && hit.get("key") === key)
-      return { storagePath: hit.get("storagePath") as string, cached: true };
+      return {
+        storagePath: hit.get("storagePath") as string,
+        cached: true,
+        photoId: front.id,
+      };
 
     const aSnap = await aRef.get();
     const owner = aSnap.get("uid") as string;
@@ -682,7 +694,7 @@ export const renderRemodel = onCall(
         createdBy: request.auth.uid,
         createdAt: FieldValue.serverTimestamp(),
       });
-      return { storagePath, cached: false };
+      return { storagePath, cached: false, photoId: front.id };
     } catch (e) {
       await refund();
       logger.warn("AI 이미지 생성 실패", { error: String(e) });
