@@ -3,10 +3,31 @@
 import type { PriceTable, ProcessId } from "../engine/types";
 import { PROCESS_LABELS } from "../engine/types";
 
+// 초안 하나: 이름과 만든 시각
+export interface DraftInfo {
+  id: string;
+  createdAt: Date | null;
+}
+
+// 적용 중인 버전보다 나중에 만든 초안만 '적용 대기'. 그 전에 만든 초안은 적용되지 않고 남은 것(지워도 됨)
+export function splitDrafts(drafts: DraftInfo[], activeSince: Date | null) {
+  const pending: string[] = [];
+  const stale: string[] = [];
+  for (const d of drafts) {
+    if (activeSince && d.createdAt && d.createdAt < activeSince)
+      stale.push(d.id);
+    else pending.push(d.id);
+  }
+  return { pending, stale };
+}
+
 export interface TodoState {
   activePrice: PriceTable | null;
   priceDrafts: string[];
   assumptionDrafts: string[];
+  // 적용 중 버전보다 먼저 만든, 남겨진 초안 (할 일이 아니라 정리 안내)
+  stalePriceDrafts?: string[];
+  staleAssumptionDrafts?: string[];
   permitsSaved: boolean;
   photoGuidesSaved: boolean;
   branchCount: number;
@@ -31,6 +52,11 @@ const NEEDED_RULE_PROCESSES: ProcessId[] = [
   "electrical",
   "insulation",
 ];
+
+const staleNote = (stale?: string[]) =>
+  stale && stale.length > 0
+    ? ` (적용 중 버전보다 먼저 만든 초안 ${stale.join(", ")}은 지워도 됩니다)`
+    : "";
 
 const draftHref = (base: string, drafts: string[]) =>
   drafts.length === 1 ? `${base}/${drafts[0]}` : base;
@@ -60,7 +86,7 @@ export function buildTodo(s: TodoState): TodoItem[] {
       done: s.priceDrafts.length === 0,
       text:
         s.priceDrafts.length === 0
-          ? "적용 대기 단가 초안 없음"
+          ? `적용 대기 단가 초안 없음${staleNote(s.stalePriceDrafts)}`
           : `단가 초안 ${s.priceDrafts.join(", ")} — 검증 사례 확인 후 적용`,
       href: draftHref("/admin/prices", s.priceDrafts),
       d: ["D4", "D5"],
@@ -89,7 +115,7 @@ export function buildTodo(s: TodoState): TodoItem[] {
       done: s.assumptionDrafts.length === 0,
       text:
         s.assumptionDrafts.length === 0
-          ? "적용 대기 가정값 초안 없음"
+          ? `적용 대기 가정값 초안 없음${staleNote(s.staleAssumptionDrafts)}`
           : `가정값 초안 ${s.assumptionDrafts.join(", ")} — 확인 후 적용`,
       href: draftHref("/admin/assumptions", s.assumptionDrafts),
       d: ["D6"],

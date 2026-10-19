@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { buildTodo, type TodoItem } from "@/lib/admin/todo";
+import { buildTodo, splitDrafts, type TodoItem } from "@/lib/admin/todo";
 import { listBranches } from "@/lib/branches/store";
 import { countReceived } from "@/lib/consult/store";
 import type { PriceTable } from "@/lib/engine/types";
@@ -33,15 +33,25 @@ export function AdminTodo() {
       .then(([prices, assumptions, permits, guides, branches, received]) => {
         if (cancelled) return;
         const active = prices.find((v) => v.status === "active");
+        const activeAssumption = assumptions.find((v) => v.status === "active");
+        const drafts = (list: typeof prices | typeof assumptions) =>
+          list
+            .filter((v) => v.status === "draft")
+            .map((v) => ({ id: v.id, createdAt: v.createdAt }));
+        // 적용 시각(없으면 만든 시각)보다 먼저 만든 초안은 남겨진 초안
+        const since = (v?: {
+          effectiveFrom: Date | null;
+          createdAt: Date | null;
+        }) => v?.effectiveFrom ?? v?.createdAt ?? null;
+        const p = splitDrafts(drafts(prices), since(active));
+        const a = splitDrafts(drafts(assumptions), since(activeAssumption));
         setItems(
           buildTodo({
             activePrice: (active?.data as PriceTable) ?? null,
-            priceDrafts: prices
-              .filter((v) => v.status === "draft")
-              .map((v) => v.id),
-            assumptionDrafts: assumptions
-              .filter((v) => v.status === "draft")
-              .map((v) => v.id),
+            priceDrafts: p.pending,
+            assumptionDrafts: a.pending,
+            stalePriceDrafts: p.stale,
+            staleAssumptionDrafts: a.stale,
             permitsSaved: permits.updatedAt !== null,
             photoGuidesSaved: guides.updatedAt !== null,
             branchCount: branches.length,
