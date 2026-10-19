@@ -77,6 +77,7 @@ export function FinishTiers({
         answer:
           q.options.find((o) => o.id === checklist[q.id])?.label ?? "미응답",
       })),
+      // 카드의 콘셉트·대표 마감(t.concept, t.finishes)을 함께 보내 AI 설명이 카드와 어긋나지 않게 한다
       tiers: FINISH_TIERS.map((t) => ({
         ...t,
         unitPrice: price.moduleUnitPrices[t.module],
@@ -85,6 +86,7 @@ export function FinishTiers({
         rangeHigh: tiers[t.module].rangeHigh,
       })),
       purpose: "농촌 빈집을 고쳐 독채 숙소로 운영",
+      scope: MODULE_SCOPE,
     };
     try {
       setAi((await explainGrades(assessmentId, input)).result);

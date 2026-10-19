@@ -27,8 +27,13 @@ export interface GradeExplainInput {
     total: number;
     rangeLow: number;
     rangeHigh: number;
+    // 10/19: 확정 콘셉트·대표 마감 (AI 자재 예시가 카드와 어긋나지 않게)
+    concept: string;
+    finishes: string;
   }[];
   purpose: string;
+  // 실내 마감 범위 (MODULE_SCOPE)
+  scope: string;
 }
 
 export interface GradeExplanation {

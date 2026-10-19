@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AI_MODELS, claudeCaller, hasKey } from "./claude.js";
 import {
   explainGrades,
+  GRADE_SYSTEM,
   gradePrompt,
   parseGradeExplanation,
   parseGradeInput,
@@ -238,5 +239,37 @@ describe("Claude 호출", () => {
       grades: "claude-sonnet-5-5",
       photos: "claude-opus-5-5",
     });
+  });
+});
+
+describe("AI 등급 설명 · 확정 대표 마감 (10/19)", () => {
+  it("화면이 보낸 콘셉트·대표 마감·범위를 받아 프롬프트에 넣고, 어긋나지 말라고 지시한다", () => {
+    const tiers = (["A", "B", "C"] as const).map((m, i) => ({
+      module: m,
+      grade: (["하", "중", "상"] as const)[i],
+      name: ["기본형", "표준형", "고급형"][i],
+      unitPrice: 200_000,
+      total: 30_000_000,
+      rangeLow: 25_000_000,
+      rangeHigh: 35_000_000,
+      concept: "콘셉트" + m,
+      finishes: ["장판·실크벽지", "강마루·포인트 도장", "원목마루·노출 서까래"][
+        i
+      ],
+    }));
+    const input = parseGradeInput({
+      house: { floorArea: 72 },
+      checklist: [],
+      tiers,
+      scope: "바닥·벽·천장 마감, 도배·도장, 실내 문, 조명",
+    })!;
+    expect(input.tiers[1].finishes).toBe("강마루·포인트 도장");
+    const p = gradePrompt(input);
+    expect(p).toContain(
+      "대표 마감(확정, 이것과 어긋나지 않게): 강마루·포인트 도장",
+    );
+    expect(p).toContain("실내 마감 범위: 바닥·벽·천장 마감");
+    expect(GRADE_SYSTEM).toContain("대표 마감과 같은 종류·수준으로만");
+    expect(GRADE_SYSTEM).toContain("욕실·주방은 등급과 별개");
   });
 });

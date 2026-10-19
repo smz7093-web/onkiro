@@ -33,9 +33,14 @@ export interface GradeExplainInput {
     total: number;
     rangeLow: number;
     rangeHigh: number;
+    // 10/19: 팀이 확정한 등급 콘셉트·대표 마감 (web FINISH_TIERS). AI 자재 예시가 이것과 어긋나지 않게 한다
+    concept?: string;
+    finishes?: string;
   }[];
   // 숙소 운영 전제 (예: 농촌 독채 민박)
   purpose: string;
+  // 실내 마감(모듈 단가)에 들어가는 범위 (web MODULE_SCOPE)
+  scope?: string;
 }
 
 export interface GradeExplanation {
@@ -77,6 +82,8 @@ export function parseGradeInput(raw: unknown): GradeExplainInput | null {
       total: x.total as number,
       rangeLow: x.rangeLow as number,
       rangeHigh: x.rangeHigh as number,
+      ...(str(x.concept, 60) ? { concept: str(x.concept, 60)! } : {}),
+      ...(str(x.finishes, 120) ? { finishes: str(x.finishes, 120)! } : {}),
     };
   });
   const okTier = (t: GradeExplainInput["tiers"][number]) =>
@@ -104,6 +111,7 @@ export function parseGradeInput(raw: unknown): GradeExplainInput | null {
     checklist,
     tiers,
     purpose: str(r.purpose, 80) ?? "농촌 빈집을 고쳐 독채 숙소로 운영",
+    ...(str(r.scope, 160) ? { scope: str(r.scope, 160)! } : {}),
   };
 }
 
@@ -133,7 +141,7 @@ export const GRADE_TOOL: ToolSpec = {
               maxItems: 5,
               items: { type: "string" },
               description:
-                "바닥·벽·욕실·주방 등 대표 자재 예시, 항목당 25자 이내",
+                "그 등급의 실내 마감(바닥·벽·천장·문·조명) 자재 예시, 항목당 25자 이내. 확정 대표 마감과 같은 종류·수준으로만",
             },
             fit: {
               type: "string",
@@ -164,6 +172,8 @@ export const GRADE_SYSTEM = [
   "자재는 일반적인 예시로만 쓰고 특정 상표·제품명은 쓰지 마세요.",
   "확실하지 않은 내용은 단정하지 말고 '현장 확인 필요'라고 쓰세요. 법적 허가 가능 여부는 판단하지 마세요.",
   "한국어로, 집주인이 이해할 수 있는 쉬운 말로 짧게 쓰세요.",
+  "등급마다 회사가 확정한 '대표 마감'이 주어지면, 자재 예시는 그 대표 마감과 같은 종류·수준으로만 쓰세요. 대표 마감에 없는 다른 바닥재·벽 마감으로 바꾸거나 더 높은·낮은 등급의 자재를 섞지 마세요. 대표 마감을 조금 더 구체적으로 풀어 쓰는 것은 괜찮습니다.",
+  "욕실·주방은 등급과 별개인 공정이므로 등급 자재 예시에 넣지 마세요.",
 ].join("\n");
 
 export function gradePrompt(input: GradeExplainInput): string {
@@ -182,12 +192,17 @@ export function gradePrompt(input: GradeExplainInput): string {
     ...input.checklist.map((c) => `- ${c.question} → ${c.answer}`),
     "",
     "[실내 마감 등급별 견적 — 단가표 계산값, 변경 금지]",
+    ...(input.scope ? [`실내 마감 범위: ${input.scope}`] : []),
     ...input.tiers.map(
       (t) =>
-        `- 모듈 ${t.module} (${t.grade}·${t.name}): 실내 ㎡당 ${t.unitPrice.toLocaleString("ko-KR")}원, 전체 공사비 ${won(t.total)} (범위 ${won(t.rangeLow)}~${won(t.rangeHigh)})`,
+        `- 모듈 ${t.module} (${t.grade}·${t.name}): 실내 ㎡당 ${t.unitPrice.toLocaleString("ko-KR")}원, 전체 공사비 ${won(t.total)} (범위 ${won(t.rangeLow)}~${won(t.rangeHigh)})` +
+        (t.concept ? ` / 콘셉트: ${t.concept}` : "") +
+        (t.finishes
+          ? ` / 대표 마감(확정, 이것과 어긋나지 않게): ${t.finishes}`
+          : ""),
     ),
     "",
-    "각 등급의 대표 자재 예시와 이 집에 가장 맞는 등급을 추천해 주세요.",
+    "각 등급의 자재 예시(대표 마감과 같은 수준)와 이 집에 가장 맞는 등급을 추천해 주세요.",
   ];
   return lines.join("\n");
 }
