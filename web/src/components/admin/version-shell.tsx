@@ -16,6 +16,7 @@ import {
 } from "@/lib/versions/store";
 import { dateTime, STATUS_LABEL, STATUS_STYLE } from "./format";
 import { useStaff } from "./staff-context";
+import { buttonClass } from "../ui";
 
 const BASE_PATH: Record<VersionKind, string> = {
   price: "/admin/prices",
@@ -86,7 +87,7 @@ export function VersionShell<K extends VersionKind>({
 
   if (error && doc === undefined)
     return (
-      <p role="alert" className="text-red-700">
+      <p role="alert" className="text-crit">
         {error}
       </p>
     );
@@ -154,10 +155,7 @@ export function VersionShell<K extends VersionKind>({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Link
-          href={BASE_PATH[kind]}
-          className="text-sm text-zinc-600 underline"
-        >
+        <Link href={BASE_PATH[kind]} className="text-sm text-ink-2 underline">
           ← {TITLE[kind]} 목록
         </Link>
       </div>
@@ -169,7 +167,7 @@ export function VersionShell<K extends VersionKind>({
           {STATUS_LABEL[doc.status]}
         </span>
       </div>
-      <dl className="grid grid-cols-[7rem_1fr] gap-x-4 gap-y-1 text-sm text-zinc-700 sm:grid-cols-[7rem_1fr_7rem_1fr]">
+      <dl className="grid grid-cols-[7rem_1fr] gap-x-4 gap-y-1 text-sm text-ink-2 sm:grid-cols-[7rem_1fr_7rem_1fr]">
         <dt>복사한 버전</dt>
         <dd className="font-mono">{doc.basedOn ?? "임시 기준값"}</dd>
         <dt>작성</dt>
@@ -187,7 +185,7 @@ export function VersionShell<K extends VersionKind>({
       </dl>
 
       {!isDraft && (
-        <p className="rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700">
+        <p className="rounded-lg bg-surface-2 p-3 text-sm text-ink-2">
           {STATUS_LABEL[doc.status]} 버전은 고칠 수 없습니다. 바꾸려면 목록에서
           이 버전을 복사해 새 초안을 만드세요.
         </p>
@@ -195,10 +193,10 @@ export function VersionShell<K extends VersionKind>({
 
       {children({ data: data!, setData, readOnly: !canEdit })}
 
-      <label className="flex flex-col gap-1 text-sm text-zinc-700">
+      <label className="flex flex-col gap-1 text-sm text-ink-2">
         변경 메모 (무엇을 왜 바꿨는지)
         <textarea
-          className="min-h-20 rounded-md border border-zinc-300 p-3 text-base read-only:bg-zinc-50"
+          className="min-h-20 rounded-md border border-line-2 p-3 text-base read-only:bg-surface-2"
           value={note}
           readOnly={!canEdit}
           onChange={(e) => {
@@ -208,48 +206,49 @@ export function VersionShell<K extends VersionKind>({
         />
       </label>
 
-      <div className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-zinc-200 bg-white py-3">
-        {canEdit && (
-          <button
-            type="button"
-            onClick={save}
-            disabled={busy || !dirty}
-            className="h-12 rounded-lg bg-zinc-900 px-5 text-base font-semibold text-white disabled:opacity-40"
-          >
-            저장
-          </button>
-        )}
-        {canActivate && (
-          <button
-            type="button"
-            onClick={activate}
-            disabled={busy}
-            className="h-12 rounded-lg bg-emerald-700 px-5 text-base font-semibold text-white disabled:opacity-40"
-          >
-            적용
-          </button>
-        )}
-        {canEdit && (
-          <button
-            type="button"
-            onClick={remove}
-            disabled={busy}
-            className="h-12 rounded-lg border border-red-300 px-5 text-base text-red-700 disabled:opacity-40"
-          >
-            초안 삭제
-          </button>
-        )}
-        {dirty && (
-          <span className="text-sm text-amber-700">
-            저장하지 않은 변경이 있습니다
-          </span>
-        )}
-        {info && <span className="text-sm text-emerald-700">{info}</span>}
-        {error && (
-          <span role="alert" className="break-all text-sm text-red-700">
-            {error}
-          </span>
-        )}
+      {/* 저장 바: 상태 문구는 버튼 위 고정 줄에(버튼이 밀리지 않게, UX기준 0번), 저장=주요 버튼 하나, 삭제는 오른쪽 끝에 떨어뜨린다(피츠) */}
+      <div className="sticky bottom-0 flex flex-col gap-2 border-t border-line bg-surface py-3">
+        <p className="min-h-6 text-sm" role={error ? "alert" : "status"}>
+          {error ? (
+            <span className="break-all text-crit">{error}</span>
+          ) : info ? (
+            <span className="text-good">{info}</span>
+          ) : dirty ? (
+            <span className="text-warn">저장하지 않은 변경이 있습니다</span>
+          ) : null}
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          {canEdit && (
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy || !dirty}
+              className={buttonClass({ variant: "primary" })}
+            >
+              {busy ? "처리 중…" : "저장"}
+            </button>
+          )}
+          {canActivate && (
+            <button
+              type="button"
+              onClick={activate}
+              disabled={busy}
+              className={buttonClass()}
+            >
+              적용 (운영 견적에 반영)
+            </button>
+          )}
+          {canEdit && (
+            <button
+              type="button"
+              onClick={remove}
+              disabled={busy}
+              className={`${buttonClass({ variant: "danger" })} ml-auto`}
+            >
+              초안 삭제
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

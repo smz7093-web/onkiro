@@ -12,16 +12,15 @@ import {
   type BranchDraft,
 } from "@/lib/branches/validate";
 import { useStaff } from "./staff-context";
+import { buttonClass } from "../ui";
+import { NumberInput } from "./number-input";
 
-const field = "h-11 w-full rounded-md border border-zinc-300 px-3 text-base";
+const field = "h-11 w-full rounded-md border border-line-2 px-3 text-base";
 const area =
-  "min-h-20 w-full rounded-md border border-zinc-300 px-3 py-2 text-base";
-const btn =
-  "h-11 rounded-lg border border-zinc-300 px-4 text-base disabled:opacity-40";
-const btnDark =
-  "h-11 rounded-lg bg-zinc-900 px-4 text-base font-semibold text-white disabled:opacity-40";
-const small =
-  "min-h-10 px-2 text-sm text-zinc-600 underline disabled:opacity-40";
+  "min-h-20 w-full rounded-md border border-line-2 px-3 py-2 text-base";
+const btn = buttonClass();
+const btnDark = buttonClass({ variant: "primary" });
+const small = buttonClass({ variant: "ghost", size: "sm" });
 
 const EMPTY: BranchContent = {
   label: "",
@@ -148,10 +147,7 @@ export function BranchEditor({ id }: { id: string }) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col">
-          <Link
-            href="/admin/branches"
-            className="text-sm text-zinc-600 underline"
-          >
+          <Link href="/admin/branches" className="text-sm text-ink-2 underline">
             ← 숙소 목록
           </Link>
           <h1 className="text-2xl font-semibold">숙소 편집 · /stay/{id}</h1>
@@ -165,7 +161,7 @@ export function BranchEditor({ id }: { id: string }) {
         </Link>
       </div>
       {fromSample && (
-        <p className="rounded-lg bg-amber-100 px-4 py-3 text-base text-amber-900">
+        <p className="rounded-lg bg-warn-soft px-4 py-3 text-base text-warn">
           샘플 내용에서 시작합니다. 저장하면 실제 숙소로 등록되어
           &lsquo;샘플&rsquo; 표시가 사라집니다.
         </p>
@@ -209,7 +205,7 @@ export function BranchEditor({ id }: { id: string }) {
           {c.photos.map((p, i) => (
             <li
               key={`${p.url}-${i}`}
-              className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-2"
+              className="flex flex-col gap-2 rounded-lg border border-line p-2"
             >
               {p.url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- Storage 공개 주소를 그대로 보여준다
@@ -219,7 +215,7 @@ export function BranchEditor({ id }: { id: string }) {
                   className="aspect-[4/3] w-full rounded object-cover"
                 />
               ) : (
-                <div className="flex aspect-[4/3] w-full items-center justify-center rounded bg-zinc-100 text-sm text-zinc-500">
+                <div className="flex aspect-[4/3] w-full items-center justify-center rounded bg-surface-2 text-sm text-muted">
                   파일 없음 (샘플 자리)
                 </div>
               )}
@@ -285,7 +281,7 @@ export function BranchEditor({ id }: { id: string }) {
             />
           </label>
         </div>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-muted">
           사진은 긴 변 1600px로 줄이고 위치정보를 지운 뒤 올립니다. 사람
           얼굴·차량 번호판이 보이지 않게 해 주세요.
         </p>
@@ -392,25 +388,19 @@ export function BranchEditor({ id }: { id: string }) {
         </Field>
         <Grid>
           <Field label="평일 1박 요금 (원)">
-            <input
+            <NumberInput
               className={field}
-              type="number"
-              inputMode="numeric"
-              value={c.price.weekday}
-              onChange={(e) =>
-                setC({ price: { ...c.price, weekday: Number(e.target.value) } })
-              }
+              value={Number(c.price.weekday) || undefined}
+              placeholder="예: 200,000 또는 20만"
+              onChange={(v) => setC({ price: { ...c.price, weekday: v ?? 0 } })}
             />
           </Field>
           <Field label="주말 1박 요금 (원)">
-            <input
+            <NumberInput
               className={field}
-              type="number"
-              inputMode="numeric"
-              value={c.price.weekend}
-              onChange={(e) =>
-                setC({ price: { ...c.price, weekend: Number(e.target.value) } })
-              }
+              value={Number(c.price.weekend) || undefined}
+              placeholder="예: 200,000 또는 20만"
+              onChange={(v) => setC({ price: { ...c.price, weekend: v ?? 0 } })}
             />
           </Field>
           <Field label="체크인 (예: 15:00)">
@@ -455,7 +445,7 @@ export function BranchEditor({ id }: { id: string }) {
       {errors.length > 0 && (
         <ul
           role="alert"
-          className="list-disc rounded-lg bg-red-50 py-3 pl-8 pr-4 text-base text-red-800"
+          className="list-disc rounded-lg bg-crit-soft py-3 pl-8 pr-4 text-base text-crit"
         >
           {errors.map((e) => (
             <li key={e}>{e}</li>
@@ -489,7 +479,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4">
+    <section className="flex flex-col gap-3 rounded-lg border border-line p-4">
       <h2 className="text-lg font-semibold">{title}</h2>
       {children}
     </section>
@@ -508,7 +498,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm text-zinc-700">
+    <label className="flex flex-col gap-1 text-sm text-ink-2">
       {label}
       {children}
     </label>

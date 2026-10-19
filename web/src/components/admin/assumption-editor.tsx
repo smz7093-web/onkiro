@@ -139,7 +139,7 @@ export function AssumptionEditor({
             })
           }
         />
-        <p className="text-xs text-zinc-500 sm:col-span-4">
+        <p className="text-xs text-muted sm:col-span-4">
           하한 + 보수안 편차는 10% 이상, 상한 + 낙관안 편차는 95% 이하여야
           적용할 수 있습니다.
         </p>
@@ -241,14 +241,14 @@ function AssumptionCheck({ data }: { data: AssumptionSet }) {
     failure = e instanceof RevenueInputError ? e.message : String(e);
   }
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4">
+    <section className="flex flex-col gap-3 rounded-lg border border-line p-4">
       <h2 className="text-lg font-semibold">검증 사례 · 수익 검증표</h2>
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-ink-2">
         총투자금 3,300만 원으로 이 버전의 기본값을 계산합니다 (prd.md 7.2). 확정
         가정값으로 바꿀 때는 PRD 기준값도 함께 고칩니다 (task.md 5.6).
       </p>
       {failure ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-crit">
           계산할 수 없습니다: {failure}
         </p>
       ) : (

@@ -16,6 +16,7 @@ import {
   type RiskFlagId,
 } from "@/lib/engine/types";
 import { DTag } from "./d-tag";
+import { buttonClass } from "../ui";
 
 const GRADE_LABEL: Record<ConditionGrade, string> = {
   good: "양호",
@@ -43,7 +44,7 @@ export function ChecklistRulesEditor({
   const usingDefault = rules === undefined;
   const missing = uncoveredAnswers(list);
   const cell =
-    "h-10 rounded-md border border-zinc-300 bg-white px-2 text-base text-ink disabled:bg-zinc-50 disabled:text-ink disabled:opacity-100";
+    "h-10 rounded-md border border-line-2 bg-surface px-2 text-base text-ink disabled:bg-surface-2 disabled:text-ink disabled:opacity-100";
 
   const update = (i: number, patch: Partial<ChecklistRule>) =>
     setRules(list.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -73,7 +74,7 @@ export function ChecklistRulesEditor({
       <h2 className="text-lg font-semibold">
         체크리스트 판정표 <DTag ids={["D4"]} />
       </h2>
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-ink-2">
         한 줄은 &ldquo;이 문항에 이 답이면 → 이 공정을 이 판정으로&rdquo;입니다.
         위험 신호를 고르면 결과 화면에 &lsquo;전문가 진단 필수&rsquo;가 뜹니다.
         한 공정에 여러 줄이 걸리면 가장 나쁜 판정을 씁니다. 공정 없이 위험
@@ -84,7 +85,7 @@ export function ChecklistRulesEditor({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] border-collapse text-left text-base">
           <thead>
-            <tr className="border-b border-zinc-300 text-sm text-zinc-600">
+            <tr className="border-b border-line-2 text-sm text-ink-2">
               <th className="py-2 pr-2">문항</th>
               <th className="py-2 pr-2">답</th>
               <th className="py-2 pr-2">공정</th>
@@ -102,7 +103,7 @@ export function ChecklistRulesEditor({
               return (
                 <tr
                   key={i}
-                  className={`border-b border-zinc-100 ${incomplete ? "bg-amber-50" : ""}`}
+                  className={`border-b border-line ${incomplete ? "bg-warn-soft" : ""}`}
                 >
                   <td className="py-1 pr-2">
                     <select
@@ -200,7 +201,7 @@ export function ChecklistRulesEditor({
                     {!readOnly && (
                       <button
                         type="button"
-                        className="min-h-10 px-2 text-sm text-zinc-600 underline"
+                        className="min-h-10 px-2 text-sm text-ink-2 underline"
                         onClick={() => remove(i)}
                       >
                         삭제
@@ -215,16 +216,12 @@ export function ChecklistRulesEditor({
       </div>
       {!readOnly && (
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="h-11 rounded-lg border border-zinc-300 px-4 text-base"
-            onClick={() => add()}
-          >
+          <button type="button" className={buttonClass()} onClick={() => add()}>
             + 줄 추가
           </button>
           <button
             type="button"
-            className="h-11 rounded-lg border border-accent px-4 text-base text-accent"
+            className={buttonClass()}
             onClick={() => {
               if (
                 window.confirm(
@@ -238,7 +235,7 @@ export function ChecklistRulesEditor({
           </button>
         </div>
       )}
-      <details className="text-sm text-zinc-700">
+      <details className="text-sm text-ink-2">
         <summary className="min-h-10 cursor-pointer py-2">
           판정표에 없는 답 {missing.length}개 (이 답들은 어떤 공정에도 영향을
           주지 않습니다)
@@ -247,14 +244,14 @@ export function ChecklistRulesEditor({
           {missing.map((m) => (
             <li key={`${m.question}:${m.answer}`}>
               {readOnly ? (
-                <span className="rounded bg-zinc-100 px-2 py-1">
+                <span className="rounded bg-surface-2 px-2 py-1">
                   {questionOf(m.question)?.label} →{" "}
                   {answerLabel(m.question, m.answer)}
                 </span>
               ) : (
                 <button
                   type="button"
-                  className="rounded bg-zinc-100 px-2 py-1 hover:bg-zinc-200"
+                  className="rounded bg-surface-2 px-2 py-1 hover:bg-line"
                   onClick={() => add(m.question, m.answer)}
                 >
                   + {questionOf(m.question)?.label} →{" "}

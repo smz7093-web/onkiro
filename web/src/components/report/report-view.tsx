@@ -25,6 +25,7 @@ import {
 import { manwon } from "@/components/diagnose/estimate-step";
 import { ScenarioTable } from "@/components/diagnose/revenue-step";
 import { usePermitContent } from "@/lib/site-content/store";
+import { buttonClass } from "@/components/ui";
 
 const GRADE_LABEL: Record<ConditionGrade, string> = {
   good: "양호",
@@ -99,16 +100,13 @@ export function ReportView({
   return (
     <article className="mx-auto flex w-full max-w-[210mm] flex-col gap-6 bg-white px-6 py-8 text-ink print:max-w-none print:p-0">
       <div className="flex flex-wrap justify-end gap-2 print:hidden">
-        <Link
-          href="/me"
-          className="inline-flex h-12 items-center rounded-lg border border-line-2 px-4 text-base"
-        >
+        <Link href="/me" className={buttonClass()}>
           마이페이지
         </Link>
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex h-12 items-center rounded-lg bg-accent px-5 text-base font-semibold text-accent-ink"
+          className={buttonClass({ variant: "primary" })}
         >
           PDF로 저장 (인쇄)
         </button>

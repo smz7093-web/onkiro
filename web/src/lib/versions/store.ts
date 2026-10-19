@@ -78,7 +78,6 @@ export async function getVersion<K extends VersionKind>(kind: K, id: string) {
   return snap.exists() ? fromSnap<K>(snap.id, snap.data()) : null;
 }
 
-// 시뮬레이터 계산용 적용 버전 (회원도 읽을 수 있다)
 // 결과 화면용: 적용 버전을 잠시(2분) 기억해 체크리스트 화면에서 미리 읽어 둔다 (7.6 응답 속도)
 const activeCache = new Map<VersionKind, { at: number; p: Promise<unknown> }>();
 export function loadActiveVersionCached<K extends VersionKind>(
@@ -95,6 +94,7 @@ export function loadActiveVersionCached<K extends VersionKind>(
   return p;
 }
 
+// 시뮬레이터 계산용 적용 버전 (회원도 읽을 수 있다)
 export async function loadActiveVersion<K extends VersionKind>(kind: K) {
   const snap = await getDocs(
     query(

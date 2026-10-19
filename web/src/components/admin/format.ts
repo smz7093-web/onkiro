@@ -13,7 +13,7 @@ export const STATUS_LABEL = {
   retired: "이전 버전",
 } as const;
 export const STATUS_STYLE = {
-  draft: "bg-amber-100 text-amber-900",
-  active: "bg-emerald-100 text-emerald-900",
-  retired: "bg-zinc-100 text-zinc-700",
+  draft: "bg-warn-soft text-warn",
+  active: "bg-good-soft text-good",
+  retired: "bg-surface-2 text-ink-2",
 } as const;

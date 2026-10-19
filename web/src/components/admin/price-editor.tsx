@@ -24,7 +24,9 @@ import { RECOMMENDED_PROCESS_PRICES } from "@/lib/engine/defaults";
 import { ChecklistRulesEditor } from "./checklist-rules-editor";
 import { man } from "./format";
 import { NumberField } from "./number-field";
+import { NumberInput } from "./number-input";
 import { DTag } from "./d-tag";
+import { buttonClass } from "../ui";
 
 const BASIS_LABEL: Record<QuantityBasis, string> = {
   floorArea: "연면적(㎡)",
@@ -63,7 +65,7 @@ export function PriceEditor({
   };
   const num = (v: number | undefined) => v ?? 0;
   const input =
-    "h-10 w-28 rounded-md border border-zinc-300 bg-white px-2 text-right text-base text-ink read-only:bg-zinc-50";
+    "h-10 w-28 rounded-md border border-line-2 bg-surface px-2 text-right text-base text-ink read-only:bg-surface-2";
 
   return (
     <div className="flex flex-col gap-8">
@@ -71,14 +73,14 @@ export function PriceEditor({
         <h2 className="text-lg font-semibold">
           공정별 단가 <DTag ids={["D5"]} />
         </h2>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-ink-2">
           공정별 비용 = 기준수량 × 기본 단가 + 기준수량 × 보수 단가 × 상태계수.
           내부 리모델링의 기본 단가는 아래 모듈 단가를 씁니다.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse text-left text-base">
             <thead>
-              <tr className="border-b border-zinc-300 text-sm text-zinc-600">
+              <tr className="border-b border-line-2 text-sm text-ink-2">
                 <th className="py-2 pr-3">공정</th>
                 <th className="py-2 pr-3">기준수량</th>
                 <th className="py-2 pr-3">기본 공사</th>
@@ -94,10 +96,7 @@ export function PriceEditor({
                 const p = data.processes[id];
                 if (!p) {
                   return (
-                    <tr
-                      key={id}
-                      className="border-b border-zinc-100 text-zinc-500"
-                    >
+                    <tr key={id} className="border-b border-line text-muted">
                       <td className="py-2 pr-3">{PROCESS_LABELS[id]}</td>
                       <td className="py-2 pr-3" colSpan={6}>
                         단가 없음 (견적에서 빠짐)
@@ -119,32 +118,24 @@ export function PriceEditor({
                   );
                 }
                 const field = (key: keyof ProcessPrice, disabled = false) => (
-                  <input
-                    type="number"
+                  <NumberInput
                     aria-label={`${PROCESS_LABELS[id]} ${key}`}
                     className={input}
                     readOnly={readOnly || disabled}
                     value={
-                      disabled ? "" : ((p[key] as number | undefined) ?? "")
+                      disabled ? undefined : (p[key] as number | undefined)
                     }
                     placeholder={disabled ? "모듈 단가" : "–"}
-                    onChange={(e) =>
-                      setProcess(id, {
-                        [key]:
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value),
-                      })
-                    }
+                    onChange={(v) => setProcess(id, { [key]: v })}
                   />
                 );
                 return (
-                  <tr key={id} className="border-b border-zinc-100">
+                  <tr key={id} className="border-b border-line">
                     <td className="py-2 pr-3">{PROCESS_LABELS[id]}</td>
                     <td className="py-2 pr-3">
                       <select
                         aria-label={`${PROCESS_LABELS[id]} 기준수량`}
-                        className="h-10 rounded-md border border-zinc-300 px-2 text-base disabled:bg-zinc-50"
+                        className="h-10 rounded-md border border-line-2 px-2 text-base disabled:bg-surface-2"
                         disabled={readOnly}
                         value={p.quantityBasis}
                         onChange={(e) =>
@@ -163,7 +154,7 @@ export function PriceEditor({
                     <td className="py-2 pr-3">
                       <select
                         aria-label={`${PROCESS_LABELS[id]} 기본 공사`}
-                        className="h-10 rounded-md border border-zinc-300 px-2 text-base disabled:bg-zinc-50"
+                        className="h-10 rounded-md border border-line-2 px-2 text-base disabled:bg-surface-2"
                         disabled={readOnly}
                         value={p.baseApplies ?? "none"}
                         onChange={(e) =>
@@ -190,7 +181,7 @@ export function PriceEditor({
                       {!readOnly && (
                         <button
                           type="button"
-                          className="text-sm text-red-700 underline"
+                          className="text-sm text-crit underline"
                           onClick={() => setProcess(id, null)}
                         >
                           빼기
@@ -207,7 +198,7 @@ export function PriceEditor({
           <div>
             <button
               type="button"
-              className="h-11 rounded-lg border border-accent px-4 text-base text-accent"
+              className={buttonClass()}
               onClick={() => {
                 const empty = (
                   Object.keys(RECOMMENDED_PROCESS_PRICES) as ProcessId[]
@@ -393,17 +384,17 @@ export function PriceEditor({
         </div>
         {!readOnly && (
           <div className="flex items-end gap-2">
-            <label className="flex flex-col gap-1 text-sm text-zinc-700">
+            <label className="flex flex-col gap-1 text-sm text-ink-2">
               지역 추가 (영문 코드)
               <input
-                className="h-10 rounded-md border border-zinc-300 px-2 text-base"
+                className="h-10 rounded-md border border-line-2 px-2 text-base"
                 value={newRegion}
                 onChange={(e) => setNewRegion(e.target.value.trim())}
               />
             </label>
             <button
               type="button"
-              className="h-10 rounded-md border border-zinc-300 px-3 text-sm"
+              className="h-10 rounded-md border border-line-2 px-3 text-sm"
               disabled={
                 !/^[a-z][a-z0-9-]*$/.test(newRegion) ||
                 newRegion in data.regionFactors
@@ -471,9 +462,9 @@ function PriceCheck({ data }: { data: PriceTable }) {
     failure = e instanceof EstimateInputError ? e.message : String(e);
   }
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4">
+    <section className="flex flex-col gap-3 rounded-lg border border-line p-4">
       <h2 className="text-lg font-semibold">검증 사례 · 대표 예시</h2>
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-ink-2">
         72㎡ 목구조·모듈 B, 지붕·구조 부분 보수, 욕실·주방 전면 교체 (prd.md
         7.1). 단가를 바꾸면 결과가 기준값과 달라질 수 있으며, 확정 단가로 바꿀
         때는 PRD 기준값도 함께 고칩니다 (task.md 5.6).
@@ -481,7 +472,7 @@ function PriceCheck({ data }: { data: PriceTable }) {
       {rows ? (
         <CheckTable rows={rows} />
       ) : (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-crit">
           계산할 수 없습니다: {failure}
         </p>
       )}
@@ -498,7 +489,7 @@ export function CheckTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[480px] border-collapse text-left text-base">
         <thead>
-          <tr className="border-b border-zinc-300 text-sm text-zinc-600">
+          <tr className="border-b border-line-2 text-sm text-ink-2">
             <th className="py-2 pr-4">항목</th>
             <th className="py-2 pr-4">이 버전</th>
             <th className="py-2 pr-4">PRD 기준값</th>
@@ -507,13 +498,13 @@ export function CheckTable({
         </thead>
         <tbody>
           {rows.map(([label, actual, expected, ok]) => (
-            <tr key={label} className="border-b border-zinc-100">
+            <tr key={label} className="border-b border-line">
               <td className="py-2 pr-4">{label}</td>
               <td className="py-2 pr-4">{actual}</td>
-              <td className="py-2 pr-4 text-zinc-600">{expected}</td>
+              <td className="py-2 pr-4 text-ink-2">{expected}</td>
               <td className="py-2">
                 <span
-                  className={`rounded px-2 py-0.5 text-sm ${ok ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-900"}`}
+                  className={`rounded px-2 py-0.5 text-sm ${ok ? "bg-good-soft text-good" : "bg-warn-soft text-warn"}`}
                 >
                   {ok ? "일치" : "다름"}
                 </span>

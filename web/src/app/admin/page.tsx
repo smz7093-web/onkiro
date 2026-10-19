@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminTodo } from "@/components/admin/admin-todo";
 import { DTag } from "@/components/admin/d-tag";
 
 // 관리자 첫 화면. 메뉴마다 입력하는 팀원 산출물 번호(D#, prd.md 3.2절)와 담당을 함께 보인다
@@ -51,6 +52,8 @@ export default function AdminHome() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">관리자</h1>
+      <AdminTodo />
+      <h2 className="text-lg font-semibold">메뉴</h2>
       <p className="text-base text-ink-2">
         D 번호는 팀원 산출물 번호입니다. 번호에 마우스를 올리면 내용과 담당이
         보입니다. D2·D3은 단가 DB 값의 근거 자료라 따로 입력하는 칸은 없습니다.

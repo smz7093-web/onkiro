@@ -14,13 +14,14 @@ import {
 import { listMembers, savePermissions, type Member } from "@/lib/members/store";
 import { dateTime } from "./format";
 import { useStaff } from "./staff-context";
+import { buttonClass } from "../ui";
 
 type Filter = "staff" | "member" | "all";
 
 const ROLE_STYLE: Record<Role, string> = {
-  admin: "bg-emerald-100 text-emerald-900",
+  admin: "bg-good-soft text-good",
   staff: "bg-sky-100 text-sky-900",
-  member: "bg-zinc-100 text-zinc-700",
+  member: "bg-surface-2 text-ink-2",
 };
 
 // 회원·권한 관리 (ADM-05, task.md 2.5). 관리자만 쓴다.
@@ -83,8 +84,8 @@ export function MemberAdmin() {
                 aria-pressed={filter === id}
                 className={`h-11 rounded-full border px-4 text-base ${
                   filter === id
-                    ? "border-zinc-900 bg-zinc-900 text-white"
-                    : "border-zinc-300"
+                    ? "border-accent bg-accent text-accent-ink"
+                    : "border-line-2"
                 }`}
               >
                 {label}
@@ -94,14 +95,14 @@ export function MemberAdmin() {
         )}
       </div>
 
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-ink-2">
         팀원은 먼저 카카오로 한 번 로그인해야 목록에 나타납니다. 일반 회원
         목록에서 찾아 권한을 바꾸세요. 바뀐 권한은 그 사람이 로그인 화면의
         &lsquo;권한 새로고침&rsquo;을 누르거나 다시 로그인하면 반영됩니다.
       </p>
 
       {error && (
-        <p role="alert" className="break-all text-sm text-red-700">
+        <p role="alert" className="break-all text-sm text-crit">
           {error}
         </p>
       )}
@@ -109,12 +110,12 @@ export function MemberAdmin() {
       {!members ? (
         <p className="text-base">불러오는 중…</p>
       ) : shown.length === 0 ? (
-        <p className="text-base text-zinc-600">해당하는 회원이 없습니다.</p>
+        <p className="text-base text-ink-2">해당하는 회원이 없습니다.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-left text-base">
             <thead>
-              <tr className="border-b border-zinc-300 text-sm text-zinc-600">
+              <tr className="border-b border-line-2 text-sm text-ink-2">
                 <th className="py-2 pr-4">이름</th>
                 <th className="py-2 pr-4">역할</th>
                 <th className="py-2 pr-4">진단 사진</th>
@@ -130,15 +131,13 @@ export function MemberAdmin() {
                 const flags = FLAG_KEYS.filter((k) => eff.flags[k]);
                 return (
                   <Fragment key={m.uid}>
-                    <tr className="border-b border-zinc-100 align-top">
+                    <tr className="border-b border-line align-top">
                       <td className="py-2 pr-4">
                         {m.name ?? "(이름 없음)"}
                         {m.uid === user.uid && (
-                          <span className="ml-1 text-sm text-zinc-500">
-                            (나)
-                          </span>
+                          <span className="ml-1 text-sm text-muted">(나)</span>
                         )}
-                        <div className="font-mono text-xs text-zinc-500">
+                        <div className="font-mono text-xs text-muted">
                           {m.uid.slice(0, 8)}
                         </div>
                       </td>
@@ -169,15 +168,15 @@ export function MemberAdmin() {
                           onClick={() =>
                             setEditing(editing === m.uid ? null : m.uid)
                           }
-                          className="h-11 rounded-lg border border-zinc-300 px-4 text-base"
+                          className={buttonClass()}
                         >
                           {editing === m.uid ? "닫기" : "변경"}
                         </button>
                       </td>
                     </tr>
                     {editing === m.uid && (
-                      <tr className="border-b border-zinc-200">
-                        <td colSpan={7} className="bg-zinc-50 p-4">
+                      <tr className="border-b border-line">
+                        <td colSpan={7} className="bg-surface-2 p-4">
                           <PermissionEditor
                             member={m}
                             isSelf={m.uid === user.uid}
@@ -232,10 +231,10 @@ function PermissionEditor({
     value: AccessLevel,
     onChange: (v: AccessLevel) => void,
   ) => (
-    <label className="flex flex-col gap-1 text-sm text-zinc-700">
+    <label className="flex flex-col gap-1 text-sm text-ink-2">
       {label}
       <select
-        className="h-11 rounded-md border border-zinc-300 bg-white px-3 text-base disabled:opacity-50"
+        className="h-11 rounded-md border border-line-2 bg-surface px-3 text-base disabled:opacity-50"
         value={value}
         disabled={!isStaffForm}
         onChange={(e) => onChange(e.target.value as AccessLevel)}
@@ -252,10 +251,10 @@ function PermissionEditor({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm text-zinc-700">
+        <label className="flex flex-col gap-1 text-sm text-ink-2">
           역할
           <select
-            className="h-11 rounded-md border border-zinc-300 bg-white px-3 text-base disabled:opacity-50"
+            className="h-11 rounded-md border border-line-2 bg-surface px-3 text-base disabled:opacity-50"
             value={form.role}
             disabled={isSelf}
             onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
@@ -274,10 +273,10 @@ function PermissionEditor({
           setForm({ ...form, consultAccess: v }),
         )}
         {!isSelf && (
-          <label className="flex flex-col gap-1 text-sm text-zinc-700">
+          <label className="flex flex-col gap-1 text-sm text-ink-2">
             팀원 권장 설정 불러오기
             <select
-              className="h-11 rounded-md border border-zinc-300 bg-white px-3 text-base"
+              className="h-11 rounded-md border border-line-2 bg-surface px-3 text-base"
               value=""
               onChange={(e) => {
                 const p = PRESETS.find((x) => x.id === e.target.value);
@@ -299,7 +298,7 @@ function PermissionEditor({
         disabled={!isStaffForm}
         className="flex flex-wrap gap-x-6 gap-y-2 disabled:opacity-50"
       >
-        <legend className="mb-2 text-sm text-zinc-700">
+        <legend className="mb-2 text-sm text-ink-2">
           세부 권한 {form.role === "admin" && "(관리자는 모두 허용)"}
           {form.role === "member" && "(일반 회원은 권한 없음)"}
         </legend>
@@ -322,18 +321,18 @@ function PermissionEditor({
       </fieldset>
 
       {isStaffForm && form.flags.canApproveVersions && (
-        <p className="text-sm text-amber-800">
+        <p className="text-sm text-warn">
           단가·가정값 적용은 두 사람 확인 원칙에 따라 PM만 하기로
           했습니다(prd.md 2절). 꼭 필요한 경우에만 켜세요.
         </p>
       )}
       {isSelf && (
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-ink-2">
           본인의 관리자 권한은 내릴 수 없습니다.
         </p>
       )}
       {error && (
-        <p role="alert" className="break-all text-sm text-red-700">
+        <p role="alert" className="break-all text-sm text-crit">
           {error}
         </p>
       )}
@@ -343,7 +342,7 @@ function PermissionEditor({
           type="button"
           onClick={save}
           disabled={busy || !changed}
-          className="h-11 rounded-lg bg-zinc-900 px-4 text-base font-semibold text-white disabled:opacity-40"
+          className={buttonClass({ variant: "primary" })}
         >
           {busy ? "저장 중…" : "저장"}
         </button>

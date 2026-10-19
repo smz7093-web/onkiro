@@ -28,13 +28,12 @@ import { diagnosisCode } from "@/lib/diagnosis/store";
 import { dateTime } from "./format";
 import { useStaff } from "./staff-context";
 import { DTag } from "./d-tag";
+import { buttonClass } from "../ui";
 
-const btn =
-  "h-11 rounded-lg border border-zinc-300 px-4 text-base disabled:opacity-40";
-const btnDark =
-  "h-11 rounded-lg bg-zinc-900 px-4 text-base font-semibold text-white disabled:opacity-40";
+const btn = buttonClass();
+const btnDark = buttonClass({ variant: "primary" });
 const field =
-  "h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-base";
+  "h-11 w-full rounded-md border border-line-2 bg-surface px-3 text-base";
 
 const EVENT_LABEL = {
   status: "단계",
@@ -109,8 +108,8 @@ export function ConsultBoard() {
               onClick={() => setTypeFilter(t)}
               className={`h-11 rounded-full border px-4 text-base ${
                 typeFilter === t
-                  ? "border-zinc-900 bg-zinc-900 text-white"
-                  : "border-zinc-300"
+                  ? "border-accent bg-accent text-accent-ink"
+                  : "border-line-2"
               }`}
             >
               {t === "all" ? "전체" : CONSULT_TYPE_LABELS[t]}
@@ -127,13 +126,13 @@ export function ConsultBoard() {
           )}
         </div>
       </div>
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-ink-2">
         접수 후 영업일 1일 안에 첫 연락합니다.{" "}
         {permissions.consultAccess === "assigned" &&
           "내게 배정된 상담만 보입니다."}
       </p>
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-crit">
           {error}
         </p>
       )}
@@ -156,31 +155,33 @@ export function ConsultBoard() {
             return (
               <section
                 key={stage}
-                className="flex flex-col gap-2 rounded-lg bg-zinc-100 p-2"
+                className="flex flex-col gap-2 rounded-lg bg-surface-2 p-2"
               >
                 <h2 className="flex justify-between px-1 text-sm font-semibold">
                   {CONSULT_STAGE_LABELS[stage]}
-                  <span className="text-zinc-500">{cards.length}</span>
+                  <span className="text-muted">{cards.length}</span>
                 </h2>
                 {cards.map((c) => (
                   <button
                     key={c.id}
                     type="button"
                     onClick={() => setSelected(c.id === selected ? null : c.id)}
-                    className={`flex flex-col gap-1 rounded-md border bg-white p-2 text-left text-sm ${
-                      c.id === selected ? "border-zinc-900" : "border-zinc-200"
+                    className={`flex flex-col gap-1 rounded-md border bg-surface p-2 text-left text-sm ${
+                      c.id === selected
+                        ? "border-accent ring-3 ring-accent-soft"
+                        : "border-line"
                     }`}
                   >
                     <span className="font-semibold">
                       {CONSULT_TYPE_LABELS[c.type]}
                     </span>
                     <span>{c.applicantName}</span>
-                    <span className="text-zinc-500">
+                    <span className="text-muted">
                       {c.createdAt?.toLocaleDateString("ko-KR")}
                       {c.assigneeName ? ` · ${c.assigneeName}` : " · 미배정"}
                     </span>
                     {c.proxyEnteredBy && (
-                      <span className="text-zinc-500">전화 접수</span>
+                      <span className="text-muted">전화 접수</span>
                     )}
                   </button>
                 ))}
@@ -251,31 +252,29 @@ function ConsultDetail({
   const nextStages = CONSULT_STAGES.filter((s) => canTransition(c.status, s));
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-zinc-300 p-4">
+    <section className="flex flex-col gap-4 rounded-lg border border-line-2 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold">
           {CONSULT_TYPE_LABELS[c.type]} · {c.applicantName}
         </h2>
-        <span className="text-sm text-zinc-600">
-          접수 {dateTime(c.createdAt)}
-        </span>
+        <span className="text-sm text-ink-2">접수 {dateTime(c.createdAt)}</span>
       </div>
       <dl className="grid grid-cols-[7rem_1fr] gap-y-1 text-base">
-        <dt className="text-zinc-600">연락처</dt>
+        <dt className="text-ink-2">연락처</dt>
         <dd>
           <a href={`tel:${c.phone}`} className="underline">
             {c.phone}
           </a>
           {c.phoneRequested && " · 전화 상담 요청"}
         </dd>
-        <dt className="text-zinc-600">소유 관계</dt>
+        <dt className="text-ink-2">소유 관계</dt>
         <dd>
           {OWNERSHIP_LABELS[c.ownership]}
           {c.ownership === "coHeir" && " (계약 단계에서 동의서 필요)"}
         </dd>
-        <dt className="text-zinc-600">희망 연락일</dt>
+        <dt className="text-ink-2">희망 연락일</dt>
         <dd>{c.preferredDate ?? "–"}</dd>
-        <dt className="text-zinc-600">연결 진단</dt>
+        <dt className="text-ink-2">연결 진단</dt>
         <dd>
           {c.assessmentId ? (
             c.snapshotId ? (
@@ -292,7 +291,7 @@ function ConsultDetail({
             "없음"
           )}
         </dd>
-        <dt className="text-zinc-600">신청 메모</dt>
+        <dt className="text-ink-2">신청 메모</dt>
         <dd className="whitespace-pre-wrap">
           {c.memo || "–"}
           {c.proxyEnteredBy && " (전화 접수)"}
@@ -300,7 +299,7 @@ function ConsultDetail({
       </dl>
 
       <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm text-zinc-700">
+        <label className="flex flex-col gap-1 text-sm text-ink-2">
           단계 옮기기
           <select
             className={field}
@@ -320,7 +319,7 @@ function ConsultDetail({
           </select>
         </label>
         {manageAll && (
-          <label className="flex flex-col gap-1 text-sm text-zinc-700">
+          <label className="flex flex-col gap-1 text-sm text-ink-2">
             담당자
             <select
               className={field}
@@ -339,10 +338,10 @@ function ConsultDetail({
         )}
       </div>
 
-      <label className="flex flex-col gap-1 text-sm text-zinc-700">
+      <label className="flex flex-col gap-1 text-sm text-ink-2">
         상담 메모 (운영팀만 봄)
         <textarea
-          className="min-h-24 w-full rounded-md border border-zinc-300 px-3 py-2 text-base"
+          className="min-h-24 w-full rounded-md border border-line-2 px-3 py-2 text-base"
           maxLength={2000}
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
@@ -359,7 +358,7 @@ function ConsultDetail({
         </button>
       </div>
       {error && (
-        <p role="alert" className="break-all text-sm text-red-700">
+        <p role="alert" className="break-all text-sm text-crit">
           {error}
         </p>
       )}
@@ -369,7 +368,7 @@ function ConsultDetail({
         {!events ? (
           <p className="text-sm">불러오는 중…</p>
         ) : events.length === 0 ? (
-          <p className="text-sm text-zinc-500">아직 변경이 없습니다.</p>
+          <p className="text-sm text-muted">아직 변경이 없습니다.</p>
         ) : (
           <ul className="flex flex-col gap-1 text-sm">
             {events.map((e) => (
@@ -420,10 +419,10 @@ function ProxyForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-zinc-300 p-4">
+    <section className="flex flex-col gap-3 rounded-lg border border-line-2 p-4">
       <h2 className="text-lg font-semibold">전화 접수 대리 입력</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1 text-sm text-zinc-700">
+        <label className="flex flex-col gap-1 text-sm text-ink-2">
           유형
           <select
             className={field}
@@ -437,7 +436,7 @@ function ProxyForm({ onDone }: { onDone: () => void }) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm text-zinc-700">
+        <label className="flex flex-col gap-1 text-sm text-ink-2">
           신청인
           <input
             className={field}
@@ -445,7 +444,7 @@ function ProxyForm({ onDone }: { onDone: () => void }) {
             onChange={(e) => setName(e.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm text-zinc-700">
+        <label className="flex flex-col gap-1 text-sm text-ink-2">
           연락처
           <input
             className={field}
@@ -454,7 +453,7 @@ function ProxyForm({ onDone }: { onDone: () => void }) {
             onChange={(e) => setPhone(e.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm text-zinc-700">
+        <label className="flex flex-col gap-1 text-sm text-ink-2">
           소유 관계
           <select
             className={field}
@@ -468,7 +467,7 @@ function ProxyForm({ onDone }: { onDone: () => void }) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm text-zinc-700">
+        <label className="flex flex-col gap-1 text-sm text-ink-2">
           희망 연락일
           <input
             className={field}
@@ -477,7 +476,7 @@ function ProxyForm({ onDone }: { onDone: () => void }) {
             onChange={(e) => setPreferredDate(e.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm text-zinc-700">
+        <label className="flex flex-col gap-1 text-sm text-ink-2">
           메모
           <input
             className={field}
@@ -486,7 +485,7 @@ function ProxyForm({ onDone }: { onDone: () => void }) {
           />
         </label>
       </div>
-      {error && <p className="break-all text-sm text-red-700">{error}</p>}
+      {error && <p className="break-all text-sm text-crit">{error}</p>}
       <div>
         <button
           type="button"
