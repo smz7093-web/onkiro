@@ -103,7 +103,7 @@ describe("수익 엔진 · 규칙", () => {
 });
 
 describe("10/19 확정 가정값 (관리 화면 수익 검증표와 같아야 한다)", () => {
-  it("기본안 월 매출 256만·차감 후 92만·회수 40개월", () => {
+  it("기본안 월 매출 320만·차감 후 140만·회수 26개월 (가동률 50%)", () => {
     const s = calculateScenarios(
       RECOMMENDED_ASSUMPTION.defaults,
       REFERENCE_INVESTMENT,

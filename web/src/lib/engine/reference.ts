@@ -30,28 +30,28 @@ export const REFERENCE_ESTIMATE = {
   days: 25,
 };
 
-// 수익 검증표: 총투자금 3,700만 원, 만 원 단위 (BEP는 %). 확정 가정값(가동률 기본 40%, 보수 25%, 낙관 55%)
+// 수익 검증표: 총투자금 3,700만 원, 만 원 단위 (BEP는 %). 확정 가정값(가동률 기본 50%, 보수 35%, 낙관 65%, 10/19 조정)
 export const REFERENCE_INVESTMENT = 37_000_000;
 export const REFERENCE_REVENUE = {
   conservative: {
-    revenue: 160,
-    operatingCost: 140,
-    net: 20,
-    paybackMonths: 186,
+    revenue: 224,
+    operatingCost: 156,
+    net: 68,
+    paybackMonths: 55,
     bep: 21,
   },
   base: {
-    revenue: 256,
-    operatingCost: 164,
-    net: 92,
-    paybackMonths: 40,
+    revenue: 320,
+    operatingCost: 180,
+    net: 140,
+    paybackMonths: 26,
     bep: 21,
   },
   optimistic: {
-    revenue: 352,
-    operatingCost: 188,
-    net: 164,
-    paybackMonths: 23,
+    revenue: 416,
+    operatingCost: 204,
+    net: 212,
+    paybackMonths: 17,
     bep: 21,
   },
 } as const;

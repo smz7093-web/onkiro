@@ -64,7 +64,7 @@ export function AssumptionEditor({
     <div className="flex flex-col gap-8">
       {!readOnly && (
         <Notice tone="info" title="10/19 팀원 회의 확정안">
-          가동률 기본 40%(보수 25%·낙관 55%), OTA 경유 70%, 공과금 35만 원, 판매
+          가동률 기본 50%(보수 35%·낙관 65%), OTA 경유 70%, 공과금 35만 원, 판매
           불가일 2일을 한 번에 넣습니다. 위탁 운영 사례는 임차료를 0원으로 두고
           보세요. 넣은 뒤 아래 검증표가 &lsquo;일치&rsquo;인지 보고
           저장·적용하세요.

@@ -151,13 +151,14 @@ export const RECOMMENDED_PRICE_TABLE: PriceTable = {
   checklistRules: RECOMMENDED_CHECKLIST_RULES,
 };
 
-// D6 가정값 확정안 (10/19 원일 확정). 관리 화면 '확정안 불러오기'로 새 초안에 넣고 PM이 적용한다
+// D6 가정값 확정안 (10/19 원일 확정, 10/19 PM 조정: 1호점 테스트 운영에서 가동률 60~70%가 나와 기본 40→50%, 보수 35%·낙관 65%).
+// 관리 화면 '확정안 불러오기'로 새 초안에 넣고 PM이 적용한다
 export const RECOMMENDED_ASSUMPTION: AssumptionSet = {
   ...ASSUMPTION_V0_3,
   version: "recommended-2026-10-19",
   defaults: {
     ...ASSUMPTION_V0_3.defaults,
-    occupancy: 0.4,
+    occupancy: 0.5,
     otaShare: 0.7,
     utilities: 350_000,
     unavailableDays: 2,
