@@ -294,9 +294,10 @@ export function ReportView({
       </section>
 
       <footer className="report-section border-t border-line pt-3 text-sm text-ink-2">
-        이 리포트의 금액은 입력하신 정보와 기준값으로 계산한 추정치이며 실제
-        공사비·수익과 다를 수 있습니다. 정확한 금액은 현장진단 후 확정됩니다.
-        계산 기준일 {at.toLocaleDateString("ko-KR")} · 단가{" "}
+        이 리포트의 금액은 입력하신 정보와 온기로 기준값으로 계산한 추정치이며
+        견적서나 수익 보장이 아닙니다. 실제 공사비는 현장진단 후 확정됩니다.
+        리포트는 저장 당시 기준값으로 계산했으며 이후 기준값이 바뀌어도 내용이
+        바뀌지 않습니다. 계산 기준일 {at.toLocaleDateString("ko-KR")} · 단가{" "}
         {inputs.priceVersion} · 가정값 {inputs.assumptionVersion} · 계산식{" "}
         {inputs.formulaVersion}
       </footer>

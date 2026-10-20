@@ -1,5 +1,5 @@
 // 가입 동의 항목 (prd.md COM-04, 6.7 약관 개정 규칙).
-// 문구·버전은 D8(약관·개인정보 처리방침, 주연) 확정 전 임시 값이다. 문구를 바꾸면 version을 올린다.
+// 문구는 D8(약관·개인정보 처리방침, 원일 검토) 10/20 확정본 5절. 문구를 바꾸면 version을 올린다.
 // 필수 항목의 version이 바뀌면 다음 로그인 때 재동의를 받는다.
 
 export type ConsentType =
@@ -18,47 +18,48 @@ export interface ConsentItem {
   detail: string;
 }
 
-const DRAFT = "draft-2026-10-08";
+// 10/20 D8 확정으로 draft-2026-10-08 → 2026-10-20 (기존 회원은 다음 로그인 때 재동의)
+const D8 = "2026-10-20";
 
 export const CONSENT_ITEMS: readonly ConsentItem[] = [
   {
     type: "terms",
     required: true,
-    version: DRAFT,
+    version: D8,
     label: "이용약관",
-    detail: "온기로 서비스 이용약관에 동의합니다. (약관 확정 전 임시 문구)",
+    detail: "온기로 서비스 이용약관에 동의합니다.",
   },
   {
     type: "privacy",
     required: true,
-    version: DRAFT,
+    version: D8,
     label: "개인정보 수집·이용",
     detail:
-      "카카오 계정 닉네임·이메일(선택), 진단 입력 정보, 상담 연락처를 서비스 제공과 상담 연락에 이용합니다. 이용 분석에 Google Analytics를 사용합니다. (처리방침 확정 전 임시 문구)",
+      "카카오 닉네임·이메일(선택), 진단한 빈집 정보, 상담 연락처를 서비스 제공과 상담 연락에 이용합니다. 보관 기간은 탈퇴 시까지이며, 서비스 개선을 위해 이용 기록을 Google Analytics로 분석합니다.",
   },
   {
     type: "estimateDisclaimer",
     required: true,
-    version: DRAFT,
-    label: "견적 결과는 추정치임을 확인",
+    version: D8,
+    label: "견적은 추정치임을 확인",
     detail:
-      "견적·수익 결과는 입력 정보와 가정값으로 계산한 추정치이며, 정밀 진단·구조 안전 진단·인허가 판단을 대체하지 않습니다.",
+      "견적·수익 결과는 입력 정보와 기준값으로 계산한 추정치이며 견적서·수익 보장이 아닙니다. 구조 안전 진단과 인허가 판단을 대신하지 않습니다.",
   },
   {
     type: "photoReview",
     required: true,
-    version: DRAFT,
-    label: "진단 사진을 견적 검수에 이용",
+    version: D8,
+    label: "진단 사진 검수 이용",
     detail:
-      "업로드한 사진은 운영팀이 견적을 검수할 때만 봅니다. 위치정보(EXIF)는 지우며, 보관 기간은 정책 확정 예정입니다.",
+      "올린 사진은 견적 검수에만 쓰며 권한 있는 담당자만 봅니다. 위치정보는 올리기 전에 지우고, 진단일로부터 12개월 뒤 삭제합니다. AI 기능은 따로 동의한 경우에만 사진을 AI 서비스로 보냅니다.",
   },
   {
     type: "photoModel",
     required: false,
-    version: DRAFT,
-    label: "진단 사진을 견적 모델 개선에 이용",
+    version: D8,
+    label: "진단 사진 모델 개선 이용",
     detail:
-      "식별 정보를 제거한 뒤 견적 정확도 개선에 이용합니다. 동의하지 않아도 서비스를 이용할 수 있고, 나중에 철회할 수 있습니다.",
+      "개인을 알아볼 수 없게 처리한 뒤 견적 정확도 개선에 이용합니다. 동의하지 않아도 서비스를 이용할 수 있고, 마이페이지에서 언제든 철회할 수 있습니다.",
   },
   {
     // 10/19 D8 확정(원일): 해외 AI 전송은 필수가 아닌 선택 동의로. 동의하지 않으면 AI 기능만 꺼진다

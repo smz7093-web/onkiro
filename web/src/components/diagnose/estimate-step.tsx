@@ -162,8 +162,8 @@ export function EstimateStep() {
             ))}
           </ul>
           <p className="text-base">
-            구조 안전이 확인되기 전에는 공사비와 수익 추정이 크게 달라질 수
-            있습니다. 현장진단을 먼저 받아 보세요.
+            사진과 체크리스트만으로는 구조 안전을 판단할 수 없으니 전문가
+            현장진단을 먼저 받으세요.
           </p>
           <NextActions
             payload={payload}
