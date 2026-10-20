@@ -151,6 +151,44 @@ describe("출처별로 따로 성공·실패", () => {
     });
   });
 
+  it("토지 빈 응답은 저장하지 않고 실패로, 예전에 저장된 빈 응답은 무시하고 다시 부른다 (10/20)", async () => {
+    const written: string[] = [];
+    const d = deps({
+      fixtures: [],
+      readCache: async <T>(api: string) =>
+        api === "land-v2"
+          ? {
+              value: {
+                landCategory: null,
+                zoning: null,
+                officialLandPrice: null,
+                priceYear: null,
+                landArea: null,
+                roadSide: null,
+                terrain: null,
+                landUse: null,
+              } as T,
+              fetchedAt: "2026-10-19T13:08:49.646Z",
+            }
+          : null,
+      writeCache: async (api) => {
+        written.push(api);
+      },
+      responses: { vworld: { landCharacteristicss: { field: [] } } },
+    });
+    const r = await lookupProperty(
+      { pnu: "4480025021105950001", lat: null, lng: null },
+      KEYS,
+      d,
+    );
+    expect(d.calls).toContain("vworld");
+    expect(r.land).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("비어 있습니다"),
+    });
+    expect(written).not.toContain("land-v2");
+  });
+
   it("브이월드 키가 임시값(pending)이면 토지만 건너뛴다", async () => {
     const d = deps({ fixtures: [] });
     const r = await lookupProperty(
@@ -170,19 +208,32 @@ describe("출처별로 따로 성공·실패", () => {
   });
 });
 
-describe("저장된 대표 주소 2곳 (DEMO_FIXTURES)", () => {
+describe("저장된 대표 주소 (DEMO_FIXTURES)", () => {
   it("도로명·지번 검색어 모두 저장 데이터를 찾는다", async () => {
     const d = deps({ fixtures: DEMO_FIXTURES, useFixtures: true });
-    for (const q of [
-      "충청남도 홍성군 광천읍 상정1길 21-48",
-      "광천읍 상정리 628",
-      "홍성읍 충절로1053번길 86-9",
-      "오관리 542-17",
+    for (const [q, jibun] of [
+      ["홍성군 홍성읍 오관리 595-1", "오관리 595-1"],
+      ["충청남도 홍성군 홍성읍 조양로14번길 54-12", "오관리 595-1"],
+      ["충청남도 홍성군 광천읍 상정1길 21-48", "상정리 628"],
+      ["광천읍 상정리 628", "상정리 628"],
+      ["홍성읍 충절로1053번길 86-9", "오관리 542-17"],
+      ["오관리 542-17", "오관리 542-17"],
     ]) {
       const s = await searchAddress(q, KEYS, d);
       expect(s).toMatchObject({ ok: true, source: "demoFixture" });
+      if (s.ok) expect(s.value[0].addressJibun).toContain(jibun);
     }
     expect(d.calls).toEqual([]);
+  });
+
+  it("번지 뒤에 숫자가 더 붙은 다른 필지는 저장 데이터로 잘못 잡지 않는다", async () => {
+    for (const q of ["오관리 595-10", "오관리 595-12", "상정리 6281"]) {
+      const d = deps({ fixtures: DEMO_FIXTURES, useFixtures: true });
+      const s = await searchAddress(q, KEYS, d);
+      // 저장 데이터가 아니므로 외부(도로명주소)를 부르고, 실패해도 저장 데이터로 대신하지 않는다
+      expect(d.calls).toContain("juso");
+      expect(s).not.toMatchObject({ source: "demoFixture" });
+    }
   });
 
   it("필지번호는 법정동코드 형식(19자리)이고 대장이 있다", () => {

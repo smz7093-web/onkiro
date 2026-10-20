@@ -6,9 +6,50 @@ import type { DemoFixture } from "./lookup.js";
 // 꺼져 있어도 외부 호출이 실패하면 이 값으로 대신한다.
 // 토지(land)는 10/14 브이월드 실제 조회 값(2026년 기준)이다.
 // keywords는 검색어에서 공백을 뺀 뒤 포함 여부로 비교한다.
+// 10/19: 시연 대표 주소를 홍성읍 오관리 595-1로 바꿨다(PM). 광천읍 상정리 628은 예비로 남긴다.
 export const DEMO_FIXTURES: DemoFixture[] = [
   {
-    // 대표 주소 1 — 광천읍 목조 주택 (대장: 사용승인일·대지면적 없음)
+    // 대표 주소 1 (시연 본 흐름) — 홍성읍 조적조 기와 주택, 10/19 실제 조회
+    pnu: "4480025021105950001",
+    keywords: ["조양로14번길54-12", "오관리595-1"],
+    candidate: {
+      addressRoad: "충청남도 홍성군 홍성읍 조양로14번길 54-12",
+      addressJibun: "충청남도 홍성군 홍성읍 오관리 595-1",
+      pnu: "4480025021105950001",
+      lat: 36.597933191157,
+      lng: 126.658828236333,
+    },
+    building: {
+      found: true,
+      facts: {
+        floorArea: 90.59,
+        landArea: null,
+        structure: "조적조(벽돌·블록)",
+        roofStructure: "기와",
+        approvalDate: "1976-10-28",
+        floors: 1,
+        mainPurpose: "단독주택",
+      },
+    },
+    land: {
+      landCategory: "대",
+      zoning: "제2종일반주거지역",
+      officialLandPrice: 370000,
+      priceYear: "2026",
+      landArea: 539,
+      roadSide: "소로한면",
+      terrain: "완경사 · 사다리형",
+      landUse: "단독",
+    },
+    tour: [
+      { title: "안회당과 여하정", distanceKm: 0.4572581275280478 },
+      { title: "조양문", distanceKm: 0.6339167345282944 },
+      { title: "홍주향교", distanceKm: 1.4763423183759898 },
+    ],
+    savedAt: "2026-10-19T14:58:40.909Z",
+  },
+  {
+    // 예비 주소 — 광천읍 목조 주택 (대장: 사용승인일·대지면적 없음). 10/19 전까지 대표 주소 1
     pnu: "4480025329106280000",
     keywords: ["상정1길21-48", "상정리628"],
     candidate: {
@@ -48,7 +89,7 @@ export const DEMO_FIXTURES: DemoFixture[] = [
     savedAt: "2026-10-13T05:21:49.099Z",
   },
   {
-    // 대표 주소 2 — 홍성읍 조적조 기와 주택
+    // 대표 주소 2 (위험 신호 예시) — 홍성읍 조적조 기와 주택
     pnu: "4480025021105420017",
     keywords: ["충절로1053번길86-9", "오관리542-17"],
     candidate: {

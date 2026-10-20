@@ -100,9 +100,22 @@ function fixtureFor(
       (by.pnu && f.pnu === by.pnu) ||
       (by.keyword &&
         f.keywords.some((k) =>
-          by.keyword!.replace(/\s/g, "").includes(k.replace(/\s/g, "")),
+          containsAddress(by.keyword!.replace(/\s/g, ""), k.replace(/\s/g, "")),
         )),
   );
+}
+
+// 검색어에 주소가 들어 있는지. 번지 뒤에 숫자가 더 붙으면 다른 필지다 ('오관리595-1' ≠ '오관리595-10', 10/19)
+function containsAddress(text: string, address: string) {
+  for (
+    let i = text.indexOf(address);
+    i !== -1;
+    i = text.indexOf(address, i + 1)
+  ) {
+    const next = text[i + address.length];
+    if (next === undefined || !/[0-9-]/.test(next)) return true;
+  }
+  return false;
 }
 
 // 캐시 → 외부 호출 → 캐시 저장
@@ -113,11 +126,14 @@ async function cached<T>(
   days: number,
   source: Source,
   load: () => Promise<T>,
+  // 빈 응답이면 저장하지 않고 실패로 본다. 예전에 저장된 빈 응답도 쓰지 않는다 (10/20)
+  isEmpty?: (value: T) => boolean,
 ): Promise<Sourced<T>> {
   const hit = await deps.readCache<T>(api, key, days).catch(() => null);
-  if (hit)
+  if (hit && !isEmpty?.(hit.value))
     return { ok: true, value: hit.value, source, fetchedAt: hit.fetchedAt };
   const value = await load();
+  if (isEmpty?.(value)) throw new Error(`${api} 응답이 비어 있습니다`);
   await deps.writeCache(api, key, value).catch(() => {});
   return { ok: true, value, source, fetchedAt: deps.now().toISOString() };
 }
@@ -265,6 +281,8 @@ export async function lookupProperty(
               { api: "vworld" },
             ),
           ),
+        // 10/19 오관리 595-1: 브이월드가 한 번 빈 응답을 줘서 30일간 토지 값이 모두 비어 보였다
+        (v) => Object.values(v).every((x) => x === null),
       );
     } catch (e) {
       return orFixture(e, (f) => f.land);

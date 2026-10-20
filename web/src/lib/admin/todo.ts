@@ -1,5 +1,9 @@
 // 관리자 첫 화면 '아직 할 일' (UX기준 21 목표 경사·22 자이가르닉, 10/19).
 // 읽은 상태로 할 일 목록을 만든다. 이 파일은 React·Firebase를 import하지 않는다.
+import {
+  RECOMMENDED_CHECKLIST_RULES,
+  type ChecklistRule,
+} from "../engine/checklist";
 import { calculateEstimate, roundForDisplay } from "../engine/estimate";
 import {
   REFERENCE_ESTIMATE,
@@ -14,6 +18,9 @@ import { PROCESS_LABELS } from "../engine/types";
 // 적용 중 버전이 10/19 확정안과 같은 결과를 내는지 (관리 화면 검증 사례와 같은 기준). 시연 대본 금액이 이 값을 전제로 한다
 export function priceMatchesReference(price: PriceTable | null): boolean {
   if (!price) return false;
+  // 판정표도 확정안과 같아야 한다 (10/20: 적용 중이던 10/18 초안 판정표에 '비 샘 → 큰 균열' 같은 잘못된 줄이 있었다)
+  if (!sameRules(price.checklistRules ?? [], RECOMMENDED_CHECKLIST_RULES))
+    return false;
   try {
     const r = calculateEstimate(REFERENCE_ESTIMATE_INPUT, price);
     return (
@@ -26,6 +33,17 @@ export function priceMatchesReference(price: PriceTable | null): boolean {
   } catch {
     return false;
   }
+}
+
+// 줄 순서는 상관없이 같은 줄들인지
+function sameRules(a: readonly ChecklistRule[], b: readonly ChecklistRule[]) {
+  const key = (r: ChecklistRule) =>
+    [r.question, r.answer, r.process ?? "", r.grade ?? "", r.risk ?? ""].join(
+      "|",
+    );
+  const ka = a.map(key).sort();
+  const kb = b.map(key).sort();
+  return ka.length === kb.length && ka.every((k, i) => k === kb[i]);
 }
 
 export function assumptionMatchesReference(
@@ -161,8 +179,8 @@ export function buildTodo(s: TodoState): TodoItem[] {
       id: "confirmedPrice",
       done: priceMatchesReference(s.activePrice),
       text: priceMatchesReference(s.activePrice)
-        ? "적용 중 단가가 확정안과 같음 (검증 사례 3,700만·25일, 시연 대본 금액과 일치)"
-        : "적용 중 단가가 확정안과 다름 — 단가 DB에서 '확정안 전체 불러오기' → 저장 → 적용 (시연 대본 금액이 달라짐)",
+        ? "적용 중 단가·판정표가 확정안과 같음 (검증 사례 3,700만·25일, 시연 대본 금액과 일치)"
+        : "적용 중 단가 또는 판정표가 확정안과 다름 — 단가 DB에서 '확정안 전체 불러오기' → 저장 → 적용 (시연 대본 금액·위험 신호가 달라짐)",
       href: "/admin/prices",
       d: ["D5"],
     },

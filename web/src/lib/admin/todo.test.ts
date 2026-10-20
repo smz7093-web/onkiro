@@ -58,6 +58,23 @@ describe("적용 중 버전이 확정안과 같은지 (시연 준비, 10/19)", (
     expect(priceMatchesReference(RECOMMENDED_PRICE_TABLE)).toBe(true);
     expect(priceMatchesReference(PRICE_V2026_10_1)).toBe(false);
     expect(priceMatchesReference(null)).toBe(false);
+    // 단가는 같아도 판정표 한 줄이 다르면(10/18 초안의 '비 샘 → 큰 균열') 확정안이 아니다
+    expect(
+      priceMatchesReference({
+        ...RECOMMENDED_PRICE_TABLE,
+        checklistRules: RECOMMENDED_PRICE_TABLE.checklistRules!.map((r) =>
+          r.question === "leak" && r.answer === "yes"
+            ? { ...r, grade: "full", risk: "majorCrack" }
+            : r,
+        ),
+      }),
+    ).toBe(false);
+    expect(
+      priceMatchesReference({
+        ...RECOMMENDED_PRICE_TABLE,
+        checklistRules: [...RECOMMENDED_PRICE_TABLE.checklistRules!].reverse(),
+      }),
+    ).toBe(true);
     expect(assumptionMatchesReference(RECOMMENDED_ASSUMPTION)).toBe(true);
     expect(assumptionMatchesReference(ASSUMPTION_V0_3)).toBe(false);
     const items = buildTodo({
