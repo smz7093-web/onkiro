@@ -3,6 +3,7 @@ import {
   canChangeStatus,
   canManageReservations,
   estimateTotal,
+  extraGuestTotal,
   firstConflict,
   isDate,
   nightsOf,
@@ -11,7 +12,14 @@ import {
   todayKst,
 } from "./reservation.js";
 
-const booking = { enabled: true, maxGuests: 4, minNights: 1, maxNights: 7 };
+const booking = {
+  enabled: true,
+  maxGuests: 4,
+  baseGuests: 4,
+  extraGuestFee: 0,
+  minNights: 1,
+  maxNights: 7,
+};
 const base = {
   branchId: "onkiro-1",
   checkIn: "2026-11-06",
@@ -49,6 +57,25 @@ describe("예상 금액", () => {
     expect(estimateTotal(nights, { weekday: 150_000, weekend: 200_000 })).toBe(
       550_000,
     );
+  });
+});
+
+describe("기준 인원 초과 요금", () => {
+  it("1호점: 기준 6명, 1인 1박 2만 원 — 8명 2박이면 8만 원", () => {
+    const b = { baseGuests: 6, extraGuestFee: 20_000 };
+    expect(extraGuestTotal(2, 8, b)).toBe(80_000);
+    expect(extraGuestTotal(2, 7, b)).toBe(40_000);
+    expect(extraGuestTotal(3, 6, b)).toBe(0);
+  });
+
+  it("설정이 없으면 기준 인원 = 최대 인원(추가 요금 없음), 기준은 최대를 넘지 않는다", () => {
+    expect(readBooking({ maxGuests: 8 })).toMatchObject({
+      baseGuests: 8,
+      extraGuestFee: 0,
+    });
+    expect(
+      readBooking({ maxGuests: 8, baseGuests: 10, extraGuestFee: 20_000 }),
+    ).toMatchObject({ baseGuests: 8, extraGuestFee: 20_000 });
   });
 });
 
@@ -116,6 +143,8 @@ describe("지점 예약 설정", () => {
     expect(readBooking(undefined)).toEqual({
       enabled: false,
       maxGuests: 4,
+      baseGuests: 4,
+      extraGuestFee: 0,
       minNights: 1,
       maxNights: 7,
     });
@@ -126,7 +155,14 @@ describe("지점 예약 설정", () => {
         maxNights: 2,
         maxGuests: "6",
       }),
-    ).toEqual({ enabled: true, maxGuests: 6, minNights: 3, maxNights: 3 });
+    ).toEqual({
+      enabled: true,
+      maxGuests: 6,
+      baseGuests: 6,
+      extraGuestFee: 0,
+      minNights: 3,
+      maxNights: 3,
+    });
   });
 });
 

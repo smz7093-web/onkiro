@@ -465,6 +465,21 @@ export function BranchEditor({ id }: { id: string }) {
               onChange={(v) => setBooking({ maxGuests: v ?? 1 })}
             />
           </Field>
+          <Field label="기준 인원 (넘으면 추가 요금)">
+            <NumberInput
+              className={field}
+              value={booking.baseGuests}
+              onChange={(v) => setBooking({ baseGuests: v ?? 1 })}
+            />
+          </Field>
+          <Field label="추가 1인 1박 요금 (원, 없으면 0)">
+            <NumberInput
+              className={field}
+              value={booking.extraGuestFee}
+              placeholder="예: 20,000 또는 2만"
+              onChange={(v) => setBooking({ extraGuestFee: v ?? 0 })}
+            />
+          </Field>
           <Field label="최소 박 수">
             <NumberInput
               className={field}

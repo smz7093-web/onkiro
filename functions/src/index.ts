@@ -27,6 +27,7 @@ import {
   canChangeStatus,
   canManageReservations,
   estimateTotal,
+  extraGuestTotal,
   firstConflict,
   MAX_OPEN_REQUESTS,
   nightsOf,
@@ -837,11 +838,8 @@ export const requestReservation = onCall(async (request) => {
     ]);
     if (!branch.exists) throw new HttpsError("not-found", "숙소가 없습니다");
     const content = (branch.get("content") ?? {}) as Record<string, unknown>;
-    const parsed = parseRequest(
-      request.data,
-      readBooking(content.booking),
-      todayKst(),
-    );
+    const booking = readBooking(content.booking);
+    const parsed = parseRequest(request.data, booking, todayKst());
     if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.error);
     if (open.size >= MAX_OPEN_REQUESTS)
       throw new HttpsError(
@@ -856,6 +854,11 @@ export const requestReservation = onCall(async (request) => {
       );
     const price = (content.price ?? {}) as Record<string, unknown>;
     const won = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+    const extraFee = extraGuestTotal(
+      parsed.nights.length,
+      parsed.value.guests,
+      booking,
+    );
     const now = FieldValue.serverTimestamp();
     tx.create(ref, {
       ...parsed.value,
@@ -863,10 +866,13 @@ export const requestReservation = onCall(async (request) => {
       branchName: (branch.get("name") as string | null) ?? branchId,
       nights: parsed.nights.length,
       // 신청 당시 요금으로 계산한 예상 금액 (확정 금액은 운영팀이 안내)
-      estimate: estimateTotal(parsed.nights, {
-        weekday: won(price.weekday),
-        weekend: won(price.weekend),
-      }),
+      estimate:
+        estimateTotal(parsed.nights, {
+          weekday: won(price.weekday),
+          weekend: won(price.weekend),
+        }) + extraFee,
+      // 기준 인원 초과 추가 요금 (estimate에 포함)
+      extraFee,
       status: "requested",
       staffMemo: "",
       createdAt: now,

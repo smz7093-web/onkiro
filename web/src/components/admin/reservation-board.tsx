@@ -201,7 +201,10 @@ function ReservationCard({
             · {r.guests}명
           </dd>
           <dt className="text-ink-2">예상 금액</dt>
-          <dd>{r.estimate > 0 ? won(r.estimate) : "—"}</dd>
+          <dd>
+            {r.estimate > 0 ? won(r.estimate) : "—"}
+            {r.extraFee > 0 && ` (추가 인원 요금 ${won(r.extraFee)} 포함)`}
+          </dd>
           <dt className="text-ink-2">신청</dt>
           <dd>{r.createdAt?.toLocaleString("ko-KR") ?? ""}</dd>
           {r.memo && (

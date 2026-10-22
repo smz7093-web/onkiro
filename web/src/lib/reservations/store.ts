@@ -34,6 +34,8 @@ export interface Reservation {
   staffMemo: string;
   // 신청 당시 요금으로 계산한 예상 금액(원)
   estimate: number;
+  // 그중 기준 인원 초과 추가 요금(원)
+  extraFee: number;
   status: ReservationStatus;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -66,6 +68,7 @@ function toReservation(id: string, d: Record<string, unknown>): Reservation {
     memo: (d.memo as string) ?? "",
     staffMemo: (d.staffMemo as string) ?? "",
     estimate: Number(d.estimate) || 0,
+    extraFee: Number(d.extraFee) || 0,
     status: (d.status as ReservationStatus) ?? "requested",
     createdAt: toDate(d.createdAt),
     updatedAt: toDate(d.updatedAt),

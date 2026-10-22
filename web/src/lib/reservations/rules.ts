@@ -21,6 +21,9 @@ export const RESERVATION_STATUS_LABELS: Record<ReservationStatus, string> = {
 export interface BookingSettings {
   enabled: boolean;
   maxGuests: number;
+  // 기준 인원. 넘는 인원은 1인 1박마다 extraGuestFee를 더한다 (10/23, 1호점: 6명·2만 원)
+  baseGuests: number;
+  extraGuestFee: number;
   minNights: number;
   maxNights: number;
   // 확정 후 안내 (예: 입금 계좌·기한). 확정된 예약에만 보인다
@@ -32,6 +35,8 @@ export interface BookingSettings {
 export const DEFAULT_BOOKING: BookingSettings = {
   enabled: false,
   maxGuests: 4,
+  baseGuests: 4,
+  extraGuestFee: 0,
   minNights: 1,
   maxNights: 7,
   paymentGuide: "",
@@ -78,6 +83,15 @@ export function estimateTotal(
   );
 }
 
+// 기준 인원을 넘는 인원의 추가 요금: (인원 − 기준 인원) × 1인 1박 요금 × 박 수
+export function extraGuestTotal(
+  nights: number,
+  guests: number,
+  b: { baseGuests: number; extraGuestFee: number },
+): number {
+  return Math.max(0, guests - b.baseGuests) * b.extraGuestFee * nights;
+}
+
 export function readBooking(raw: unknown): BookingSettings {
   const b = (typeof raw === "object" && raw !== null ? raw : {}) as Record<
     string,
@@ -88,9 +102,13 @@ export function readBooking(raw: unknown): BookingSettings {
     return Number.isInteger(n) && n >= min && n <= max ? n : d;
   };
   const minNights = int(b.minNights, DEFAULT_BOOKING.minNights, 1, 30);
+  const maxGuests = int(b.maxGuests, DEFAULT_BOOKING.maxGuests, 1, 20);
   return {
     enabled: b.enabled === true,
-    maxGuests: int(b.maxGuests, DEFAULT_BOOKING.maxGuests, 1, 20),
+    maxGuests,
+    // 없으면 최대 인원 = 기준 인원(추가 요금 없음)
+    baseGuests: Math.min(maxGuests, int(b.baseGuests, maxGuests, 1, 20)),
+    extraGuestFee: int(b.extraGuestFee, 0, 0, 1_000_000),
     minNights,
     maxNights: Math.max(
       minNights,

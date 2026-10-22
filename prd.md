@@ -2,9 +2,9 @@
 
 2026-10-06 · PM · **2026-10-23 갱신**
 
-> 이 파일은 팀 공유 문서(https://claude.ai/code/artifact/9bc43f90-69ee-445e-8f5c-8648a5c68292, rev 143)의 로컬 사본이다. 수정은 공유 문서에서 하고, 이 파일은 필요할 때 다시 저장한다. 공유 문서의 그림 2개(5절 흐름도, 12절 타임라인)는 같은 내용을 텍스트로 옮겼다.
+> 이 파일은 팀 공유 문서(https://claude.ai/code/artifact/9bc43f90-69ee-445e-8f5c-8648a5c68292, rev 147)의 로컬 사본이다. 수정은 공유 문서에서 하고, 이 파일은 필요할 때 다시 저장한다. 공유 문서의 그림 2개(5절 흐름도, 12절 타임라인)는 같은 내용을 텍스트로 옮겼다.
 >
-> **10/19: 팀 회의 확정안과 개발 변경을 반영했다. 10/22: 기준값 적용·D8 확정·서비스 주소(onkiro.kr)를 공유 문서(rev 139)와 이 사본에 반영했다. 10/23: 숙소 예약 신청(STY-06·ADM-09)을 추가했다(rev 143).** 바뀐 곳은 아래 0절 요약과 각 절의 ★ 표시를 본다.
+> **10/19: 팀 회의 확정안과 개발 변경을 반영했다. 10/22: 기준값 적용·D8 확정·서비스 주소(onkiro.kr)를 공유 문서(rev 139)와 이 사본에 반영했다. 10/23: 숙소 예약 신청(STY-06·ADM-09)을 추가했다(rev 143), 기준 인원 초과 요금(rev 147).** 바뀐 곳은 아래 0절 요약과 각 절의 ★ 표시를 본다.
 
 ## 0. 10/19~10/23 변경 요약
 
@@ -253,7 +253,7 @@ MVP에는 비회원·일반회원·운영팀·최고 관리자 4개 역할만 �
 | STY-02 | 외부 예약 연결 | 시연 필수 | stay-detail | 에어비앤비·네이버 예약 링크 | 클릭 수 기록 |
 | STY-03 | 체험·패키지 소개 | P1 | experience | 순례자의 식탁, 마을 투어, 장인 체험 + 문의 | – |
 | STY-05 | AI 컨시어지 | P1 | concierge | 1호점 매뉴얼 범위 챗봇 | 모르는 질문은 운영팀 연락처 안내 |
-| STY-06 | ★ 온기로 예약 신청 (10/23) | 시연 여부 미정 | stay-reserve(`/stay/{id}/reserve`), mypage | 로그인·필수 동의 후 달력에서 체크인·체크아웃(막힌 밤 제외)·인원·예약자 이름·연락처·요청 사항, 예상 금액(평일·주말(금·토 밤) 요금 합). 접수 후 마이페이지 '확인 중', 확정되면 입금 안내, 확인 중일 때 본인 취소 | 결제 연동 없음(확정 후 계좌 안내). 숙소별로 켬(content.booking: 최대 인원·최소/최대 박 수·입금 안내·취소 규정). 체크인은 내일부터 180일 안, 확인 중 신청은 1인 3건까지. 서버 함수 requestReservation이 막힌 날짜와 겹치면 거부. 클릭은 Analytics reserve_click(channel=onkiro) |
+| STY-06 | ★ 온기로 예약 신청 (10/23) | 시연 여부 미정 | stay-reserve(`/stay/{id}/reserve`), mypage | 로그인·필수 동의 후 달력에서 체크인·체크아웃(막힌 밤 제외)·인원·예약자 이름·연락처·요청 사항, 예상 금액(평일·주말(금·토 밤) 요금 합 + 기준 인원 초과 1인 1박 추가 요금. 1호점: 최대 8명, 7명부터 1인 1박 2만 원). 접수 후 마이페이지 '확인 중', 확정되면 입금 안내, 확인 중일 때 본인 취소 | 결제 연동 없음(확정 후 계좌 안내). 숙소별로 켬(content.booking: 최대 인원·기준 인원·추가 1인 1박 요금·최소/최대 박 수·입금 안내·취소 규정). 체크인은 내일부터 180일 안, 확인 중 신청은 1인 3건까지. 서버 함수 requestReservation이 막힌 날짜와 겹치면 거부. 클릭은 Analytics reserve_click(channel=onkiro) |
 
 ### 6.5 운영 데이터 (DAT)
 
@@ -371,8 +371,8 @@ BEP 가동률       = 고정비 ÷ (판매 가능일 × 1박 공헌이익)
 | `consultations/{id}` | type, assessmentId, applicantName, phone, ownership, preferredDate, memo, phoneRequested, snapshotId(신청 시점), status, assigneeUid, proxyEnteredBy, fitGrade(P1) | |
 | `consultations/{id}/events/{id}` | kind(status/assignee/memo), before, after, actorUid, at | 상태·담당자·메모 변경 이력 |
 | `consultations/{id}/inspection` | measured, confirmedEstimate | CON-03, 시연 후 |
-| `branches/{id}` | name, content(★ booking: enabled, maxGuests, minNights, maxNights, paymentGuide, policy), airbnbUrl, naverUrl, baselineSnapshotId(DAT-02 비교 기준) | STY-01·02, STY-06 |
-| ★ `reservations/{id}` | uid, branchId, branchName, checkIn, checkOut, nights, guests, guestName, phone, memo, estimate(신청 당시 예상 금액), status(requested/confirmed/rejected/cancelled), staffMemo | STY-06. 본인·예약 관리 권한만 읽고, 쓰기는 서버 함수만(requestReservation·updateReservation) |
+| `branches/{id}` | name, content(★ booking: enabled, maxGuests, baseGuests, extraGuestFee, minNights, maxNights, paymentGuide, policy), airbnbUrl, naverUrl, baselineSnapshotId(DAT-02 비교 기준) | STY-01·02, STY-06 |
+| ★ `reservations/{id}` | uid, branchId, branchName, checkIn, checkOut, nights, guests, guestName, phone, memo, estimate(신청 당시 예상 금액, 추가 인원 요금 포함), extraFee, status(requested/confirmed/rejected/cancelled), staffMemo | STY-06. 본인·예약 관리 권한만 읽고, 쓰기는 서버 함수만(requestReservation·updateReservation) |
 | ★ `reservations/{id}/events/{id}` | kind(status/memo), before, after, actorUid, at | 상태·메모 변경 이력 |
 | ★ `bookingCalendars/{branchId}` | blocked(운영팀이 막은 밤), booked(확정 예약의 밤, 서버 함수만) | STY-06. 누구나 읽음(개인정보 없음), blocked만 콘텐츠 편집 권한자가 씀 |
 | `branches/{id}/dailyRecords/{yyyy-mm-dd}` | nightsSold, netRevenue, unavailable(판매 가능일 제외 여부), unavailableReason(정비/소유주 사용/기타) | DAT-01, 시연 후 |

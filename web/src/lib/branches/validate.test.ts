@@ -36,6 +36,8 @@ describe("숙소 콘텐츠 검사", () => {
     const booking = {
       enabled: true,
       maxGuests: 4,
+      baseGuests: 4,
+      extraGuestFee: 0,
       minNights: 1,
       maxNights: 7,
       paymentGuide: "",
@@ -47,6 +49,14 @@ describe("숙소 콘텐츠 검사", () => {
     });
     expect(validateBranch(withBooking({}))).toEqual([]);
     expect(validateBranch(withBooking({ maxGuests: 0 }))).toHaveLength(1);
+    expect(
+      validateBranch(
+        withBooking({ maxGuests: 8, baseGuests: 6, extraGuestFee: 20_000 }),
+      ),
+    ).toEqual([]);
+    expect(
+      validateBranch(withBooking({ maxGuests: 8, baseGuests: 9 })),
+    ).toHaveLength(1);
     expect(
       validateBranch(withBooking({ minNights: 3, maxNights: 2 })),
     ).toHaveLength(1);

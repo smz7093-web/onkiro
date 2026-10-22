@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   estimateTotal,
   firstConflict,
+  extraGuestTotal,
   monthCells,
   nightsOf,
   readBooking,
@@ -15,6 +16,12 @@ describe("예약 날짜·금액", () => {
     expect(estimateTotal(nights, { weekday: 150_000, weekend: 200_000 })).toBe(
       550_000,
     );
+  });
+
+  it("기준 인원 초과: 8명·기준 6명·2만 원·2박 = 8만 원", () => {
+    expect(
+      extraGuestTotal(2, 8, { baseGuests: 6, extraGuestFee: 20_000 }),
+    ).toBe(80_000);
   });
 
   it("체크아웃 날은 막혀 있어도 겹치지 않는다", () => {

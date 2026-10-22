@@ -10,6 +10,7 @@ import type { Branch } from "@/lib/branches/types";
 import {
   addDays,
   estimateTotal,
+  extraGuestTotal,
   firstConflict,
   HORIZON_DAYS,
   nightsOf,
@@ -64,7 +65,9 @@ export function ReserveForm({ branchId }: { branchId: string }) {
     weekday: Number(branch?.content.price?.weekday) || 0,
     weekend: Number(branch?.content.price?.weekend) || 0,
   };
-  const total = estimateTotal(nights, price);
+  const extraGuests = Math.max(0, guests - booking.baseGuests);
+  const extraFee = extraGuestTotal(nights.length, guests, booking);
+  const total = estimateTotal(nights, price) + extraFee;
 
   if (branch === undefined) return <p className="text-base">불러오는 중…</p>;
   if (!branch || branch.sample || !booking.enabled)
@@ -162,8 +165,11 @@ export function ReserveForm({ branchId }: { branchId: string }) {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">예약 신청</h1>
         <p className="text-base text-ink-2">
-          {branch.content.label || branch.name} · 최대 {booking.maxGuests}인 ·{" "}
-          {booking.minNights > 1 ? `${booking.minNights}~` : "최대 "}
+          {branch.content.label || branch.name} · 최대 {booking.maxGuests}인
+          {booking.extraGuestFee > 0 &&
+            booking.baseGuests < booking.maxGuests &&
+            ` (${booking.baseGuests + 1}명부터 1인 1박 ${won(booking.extraGuestFee)} 추가)`}{" "}
+          · {booking.minNights > 1 ? `${booking.minNights}~` : "최대 "}
           {booking.maxNights}박
         </p>
       </div>
@@ -197,6 +203,12 @@ export function ReserveForm({ branchId }: { branchId: string }) {
             {nights.length > 0 && total > 0 ? (
               <>
                 <b>{won(total)}</b>
+                {extraFee > 0 && (
+                  <span className="block text-sm text-ink-2">
+                    추가 인원 {extraGuests}명 × {won(booking.extraGuestFee)} ×{" "}
+                    {nights.length}박 = {won(extraFee)} 포함
+                  </span>
+                )}
                 <span className="block text-sm text-ink-2">
                   금·토 밤은 주말 요금. 확정 금액은 운영팀이 안내합니다
                 </span>
