@@ -59,6 +59,7 @@
 **팀원 산출물 대기**: D2·D3·D4(석원·해순, 10/10 지남 — D4는 관리자 화면 판정표로 입력) · D5(석원, 10/14) · D7(원일, 10/14) · D9(해순, 10/14) · D6·D13(원일, 10/17) · D12(해순, 10/21) (D8은 10/20 검토 완료)
 
 **환경·작업 메모**
+- **커스텀 도메인(10/22)**: `onkiro.kr`·`www.onkiro.kr`(가비아 DNS: A 35.219.200.52, TXT fah-claim, 인증서용 CNAME `_acme-challenge_…`) → App Hosting `onkiro-web`. Firebase 승인된 도메인·카카오 Redirect URI `https://onkiro.kr/__/auth/handler` 등록(PM), 코드 `PROXIED_AUTH_HOSTS`에 추가. 시연 전까지 팀 안에서만 공유.
 - Firebase 프로젝트 ID `onkiro-2fe12`(표시 이름 onkiro), 리전 asia-northeast3. 함수: `ping`, `syncUserClaims`, `setUserPermissions`, `activateVersion`, `updateConsultation`, `createProxyConsultation`, `searchAddress`, `lookupProperty`, `explainGrades`, `analyzeDiagnosisPhotos`, `renderRemodel`, `cleanupAssessmentAi`(진단 삭제 시 AI 결과 정리), `deleteAssessmentAdmin`(관리자 진단 삭제, 10/19). 함수 배포가 'Timeout after 10000'으로 실패하면 `FUNCTIONS_DISCOVERY_TIMEOUT=60`을 붙여 다시 배포.
 - 로컬 실행: `cd web && npx next dev -p 3000` → `/login`(로그인·권한 확인), `/me`(마이페이지), `/consult`(상담 신청), `/admin`(관리자), `/admin/consults`(상담 관리), `/admin/users`(회원·권한), `/admin/branches`(숙소 콘텐츠), `/ui`(UI 견본, 시연 전 삭제), `/stay/sample-1`(숙소 샘플), `/diagnose`(진단 입력 흐름).
 - 검사: `web`에서 `npm run lint`·`npm run typecheck`·`npm test`(96개 + todo 3개), `functions`에서 `npm test`(69개)·`npm run build`. 배포: 루트에서 `npx firebase deploy --only firestore:rules|functions|storage`.

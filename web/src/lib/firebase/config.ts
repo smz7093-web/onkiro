@@ -6,6 +6,9 @@
 // Firebase Authentication 승인된 도메인에도 넣는다.
 export const PROXIED_AUTH_HOSTS = [
   "onkiro-web--onkiro-2fe12.asia-east1.hosted.app",
+  // 10/22 커스텀 도메인 연결 (가비아 DNS, App Hosting)
+  "onkiro.kr",
+  "www.onkiro.kr",
 ];
 
 const DEFAULT_AUTH_DOMAIN = "onkiro-2fe12.firebaseapp.com";
