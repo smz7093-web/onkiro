@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { buildTodo, splitDrafts, type TodoItem } from "@/lib/admin/todo";
 import { listBranches } from "@/lib/branches/store";
 import { countReceived } from "@/lib/consult/store";
+import { countRequested } from "@/lib/reservations/store";
+import { can } from "@/lib/permissions";
 import type { AssumptionSet, PriceTable } from "@/lib/engine/types";
 import { loadPermitContent, loadPhotoGuides } from "@/lib/site-content/store";
 import { listVersions } from "@/lib/versions/store";
@@ -20,6 +22,8 @@ export function AdminTodo() {
   const seesConsults =
     permissions.role === "admin" || permissions.consultAccess === "all";
 
+  const seesReservations = can(permissions, "canEditContent");
+
   useEffect(() => {
     let cancelled = false;
     Promise.all([
@@ -29,42 +33,59 @@ export function AdminTodo() {
       loadPhotoGuides(),
       listBranches(),
       seesConsults ? countReceived() : Promise.resolve(null),
+      seesReservations
+        ? countRequested().catch(() => null)
+        : Promise.resolve(null),
     ])
-      .then(([prices, assumptions, permits, guides, branches, received]) => {
-        if (cancelled) return;
-        const active = prices.find((v) => v.status === "active");
-        const activeAssumption = assumptions.find((v) => v.status === "active");
-        const drafts = (list: typeof prices | typeof assumptions) =>
-          list
-            .filter((v) => v.status === "draft")
-            .map((v) => ({ id: v.id, createdAt: v.createdAt }));
-        // 적용 시각(없으면 만든 시각)보다 먼저 만든 초안은 남겨진 초안
-        const since = (v?: {
-          effectiveFrom: Date | null;
-          createdAt: Date | null;
-        }) => v?.effectiveFrom ?? v?.createdAt ?? null;
-        const p = splitDrafts(drafts(prices), since(active));
-        const a = splitDrafts(drafts(assumptions), since(activeAssumption));
-        setItems(
-          buildTodo({
-            activePrice: (active?.data as PriceTable) ?? null,
-            activeAssumption: (activeAssumption?.data as AssumptionSet) ?? null,
-            priceDrafts: p.pending,
-            assumptionDrafts: a.pending,
-            stalePriceDrafts: p.stale,
-            staleAssumptionDrafts: a.stale,
-            permitsSaved: permits.updatedAt !== null,
-            photoGuidesSaved: guides.updatedAt !== null,
-            branchCount: branches.length,
-            receivedConsults: received,
-          }),
-        );
-      })
+      .then(
+        ([
+          prices,
+          assumptions,
+          permits,
+          guides,
+          branches,
+          received,
+          requested,
+        ]) => {
+          if (cancelled) return;
+          const active = prices.find((v) => v.status === "active");
+          const activeAssumption = assumptions.find(
+            (v) => v.status === "active",
+          );
+          const drafts = (list: typeof prices | typeof assumptions) =>
+            list
+              .filter((v) => v.status === "draft")
+              .map((v) => ({ id: v.id, createdAt: v.createdAt }));
+          // 적용 시각(없으면 만든 시각)보다 먼저 만든 초안은 남겨진 초안
+          const since = (v?: {
+            effectiveFrom: Date | null;
+            createdAt: Date | null;
+          }) => v?.effectiveFrom ?? v?.createdAt ?? null;
+          const p = splitDrafts(drafts(prices), since(active));
+          const a = splitDrafts(drafts(assumptions), since(activeAssumption));
+          setItems(
+            buildTodo({
+              activePrice: (active?.data as PriceTable) ?? null,
+              activeAssumption:
+                (activeAssumption?.data as AssumptionSet) ?? null,
+              priceDrafts: p.pending,
+              assumptionDrafts: a.pending,
+              stalePriceDrafts: p.stale,
+              staleAssumptionDrafts: a.stale,
+              permitsSaved: permits.updatedAt !== null,
+              photoGuidesSaved: guides.updatedAt !== null,
+              branchCount: branches.length,
+              receivedConsults: received,
+              requestedReservations: requested,
+            }),
+          );
+        },
+      )
       .catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
     };
-  }, [seesConsults]);
+  }, [seesConsults, seesReservations]);
 
   if (failed)
     return (

@@ -590,6 +590,95 @@ describe("branches", () => {
   });
 });
 
+describe("reservations·bookingCalendars (예약 신청, STY-06)", () => {
+  const haesoon = () =>
+    env
+      .authenticatedContext("haesoon", {
+        role: "staff",
+        perms: ["canEditContent"],
+      })
+      .firestore();
+  const calendar = (uid: string) => ({
+    blocked: ["2026-11-07"],
+    updatedBy: uid,
+    updatedAt: serverTimestamp(),
+  });
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "reservations/r1"), {
+        uid: "alice",
+        branchId: "onkiro-1",
+        status: "requested",
+      });
+      await setDoc(doc(db, "reservations/r1/events/e1"), { kind: "status" });
+      await setDoc(doc(db, "bookingCalendars/onkiro-1"), {
+        blocked: [],
+        booked: ["2026-11-01"],
+      });
+    });
+  });
+
+  it("예약은 본인과 예약 관리 권한(관리자·콘텐츠 편집)만 읽는다", async () => {
+    await assertSucceeds(getDoc(doc(member(), "reservations/r1")));
+    await assertSucceeds(getDoc(doc(haesoon(), "reservations/r1")));
+    await assertSucceeds(getDoc(doc(admin(), "reservations/r1")));
+    await assertFails(getDoc(doc(staff(), "reservations/r1")));
+    await assertFails(getDoc(doc(newcomer(), "reservations/r1")));
+    await assertFails(getDoc(doc(anonymous(), "reservations/r1")));
+    await assertSucceeds(getDoc(doc(haesoon(), "reservations/r1/events/e1")));
+    await assertFails(getDoc(doc(member(), "reservations/r1/events/e1")));
+  });
+
+  it("예약은 화면에서 직접 만들거나 고치지 못한다(서버 함수만)", async () => {
+    await assertFails(
+      setDoc(doc(member(), "reservations/r2"), {
+        uid: "alice",
+        status: "confirmed",
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(member(), "reservations/r1"), { status: "cancelled" }),
+    );
+    await assertFails(
+      updateDoc(doc(admin(), "reservations/r1"), { status: "confirmed" }),
+    );
+  });
+
+  it("달력은 누구나 읽고, 막은 날짜(blocked)만 콘텐츠 편집 권한자가 고친다", async () => {
+    await assertSucceeds(getDoc(doc(anonymous(), "bookingCalendars/onkiro-1")));
+    await assertSucceeds(
+      updateDoc(
+        doc(haesoon(), "bookingCalendars/onkiro-1"),
+        calendar("haesoon"),
+      ),
+    );
+    await assertSucceeds(
+      setDoc(doc(admin(), "bookingCalendars/onkiro-2"), calendar("pm")),
+    );
+    await assertFails(
+      updateDoc(doc(staff(), "bookingCalendars/onkiro-1"), calendar("juyeon")),
+    );
+    await assertFails(
+      updateDoc(doc(member(), "bookingCalendars/onkiro-1"), calendar("alice")),
+    );
+  });
+
+  it("확정 예약의 밤(booked)은 화면에서 못 바꾸고, 작성자 위장·삭제 금지", async () => {
+    await assertFails(
+      updateDoc(doc(admin(), "bookingCalendars/onkiro-1"), {
+        ...calendar("pm"),
+        booked: [],
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(haesoon(), "bookingCalendars/onkiro-1"), calendar("pm")),
+    );
+    await assertFails(deleteDoc(doc(admin(), "bookingCalendars/onkiro-1")));
+  });
+});
+
 describe("나머지 경로", () => {
   it("규칙이 없는 컬렉션은 관리자도 막힌다", async () => {
     await assertFails(getDoc(doc(admin(), "unknownCollection/x1")));

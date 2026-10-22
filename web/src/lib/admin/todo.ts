@@ -98,6 +98,8 @@ export interface TodoState {
   branchCount: number;
   // 볼 권한이 없으면 null
   receivedConsults: number | null;
+  // 확인 중인 예약 신청 (STY-06). 볼 권한이 없으면 null
+  requestedReservations?: number | null;
 }
 
 export interface TodoItem {
@@ -144,6 +146,17 @@ export function buildTodo(s: TodoState): TodoItem[] {
           : `새 상담 ${s.receivedConsults}건 — 영업일 1일 안에 첫 연락`,
       href: "/admin/consults",
       d: ["D13"],
+    });
+  if (s.requestedReservations != null)
+    items.push({
+      id: "reservations",
+      done: s.requestedReservations === 0,
+      text:
+        s.requestedReservations === 0
+          ? "확인 중인 예약 신청 없음"
+          : `예약 신청 ${s.requestedReservations}건 — 날짜 확인 후 확정 또는 예약 불가`,
+      href: "/admin/reservations",
+      d: [],
     });
   items.push(
     {

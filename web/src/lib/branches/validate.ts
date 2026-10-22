@@ -51,6 +51,16 @@ export function validateBranch(b: BranchDraft): string[] {
     if (v && !/^([01]\d|2[0-3]):[0-5]\d$/.test(v))
       errors.push(`${label} 시각은 15:00 형식이어야 합니다`);
   }
+  const bk = c.booking;
+  if (bk) {
+    const ok = (v: number, min: number, max: number) =>
+      Number.isInteger(v) && v >= min && v <= max;
+    if (!ok(bk.maxGuests, 1, 20)) errors.push("최대 인원은 1~20명입니다");
+    if (!ok(bk.minNights, 1, 30) || !ok(bk.maxNights, 1, 30))
+      errors.push("박 수는 1~30박입니다");
+    else if (bk.minNights > bk.maxNights)
+      errors.push("최대 박 수는 최소 박 수 이상이어야 합니다");
+  }
   for (const [label, u] of [
     ["에어비앤비 링크", b.airbnbUrl],
     ["네이버 예약 링크", b.naverUrl],

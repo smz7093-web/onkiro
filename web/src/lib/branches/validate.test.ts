@@ -32,6 +32,26 @@ describe("숙소 콘텐츠 검사", () => {
     expect(validateBranch(draft)).toEqual([]);
   });
 
+  it("예약 신청 설정: 인원·박 수 범위, 최대 박 수 ≥ 최소 박 수", () => {
+    const booking = {
+      enabled: true,
+      maxGuests: 4,
+      minNights: 1,
+      maxNights: 7,
+      paymentGuide: "",
+      policy: "",
+    };
+    const withBooking = (b: Partial<typeof booking>) => ({
+      ...draft,
+      content: { ...draft.content, booking: { ...booking, ...b } },
+    });
+    expect(validateBranch(withBooking({}))).toEqual([]);
+    expect(validateBranch(withBooking({ maxGuests: 0 }))).toHaveLength(1);
+    expect(
+      validateBranch(withBooking({ minNights: 3, maxNights: 2 })),
+    ).toHaveLength(1);
+  });
+
   it("예약 링크는 https만", () => {
     expect(
       validateBranch({ ...draft, airbnbUrl: "http://airbnb.com/x" }),

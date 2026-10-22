@@ -11,6 +11,12 @@ const MENUS: { href: string; label: string; d: string[]; desc: string }[] = [
     desc: "상담 접수·단계·담당자·메모 관리, 전화 접수 대리 입력 (CON-02). D13(원일) 처리 기준은 PM이 단계 이동 규칙에 반영",
   },
   {
+    href: "/admin/reservations",
+    label: "예약",
+    d: [],
+    desc: "숙소 예약 신청 확정·예약 불가·취소, 예약 막을 날짜(에어비앤비·네이버 예약, 휴무) 관리 (STY-06). 숙소 화면에서 예약 신청을 켜면 쓴다",
+  },
+  {
     href: "/admin/prices",
     label: "단가 DB",
     d: ["D2", "D3", "D4", "D5"],

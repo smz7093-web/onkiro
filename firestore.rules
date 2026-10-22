@@ -312,6 +312,37 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // 숙소 예약 신청 (STY-06, task.md 9.8): 만들기·바꾸기는 서버 함수(requestReservation·updateReservation)만.
+    // 본인과 예약 관리 권한(관리자·콘텐츠 편집 권한)이 읽는다.
+    match /reservations/{rid} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || hasPerm('canEditContent'));
+      allow write: if false;
+
+      match /events/{eid} {
+        allow read: if hasPerm('canEditContent');
+        allow write: if false;
+      }
+    }
+
+    // 예약 달력: 누구나 읽는다(막힌 날짜만, 개인정보 없음). blocked는 운영팀이 관리 화면에서 고치고,
+    // booked(확정 예약의 밤)는 서버 함수만 쓴다
+    match /bookingCalendars/{branchId} {
+      allow read: if true;
+      allow create: if hasPerm('canEditContent')
+        && request.resource.data.keys().hasOnly(['blocked', 'updatedBy', 'updatedAt'])
+        && request.resource.data.blocked is list
+        && request.resource.data.blocked.size() <= 400
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow update: if hasPerm('canEditContent')
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['blocked', 'updatedBy', 'updatedAt'])
+        && request.resource.data.blocked is list
+        && request.resource.data.blocked.size() <= 400
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
     // 관리 화면에서 고치는 화면 문구 (10/15): permits = 인허가 간이 확인(D7), photoGuides = 촬영 가이드(D9).
     // 누구나 읽는다(진단·리포트 화면). 인허가는 가정값 또는 콘텐츠 편집 권한, 촬영 가이드는 콘텐츠 편집 권한. 삭제하지 않는다
     match /siteContent/{docId} {

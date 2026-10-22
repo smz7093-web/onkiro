@@ -23,6 +23,19 @@ import {
   parseProxyInput,
   planUpdate,
 } from "./consult.js";
+import {
+  canChangeStatus,
+  canManageReservations,
+  estimateTotal,
+  firstConflict,
+  MAX_OPEN_REQUESTS,
+  nightsOf,
+  parseRequest,
+  readBooking,
+  RESERVATION_STATUSES,
+  todayKst,
+  type ReservationStatus,
+} from "./reservation.js";
 import { AI_MODELS, claudeCaller, hasKey } from "./ai/claude.js";
 import {
   explainGrades as explainGradesService,
@@ -783,3 +796,185 @@ export const deleteAssessmentAdmin = onCall(
     return { ok: true, deletedConsults: consultIds.length };
   },
 );
+
+// ── 숙소 예약 신청 (STY-06, task.md 9.8) ─────────────────────────────────────
+// 막힌 날짜는 bookingCalendars/{지점 id}에 둔다: blocked = 운영팀이 막은 날(관리 화면, 규칙으로 쓰기),
+// booked = 확정된 예약의 밤(이 함수들만 쓴다). 둘 다 누구나 읽어 예약 화면 달력에 표시한다.
+
+function unavailableOf(cal: FirebaseFirestore.DocumentSnapshot): string[] {
+  const list = (k: string) => {
+    const v = cal.get(k);
+    return Array.isArray(v) ? (v as string[]) : [];
+  };
+  return [...list("blocked"), ...list("booked")];
+}
+
+export const requestReservation = onCall(async (request) => {
+  if (!request.auth)
+    throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+  const uid = request.auth.uid;
+  const branchId = (request.data as Record<string, unknown> | null)?.branchId;
+  if (
+    typeof branchId !== "string" ||
+    !/^[a-z0-9][a-z0-9-]{1,39}$/.test(branchId)
+  )
+    throw new HttpsError("invalid-argument", "숙소가 올바르지 않습니다");
+
+  const db = getFirestore();
+  const branchRef = db.collection("branches").doc(branchId);
+  const calRef = db.collection("bookingCalendars").doc(branchId);
+  const ref = db.collection("reservations").doc();
+  await db.runTransaction(async (tx) => {
+    const [branch, cal, open] = await Promise.all([
+      tx.get(branchRef),
+      tx.get(calRef),
+      tx.get(
+        db
+          .collection("reservations")
+          .where("uid", "==", uid)
+          .where("status", "==", "requested"),
+      ),
+    ]);
+    if (!branch.exists) throw new HttpsError("not-found", "숙소가 없습니다");
+    const content = (branch.get("content") ?? {}) as Record<string, unknown>;
+    const parsed = parseRequest(
+      request.data,
+      readBooking(content.booking),
+      todayKst(),
+    );
+    if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.error);
+    if (open.size >= MAX_OPEN_REQUESTS)
+      throw new HttpsError(
+        "resource-exhausted",
+        `확인 중인 신청이 ${MAX_OPEN_REQUESTS}건 있습니다. 운영팀 확인 뒤 다시 신청해 주세요`,
+      );
+    const conflict = firstConflict(parsed.nights, unavailableOf(cal));
+    if (conflict)
+      throw new HttpsError(
+        "failed-precondition",
+        `${conflict}은 예약할 수 없는 날입니다. 다른 날짜를 골라 주세요`,
+      );
+    const price = (content.price ?? {}) as Record<string, unknown>;
+    const won = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+    const now = FieldValue.serverTimestamp();
+    tx.create(ref, {
+      ...parsed.value,
+      uid,
+      branchName: (branch.get("name") as string | null) ?? branchId,
+      nights: parsed.nights.length,
+      // 신청 당시 요금으로 계산한 예상 금액 (확정 금액은 운영팀이 안내)
+      estimate: estimateTotal(parsed.nights, {
+        weekday: won(price.weekday),
+        weekend: won(price.weekend),
+      }),
+      status: "requested",
+      staffMemo: "",
+      createdAt: now,
+      updatedAt: now,
+    });
+    tx.create(ref.collection("events").doc(), {
+      kind: "status",
+      before: null,
+      after: "requested",
+      actorUid: uid,
+      at: now,
+    });
+  });
+  logger.info("예약 신청", { id: ref.id, branchId });
+  return { ok: true, id: ref.id };
+});
+
+// 상태 변경·운영팀 메모. 확정하면 그 밤들을 booked에 넣고, 확정 예약을 취소하면 뺀다.
+export const updateReservation = onCall(async (request) => {
+  if (!request.auth)
+    throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+  const token = request.auth.token as Record<string, unknown>;
+  const actorUid = request.auth.uid;
+  const data = (request.data ?? {}) as Record<string, unknown>;
+  const { id, status, memo } = data;
+  if (typeof id !== "string" || id === "")
+    throw new HttpsError("invalid-argument", "예약 id가 필요합니다");
+  if (
+    status !== undefined &&
+    !RESERVATION_STATUSES.includes(status as ReservationStatus)
+  )
+    throw new HttpsError("invalid-argument", "알 수 없는 예약 상태입니다");
+  if (memo !== undefined && (typeof memo !== "string" || memo.length > 2000))
+    throw new HttpsError(
+      "invalid-argument",
+      "메모는 2,000자 이하의 글이어야 합니다",
+    );
+
+  const db = getFirestore();
+  const ref = db.collection("reservations").doc(id);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError("not-found", "예약이 없습니다");
+    const staff = canManageReservations(token);
+    const owner = snap.get("uid") === actorUid;
+    if (!staff && !owner)
+      throw new HttpsError(
+        "permission-denied",
+        "이 예약을 다룰 권한이 없습니다",
+      );
+    if (memo !== undefined && !staff)
+      throw new HttpsError(
+        "permission-denied",
+        "운영팀 메모는 운영팀만 씁니다",
+      );
+
+    const from = snap.get("status") as ReservationStatus;
+    const update: Record<string, unknown> = {};
+    const events: { kind: string; before: string | null; after: string }[] = [];
+    if (status !== undefined && status !== from) {
+      const to = status as ReservationStatus;
+      if (!canChangeStatus(from, to, staff ? "staff" : "owner"))
+        throw new HttpsError(
+          "failed-precondition",
+          "지금 상태에서는 바꿀 수 없습니다",
+        );
+      const branchId = snap.get("branchId") as string;
+      const nights = nightsOf(
+        snap.get("checkIn") as string,
+        snap.get("checkOut") as string,
+      );
+      const calRef = db.collection("bookingCalendars").doc(branchId);
+      if (to === "confirmed") {
+        const cal = await tx.get(calRef);
+        const conflict = firstConflict(nights, unavailableOf(cal));
+        if (conflict)
+          throw new HttpsError(
+            "failed-precondition",
+            `${conflict}은 이미 막혀 있습니다(다른 확정 예약 또는 운영팀이 막은 날). 날짜를 확인해 주세요`,
+          );
+        tx.set(
+          calRef,
+          { booked: FieldValue.arrayUnion(...nights) },
+          { merge: true },
+        );
+      } else if (from === "confirmed") {
+        tx.set(
+          calRef,
+          { booked: FieldValue.arrayRemove(...nights) },
+          { merge: true },
+        );
+      }
+      update.status = to;
+      events.push({ kind: "status", before: from, after: to });
+    }
+    if (memo !== undefined && memo !== snap.get("staffMemo")) {
+      update.staffMemo = memo;
+      events.push({ kind: "memo", before: null, after: memo });
+    }
+    if (events.length === 0) return;
+    update.updatedAt = FieldValue.serverTimestamp();
+    tx.update(ref, update);
+    for (const e of events)
+      tx.create(ref.collection("events").doc(), {
+        ...e,
+        actorUid,
+        at: FieldValue.serverTimestamp(),
+      });
+  });
+  return { ok: true };
+});

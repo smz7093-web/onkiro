@@ -1,6 +1,8 @@
 // 지점(숙소) 문서 branches/{id} (prd.md 8절, STY-01·02).
 // 콘텐츠는 D12(해순)로 채우고, 관리자 화면에서 canEditContent 권한자가 고친다(편집 화면은 PM이 나중에).
 
+import type { BookingSettings } from "../reservations/rules";
+
 export interface BranchPhoto {
   // 공개 이미지 주소 (Storage 공개 경로 또는 /public 아래 경로)
   url: string;
@@ -34,6 +36,8 @@ export interface BranchContent {
     checkIn: string;
     checkOut: string;
   };
+  // 온기로 예약 신청 설정 (STY-06). 없으면 꺼짐 — 읽을 때 lib/reservations/rules.ts readBooking을 거친다
+  booking?: BookingSettings;
 }
 
 export interface Branch {

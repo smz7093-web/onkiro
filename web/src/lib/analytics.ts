@@ -42,7 +42,7 @@ export function stopResultTimer() {
 // 숙소 외부 예약 버튼 클릭 (STY-02, task.md 9.3). 해순의 숙소 화면에서 버튼을 누를 때 부른다.
 export function trackReserveClick(
   branchId: string,
-  channel: "airbnb" | "naver",
+  channel: "airbnb" | "naver" | "onkiro",
 ) {
   void getClient().then((a) => {
     if (a) logEvent(a, "reserve_click", { branch_id: branchId, channel });

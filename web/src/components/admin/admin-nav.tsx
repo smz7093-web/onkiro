@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuthUser } from "@/lib/auth/use-auth-user";
 import { usePermissions } from "@/lib/auth/use-permissions";
 import { countReceived } from "@/lib/consult/store";
+import { countRequested } from "@/lib/reservations/store";
 import { can, type Permissions } from "@/lib/permissions";
 import { DTag } from "./d-tag";
 
@@ -28,6 +29,12 @@ const MENU: Item[] = [
     label: "상담",
     d: ["D13"],
     show: (p) => p.role === "admin" || p.consultAccess !== "none",
+  },
+  {
+    group: "운영",
+    href: "/admin/reservations",
+    label: "예약",
+    show: (p) => can(p, "canEditContent"),
   },
   {
     group: "기준값",
@@ -79,6 +86,9 @@ export function AdminNav() {
   const { permissions } = usePermissions(user);
   const pathname = usePathname();
   const [received, setReceived] = useState(0);
+  const [requested, setRequested] = useState(0);
+  const watchesReservations =
+    !!permissions && can(permissions, "canEditContent");
   const watchesAll =
     permissions?.role === "admin" || permissions?.consultAccess === "all";
 
@@ -93,6 +103,18 @@ export function AdminNav() {
       cancelled = true;
     };
   }, [watchesAll]);
+
+  useEffect(() => {
+    if (!watchesReservations) return;
+    let cancelled = false;
+    countRequested().then(
+      (n) => !cancelled && setRequested(n),
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [watchesReservations, pathname]);
 
   if (!permissions || permissions.role === "member") return null;
   const visible = MENU.filter((m) => m.show(permissions));
@@ -127,6 +149,14 @@ export function AdminNav() {
                     aria-label={`새 접수 ${received}건`}
                   >
                     {received}
+                  </span>
+                )}
+                {m.href === "/admin/reservations" && requested > 0 && (
+                  <span
+                    className="rounded-full bg-crit px-2 text-xs font-semibold text-white"
+                    aria-label={`확인 중인 예약 ${requested}건`}
+                  >
+                    {requested}
                   </span>
                 )}
               </Link>

@@ -32,10 +32,11 @@ export const CONSENT_ITEMS: readonly ConsentItem[] = [
   {
     type: "privacy",
     required: true,
-    version: D8,
+    // 10/23 숙소 예약 신청(STY-06) 정보 추가로 이 항목만 재동의
+    version: "2026-10-23",
     label: "개인정보 수집·이용",
     detail:
-      "카카오 닉네임·이메일(선택), 진단한 빈집 정보, 상담 연락처를 서비스 제공과 상담 연락에 이용합니다. 보관 기간은 탈퇴 시까지이며, 서비스 개선을 위해 이용 기록을 Google Analytics로 분석합니다.",
+      "카카오 닉네임·이메일(선택), 진단한 빈집 정보, 상담 연락처, 숙소 예약 신청 정보(예약자 이름·연락처·날짜·인원)를 서비스 제공과 상담·예약 연락에 이용합니다. 보관 기간은 탈퇴 시까지(예약 기록은 이용 후 3년)이며, 서비스 개선을 위해 이용 기록을 Google Analytics로 분석합니다.",
   },
   {
     type: "estimateDisclaimer",

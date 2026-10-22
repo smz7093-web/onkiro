@@ -8,6 +8,7 @@ import {
   CONSULT_TYPE_LABELS,
 } from "@/lib/consult/status";
 import { listMyConsultations, type Consultation } from "@/lib/consult/store";
+import { MyReservations } from "./my-reservations";
 import {
   deleteAssessmentAsAdmin,
   diagnosisCode,
@@ -178,6 +179,8 @@ export function MyPage() {
           </ul>
         )}
       </section>
+
+      {uid && <MyReservations uid={uid} />}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">상담 신청 내역</h2>

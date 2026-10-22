@@ -14,6 +14,7 @@ import {
 import { useStaff } from "./staff-context";
 import { buttonClass } from "../ui";
 import { NumberInput } from "./number-input";
+import { readBooking, type BookingSettings } from "@/lib/reservations/rules";
 
 const field =
   "h-11 w-full rounded-md border border-line-2 bg-surface px-3 text-base text-ink";
@@ -84,6 +85,9 @@ export function BranchEditor({ id }: { id: string }) {
   const c = draft.content;
   const setC = (patch: Partial<BranchContent>) =>
     setDraft({ ...draft, content: { ...c, ...patch } });
+  const booking = readBooking(c.booking);
+  const setBooking = (patch: Partial<BookingSettings>) =>
+    setC({ booking: { ...booking, ...patch } });
 
   async function addPhotos(files: FileList | null) {
     if (!files || !draft) return;
@@ -441,6 +445,62 @@ export function BranchEditor({ id }: { id: string }) {
             />
           </Field>
         </Grid>
+      </Section>
+
+      <Section title="온기로 예약 신청 (STY-06)">
+        <label className="flex min-h-12 items-center gap-3 text-base">
+          <input
+            type="checkbox"
+            className="size-5"
+            checked={booking.enabled}
+            onChange={(e) => setBooking({ enabled: e.target.checked })}
+          />
+          숙소 화면에 &lsquo;온기로에서 예약 신청&rsquo; 버튼을 보입니다
+        </label>
+        <Grid>
+          <Field label="최대 인원">
+            <NumberInput
+              className={field}
+              value={booking.maxGuests}
+              onChange={(v) => setBooking({ maxGuests: v ?? 1 })}
+            />
+          </Field>
+          <Field label="최소 박 수">
+            <NumberInput
+              className={field}
+              value={booking.minNights}
+              onChange={(v) => setBooking({ minNights: v ?? 1 })}
+            />
+          </Field>
+          <Field label="최대 박 수">
+            <NumberInput
+              className={field}
+              value={booking.maxNights}
+              onChange={(v) => setBooking({ maxNights: v ?? 1 })}
+            />
+          </Field>
+        </Grid>
+        <Field label="확정 후 입금 안내 (확정된 예약에만 보임, 예: 농협 000-0000-0000 온기로 · 확정 후 24시간 안)">
+          <textarea
+            className={area}
+            value={booking.paymentGuide}
+            onChange={(e) => setBooking({ paymentGuide: e.target.value })}
+          />
+        </Field>
+        <Field label="취소·환불 안내 (신청 화면에 보임)">
+          <textarea
+            className={area}
+            value={booking.policy}
+            onChange={(e) => setBooking({ policy: e.target.value })}
+          />
+        </Field>
+        <p className="text-sm text-ink-2">
+          예약이 안 되는 날(에어비앤비·네이버 예약, 휴무)은{" "}
+          <Link href="/admin/reservations" className="underline">
+            관리자 → 예약
+          </Link>
+          에서 막습니다. 확정한 예약의 날짜는 자동으로 막힙니다.
+        </p>
       </Section>
 
       {errors.length > 0 && (

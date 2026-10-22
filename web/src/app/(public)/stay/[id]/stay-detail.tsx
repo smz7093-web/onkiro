@@ -5,9 +5,11 @@ import { ButtonLink, Card, Notice, Pill } from "@/components/ui";
 import { trackReserveClick } from "@/lib/analytics";
 import { getBranch } from "@/lib/branches/store";
 import type { Branch, BranchPhoto } from "@/lib/branches/types";
+import { readBooking } from "@/lib/reservations/rules";
 
 // 숙소 상세 (STY-01·02, 목업 stay-detail). 데이터는 branches/{id} 하나에 모두 들어 있다(lib/branches/types.ts).
 // 예약은 외부(에어비앤비·네이버) 링크로 보내고 클릭 수를 기록한다. 링크가 없으면 그 버튼은 숨긴다.
+// 관리 화면에서 예약 신청을 켜면 '온기로에서 예약 신청'(STY-06)이 맨 위 주요 버튼이 된다.
 
 const manwon = (won: number) =>
   `${(won / 10_000).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}만 원`;
@@ -244,6 +246,7 @@ function Reserve({ branch }: { branch: Branch }) {
       label: "네이버 예약에서 예약",
     },
   ].filter((l) => l.url);
+  const direct = !branch.sample && readBooking(branch.content.booking).enabled;
 
   return (
     <Card className="md:sticky md:top-4 md:col-start-2 md:row-span-2 md:row-start-1">
@@ -281,6 +284,20 @@ function Reserve({ branch }: { branch: Branch }) {
           </>
         )}
       </dl>
+      {direct && (
+        <div className="flex flex-col gap-2">
+          <ButtonLink
+            href={`/stay/${branch.id}/reserve`}
+            variant="primary"
+            block
+          >
+            온기로에서 예약 신청
+          </ButtonLink>
+          <p className="text-sm text-ink-2">
+            날짜를 골라 신청하면 운영팀이 확인 후 확정·입금 안내를 드립니다.
+          </p>
+        </div>
+      )}
       {links.length > 0 ? (
         <div className="flex flex-col gap-2">
           {links.map((l, i) => (
@@ -289,7 +306,7 @@ function Reserve({ branch }: { branch: Branch }) {
               href={l.url!}
               target="_blank"
               rel="noopener noreferrer"
-              variant={i === 0 ? "primary" : "secondary"}
+              variant={i === 0 && !direct ? "primary" : "secondary"}
               block
               onClick={() => trackReserveClick(branch.id, l.channel)}
             >
@@ -301,7 +318,7 @@ function Reserve({ branch }: { branch: Branch }) {
           </p>
         </div>
       ) : (
-        <Notice tone="neutral">예약 링크를 준비 중입니다.</Notice>
+        !direct && <Notice tone="neutral">예약 링크를 준비 중입니다.</Notice>
       )}
     </Card>
   );
