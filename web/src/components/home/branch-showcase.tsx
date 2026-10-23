@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { listBranches } from "@/lib/branches/store";
+import { useHomeHero } from "@/lib/site-content/store";
 import type { Branch } from "@/lib/branches/types";
 import { Card, Pill } from "../ui";
 
@@ -29,8 +30,8 @@ function useBranches() {
   return branches;
 }
 
-// 홈에 쓸 사진을 숙소 문서 사진 대신 정한다 (PM 지정, 10/15. 원본 Work_for_AI/onkiro1·2.jpeg → public/home, 1600px·메타데이터 제거)
-const HOME_CARD_PHOTOS: Record<string, { url: string; caption: string }> = {
+// 숙소 편집에서 홈 카드 사진을 고르기 전의 기본 사진 (PM 지정, 10/15. 원본 Work_for_AI/onkiro2.jpeg → public/home, 1600px·메타데이터 제거)
+const DEFAULT_CARD_PHOTOS: Record<string, { url: string; caption: string }> = {
   "onkiro-1": { url: "/home/onkiro2.jpg", caption: "다락방" },
 };
 
@@ -47,24 +48,36 @@ const UPCOMING_PHOTOS: Record<
   },
 };
 
+// 홈 카드 사진: 숙소 편집에서 고른 사진(목록에 남아 있을 때) → 기본 사진 → 첫 사진
 const photoOf = (b: Branch) =>
-  HOME_CARD_PHOTOS[b.id] ?? b.content.photos.find((p) => p.url) ?? null;
+  b.content.photos.find((p) => p.url && p.url === b.content.homePhotoUrl) ??
+  DEFAULT_CARD_PHOTOS[b.id] ??
+  b.content.photos.find((p) => p.url) ??
+  null;
 
-// 첫 화면 오른쪽 큰 사진: 1호점 거실 (PM 지정 사진)
+// 첫 화면 오른쪽 큰 사진: 숙소 편집에서 '홈 첫 화면 사진'으로 고른 사진 (고르기 전에는 1호점 거실)
 export function HeroPhoto() {
+  const hero = useHomeHero();
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-accent-soft md:aspect-[4/5]">
-      <Image
-        src="/home/onkiro1.jpg"
-        alt="온기로 홍성 1호점 거실"
-        fill
-        priority
-        sizes="(min-width: 768px) 440px, 100vw"
-        className="object-cover"
-      />
-      <span className="absolute bottom-3 left-3 rounded-md bg-ink/75 px-2.5 py-1 text-sm text-white">
-        온기로 홍성 1호점
-      </span>
+    <div
+      className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-accent-soft md:aspect-[4/5]"
+      aria-busy={hero === null}
+    >
+      {hero && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- Storage 다운로드 URL(토큰 포함)도 올 수 있어 next/image 최적화를 쓰지 않는다 */}
+          <img
+            src={hero.url}
+            alt={`${hero.label} ${hero.caption}`.trim()}
+            className="size-full object-cover"
+          />
+          {hero.label && (
+            <span className="absolute bottom-3 left-3 rounded-md bg-ink/75 px-2.5 py-1 text-sm text-white">
+              {hero.label}
+            </span>
+          )}
+        </>
+      )}
     </div>
   );
 }

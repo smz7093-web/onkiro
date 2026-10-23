@@ -27,6 +27,27 @@ describe("숙소 id", () => {
   });
 });
 
+describe("홈 카드 사진", () => {
+  it("목록에 있는 사진만 남기고, 없으면 필드를 지운다", () => {
+    const url = "https://example.com/a.jpg";
+    const keep = normalizeBranch({
+      ...draft,
+      content: { ...draft.content, homePhotoUrl: url },
+    });
+    expect(keep.content.homePhotoUrl).toBe(url);
+    const gone = normalizeBranch({
+      ...draft,
+      content: { ...draft.content, homePhotoUrl: "https://example.com/x.jpg" },
+    });
+    expect("homePhotoUrl" in gone.content).toBe(false);
+    const unset = normalizeBranch({
+      ...draft,
+      content: { ...draft.content, homePhotoUrl: undefined },
+    });
+    expect("homePhotoUrl" in unset.content).toBe(false);
+  });
+});
+
 describe("숙소 콘텐츠 검사", () => {
   it("정상 콘텐츠는 통과", () => {
     expect(validateBranch(draft)).toEqual([]);

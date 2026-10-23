@@ -70,6 +70,70 @@ export async function savePhotoGuides(
   });
 }
 
+// 홈 첫 화면 큰 사진 (siteContent/home, 10/23). 숙소 편집의 사진에서 고르고, 콘텐츠 편집 권한자만 바꾼다.
+export interface HomeHero {
+  url: string;
+  caption: string;
+  // 사진 위에 표시하는 숙소 이름
+  label: string;
+  branchId: string | null;
+}
+
+// 고르기 전 기본값: 1호점 거실 (PM 지정, 10/15. 원본 Work_for_AI/onkiro1.jpeg → public/home)
+export const DEFAULT_HOME_HERO: HomeHero = {
+  url: "/home/onkiro1.jpg",
+  caption: "거실",
+  label: "온기로 홍성 1호점",
+  branchId: "onkiro-1",
+};
+
+function readHomeHero(raw: unknown): HomeHero {
+  const h = (raw as { hero?: Record<string, unknown> } | null)?.hero;
+  if (!h || typeof h.url !== "string" || !h.url) return DEFAULT_HOME_HERO;
+  return {
+    url: h.url,
+    caption: typeof h.caption === "string" ? h.caption : "",
+    label: typeof h.label === "string" ? h.label : "",
+    branchId: typeof h.branchId === "string" ? h.branchId : null,
+  };
+}
+
+export async function loadHomeHero(): Promise<HomeHero> {
+  const snap = await getDoc(doc(db, "siteContent", "home"));
+  return readHomeHero(snap.exists() ? snap.data() : null);
+}
+
+export async function saveHomeHero(
+  hero: HomeHero,
+  user: User,
+  userName: string | null,
+) {
+  await setDoc(doc(db, "siteContent", "home"), {
+    hero,
+    ...stamp(user, userName),
+  });
+  heroOnce = null;
+}
+
+let heroOnce: Promise<HomeHero> | null = null;
+
+// 홈 화면용: 읽기 전에는 null(자리만), 실패하면 기본 사진
+export function useHomeHero(): HomeHero | null {
+  const [h, setH] = useState<HomeHero | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    heroOnce ??= loadHomeHero().catch(() => {
+      heroOnce = null;
+      return DEFAULT_HOME_HERO;
+    });
+    heroOnce.then((v) => !cancelled && setH(v));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return h;
+}
+
 // 진단·리포트 화면용: 읽기 전에는 기본 문구, 읽기에 실패해도 기본 문구로 계속 보인다
 let permitsOnce: Promise<PermitContent> | null = null;
 let guidesOnce: Promise<PhotoGuides> | null = null;

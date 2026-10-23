@@ -525,6 +525,33 @@ describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => 
     );
   });
 
+  it("홈 첫 화면 사진(home)은 콘텐츠 편집 권한자만 바꾼다", async () => {
+    const home = (uid: string) => ({
+      hero: {
+        url: "https://example.com/a.jpg",
+        caption: "거실",
+        label: "1호점",
+        branchId: "onkiro-1",
+      },
+      updatedBy: uid,
+      updatedByName: null,
+      updatedAt: serverTimestamp(),
+    });
+    await assertSucceeds(getDoc(doc(anonymous(), "siteContent/home")));
+    await assertSucceeds(
+      setDoc(doc(haesoon(), "siteContent/home"), home("haesoon")),
+    );
+    await assertSucceeds(setDoc(doc(admin(), "siteContent/home"), home("pm")));
+    await assertFails(setDoc(doc(wonil(), "siteContent/home"), home("wonil")));
+    await assertFails(setDoc(doc(member(), "siteContent/home"), home("alice")));
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/home"), {
+        ...home("pm"),
+        hero: { url: "" },
+      }),
+    );
+  });
+
   it("정해진 문서·필드만, 작성자 위장·삭제 금지", async () => {
     await assertFails(setDoc(doc(admin(), "siteContent/home"), guides("pm")));
     await assertFails(

@@ -15,6 +15,11 @@ import { useStaff } from "./staff-context";
 import { buttonClass } from "../ui";
 import { NumberInput } from "./number-input";
 import { readBooking, type BookingSettings } from "@/lib/reservations/rules";
+import {
+  loadHomeHero,
+  saveHomeHero,
+  type HomeHero,
+} from "@/lib/site-content/store";
 
 const field =
   "h-11 w-full rounded-md border border-line-2 bg-surface px-3 text-base text-ink";
@@ -46,6 +51,19 @@ export function BranchEditor({ id }: { id: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [hero, setHero] = useState<HomeHero | null>(null);
+  const [heroBusy, setHeroBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadHomeHero().then(
+      (h) => !cancelled && setHero(h),
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!allowed || !isBranchId(id)) return;
@@ -86,6 +104,38 @@ export function BranchEditor({ id }: { id: string }) {
   const setC = (patch: Partial<BranchContent>) =>
     setDraft({ ...draft, content: { ...c, ...patch } });
   const booking = readBooking(c.booking);
+  // 홈 카드 사진: 고른 사진이 목록에 없으면 첫 사진(1호점은 기본 다락방 사진)
+  const cardUrl = c.photos.some((p) => p.url && p.url === c.homePhotoUrl)
+    ? c.homePhotoUrl
+    : undefined;
+
+  // 홈 첫 화면 큰 사진은 숙소 저장과 별개로 바로 바꾼다 (siteContent/home)
+  async function makeHero(url: string, caption: string) {
+    if (!user) return;
+    if (
+      !window.confirm(
+        "이 사진을 홈 첫 화면 큰 사진으로 바꿀까요? 저장 즉시 홈에 반영됩니다.",
+      )
+    )
+      return;
+    setHeroBusy(true);
+    try {
+      const next: HomeHero = {
+        url,
+        caption: caption.trim(),
+        label: (c.label || draft?.name || "").trim(),
+        branchId: id,
+      };
+      await saveHomeHero(next, user, name);
+      setHero(next);
+      setMessage("홈 첫 화면 사진을 바꿨습니다.");
+    } catch {
+      setMessage("홈 첫 화면 사진을 바꾸지 못했습니다.");
+    } finally {
+      setHeroBusy(false);
+    }
+  }
+
   const setBooking = (patch: Partial<BookingSettings>) =>
     setC({ booking: { ...booking, ...patch } });
 
@@ -205,7 +255,21 @@ export function BranchEditor({ id }: { id: string }) {
         </Grid>
       </Section>
 
-      <Section title={`사진 (${c.photos.length}/20) · 첫 사진이 대표 사진`}>
+      <Section
+        title={`사진 (${c.photos.length}/20) · 첫 사진이 숙소 화면 대표 사진`}
+      >
+        <p className="text-sm text-ink-2">
+          &lsquo;홈 카드&rsquo;는 홈의 &lsquo;온기로가 고친 집&rsquo; 카드
+          사진입니다(숙소 저장 후 반영, 고르지 않으면{" "}
+          {id === "onkiro-1" ? "기본 다락방 사진" : "첫 사진"}). &lsquo;홈 첫
+          화면&rsquo;은 홈 맨 위 큰 사진으로, 누르면 바로 바뀝니다(지금:{" "}
+          {hero
+            ? hero.branchId === id
+              ? `이 숙소의 ${hero.caption || "사진"}`
+              : `${hero.label || "다른 숙소"} ${hero.caption}`.trim()
+            : "불러오는 중"}
+          ).
+        </p>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {c.photos.map((p, i) => (
             <li
@@ -236,6 +300,40 @@ export function BranchEditor({ id }: { id: string }) {
                   })
                 }
               />
+              {p.url && (
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    className={small}
+                    aria-pressed={cardUrl === p.url}
+                    onClick={() =>
+                      setC({
+                        homePhotoUrl: cardUrl === p.url ? undefined : p.url,
+                      })
+                    }
+                  >
+                    {cardUrl === p.url ? "✓ 홈 카드 사진" : "홈 카드로"}
+                  </button>
+                  <button
+                    type="button"
+                    className={small}
+                    aria-pressed={hero?.url === p.url}
+                    disabled={
+                      heroBusy || hero?.url === p.url || !p.caption.trim()
+                    }
+                    title={
+                      !p.caption.trim()
+                        ? "사진 설명을 먼저 입력하세요"
+                        : undefined
+                    }
+                    onClick={() => makeHero(p.url, p.caption)}
+                  >
+                    {hero?.url === p.url
+                      ? "✓ 홈 첫 화면 사진"
+                      : "홈 첫 화면으로"}
+                  </button>
+                </div>
+              )}
               <div className="flex justify-between">
                 <div>
                   <button

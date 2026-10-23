@@ -36,6 +36,8 @@ export interface BranchContent {
     checkIn: string;
     checkOut: string;
   };
+  // 홈 '온기로가 고친 집' 카드에 쓸 사진(photos 중 하나의 url). 없거나 목록에서 빠졌으면 첫 사진 (10/23)
+  homePhotoUrl?: string;
   // 온기로 예약 신청 설정 (STY-06). 없으면 꺼짐 — 읽을 때 lib/reservations/rules.ts readBooking을 거친다
   booking?: BookingSettings;
 }

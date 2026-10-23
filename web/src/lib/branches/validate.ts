@@ -76,14 +76,21 @@ export function validateBranch(b: BranchDraft): string[] {
 }
 
 // 빈 링크는 null로, 앞뒤 공백·빈 편의시설은 지워서 저장한다
+// 홈 카드 사진은 목록에 있는 사진일 때만 남긴다(Firestore는 undefined 값을 받지 않는다)
 export function normalizeBranch(b: BranchDraft): BranchDraft {
   const t = (s: string) => s.trim();
+  const { homePhotoUrl, ...rest } = b.content;
+  const keepHome =
+    homePhotoUrl && b.content.photos.some((p) => p.url === homePhotoUrl)
+      ? { homePhotoUrl }
+      : {};
   return {
     name: t(b.name),
     airbnbUrl: b.airbnbUrl && t(b.airbnbUrl) ? t(b.airbnbUrl) : null,
     naverUrl: b.naverUrl && t(b.naverUrl) ? t(b.naverUrl) : null,
     content: {
-      ...b.content,
+      ...rest,
+      ...keepHome,
       label: t(b.content.label),
       headline: t(b.content.headline),
       summary: t(b.content.summary),

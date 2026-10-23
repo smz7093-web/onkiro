@@ -343,7 +343,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // 관리 화면에서 고치는 화면 문구 (10/15): permits = 인허가 간이 확인(D7), photoGuides = 촬영 가이드(D9).
+    // 관리 화면에서 고치는 화면 문구 (10/15): permits = 인허가 간이 확인(D7), photoGuides = 촬영 가이드(D9), home = 홈 첫 화면 사진(10/23).
     // 누구나 읽는다(진단·리포트 화면). 인허가는 가정값 또는 콘텐츠 편집 권한, 촬영 가이드는 콘텐츠 편집 권한. 삭제하지 않는다
     match /siteContent/{docId} {
       allow read: if true;
@@ -357,7 +357,14 @@ service cloud.firestore {
           || (docId == 'photoGuides'
             && hasPerm('canEditContent')
             && request.resource.data.keys().hasOnly(['guides', 'updatedBy', 'updatedByName', 'updatedAt'])
-            && request.resource.data.guides is map))
+            && request.resource.data.guides is map)
+          // home = 홈 첫 화면 큰 사진 (10/23, 숙소 편집에서 고름)
+          || (docId == 'home'
+            && hasPerm('canEditContent')
+            && request.resource.data.keys().hasOnly(['hero', 'updatedBy', 'updatedByName', 'updatedAt'])
+            && request.resource.data.hero is map
+            && request.resource.data.hero.url is string
+            && request.resource.data.hero.url.size() > 0))
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.updatedAt == request.time;
       allow delete: if false;
