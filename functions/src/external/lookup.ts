@@ -79,11 +79,11 @@ export interface Deps {
 
 const CACHE_DAYS = { juso: 7, building: 30, land: 30, tour: 30 };
 // 캐시 이름. 응답에서 꺼내는 값이 늘면 이름을 바꿔 이전 캐시를 쓰지 않는다 (10/14: 층수·주용도·도로 접면 등 추가)
-// 10/25: 관광지 반경 20km → 10km(사업계획서와 맞춤)로 tour-v2
-const CACHE_API = { building: "building-v2", land: "land-v2", tour: "tour-v2" };
+// tour: 반경 20km 결과 (10/25 잠시 10km·tour-v2로 바꿨다가 20km로 되돌림)
+const CACHE_API = { building: "building-v2", land: "land-v2", tour: "tour" };
 
-// 주변 관광지 조회 반경(m). 사업계획서 2-1 'TourAPI 반경 10km 관광 수요'
-export const TOUR_RADIUS_M = 10_000;
+// 주변 관광지 조회 반경(m). 사업계획서 2-1도 '반경 20km'로 맞춘다 (PM 결정 10/25)
+export const TOUR_RADIUS_M = 20_000;
 
 const qs = (params: Record<string, string | number>) =>
   new URLSearchParams(
