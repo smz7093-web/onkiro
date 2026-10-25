@@ -103,10 +103,28 @@ export default function Home() {
             숙박 영업 인허가 방식(농어촌민박·한옥체험업 등)도 집에 맞춰 상담에서
             함께 정합니다.
           </p>
-          <div>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <ButtonLink href="/consult?type=entrust">
               빈집 맡기기 상담
             </ButtonLink>
+            {/* 상담 전화 (PM 지정 10/25). 휴대폰에서 누르면 바로 걸린다 */}
+            <a
+              href="tel:010-2761-3187"
+              className="inline-flex min-h-12 items-center gap-2 rounded-md px-1 text-lg font-semibold text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="size-6 fill-none stroke-current"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
+              </svg>
+              <span className="sr-only">상담 전화 </span>
+              010-2761-3187
+            </a>
           </div>
         </Card>
 
