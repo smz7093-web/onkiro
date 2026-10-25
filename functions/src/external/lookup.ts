@@ -79,7 +79,11 @@ export interface Deps {
 
 const CACHE_DAYS = { juso: 7, building: 30, land: 30, tour: 30 };
 // 캐시 이름. 응답에서 꺼내는 값이 늘면 이름을 바꿔 이전 캐시를 쓰지 않는다 (10/14: 층수·주용도·도로 접면 등 추가)
-const CACHE_API = { building: "building-v2", land: "land-v2" };
+// 10/25: 관광지 반경 20km → 10km(사업계획서와 맞춤)로 tour-v2
+const CACHE_API = { building: "building-v2", land: "land-v2", tour: "tour-v2" };
+
+// 주변 관광지 조회 반경(m). 사업계획서 2-1 'TourAPI 반경 10km 관광 수요'
+export const TOUR_RADIUS_M = 10_000;
 
 const qs = (params: Record<string, string | number>) =>
   new URLSearchParams(
@@ -298,7 +302,7 @@ export async function lookupProperty(
       const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
       return await cached(
         deps,
-        "tour",
+        CACHE_API.tour,
         key,
         CACHE_DAYS.tour,
         "tourApi",
@@ -312,7 +316,7 @@ export async function lookupProperty(
                 _type: "json",
                 mapX: lng,
                 mapY: lat,
-                radius: 20000,
+                radius: TOUR_RADIUS_M,
                 contentTypeId: 12,
                 arrange: "E",
                 numOfRows: 30,

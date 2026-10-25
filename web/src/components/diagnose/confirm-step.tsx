@@ -236,7 +236,7 @@ export function ConfirmStep() {
             <h2 className="text-lg font-semibold">주변 관광지</h2>
             {nearby.spots.length === 0 ? (
               <p className="text-base text-ink-2">
-                반경 20km 안에서 찾지 못했습니다.
+                반경 10km 안에서 찾지 못했습니다.
               </p>
             ) : (
               <ul className="flex flex-col gap-1 text-base">
