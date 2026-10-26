@@ -118,3 +118,54 @@ export async function analyzeDiagnosisPhotos(
     })
   ).data;
 }
+
+// AI 인허가 안내 (RAG, 10/26, functions/src/ai/permits.ts). 인허가 자료에서 찾은 것만 근거로 쓰고 출처를 붙인다
+export type PermitOperator = "owner" | "entrust" | "unknown";
+
+export interface PermitQuery {
+  floorArea: number | null;
+  structure: string | null;
+  approvalDate: string | null;
+  zoning: string | null;
+  landUse: string | null;
+  mainPurpose: string | null;
+  roadSide: string | null;
+  roofStructure: string | null;
+  noRegistry: boolean;
+  operator: PermitOperator;
+  question: string | null;
+}
+
+export interface PermitGuideResult {
+  summary: string;
+  items: {
+    title: string;
+    level: "caution" | "check" | "info";
+    explanation: string;
+    nextAction: string;
+    sourceIds: string[];
+  }[];
+  unanswered: string[];
+  sources: {
+    id: string;
+    title: string;
+    source: string;
+    url: string | null;
+    reviewed: boolean;
+  }[];
+}
+
+export async function askPermitGuide(
+  assessmentId: string,
+  query: PermitQuery,
+): Promise<AiResponse<PermitGuideResult>> {
+  return (
+    await httpsCallable<
+      { assessmentId: string; query: PermitQuery },
+      AiResponse<PermitGuideResult>
+    >(functions, "askPermitGuide", { timeout: 120_000 })({
+      assessmentId,
+      query,
+    })
+  ).data;
+}

@@ -706,6 +706,126 @@ describe("reservations·bookingCalendars (예약 신청, STY-06)", () => {
   });
 });
 
+describe("permitKnowledge (AI 인허가 안내 자료, 10/26)", () => {
+  const kdoc = (uid: string, extra: Record<string, unknown> = {}) => ({
+    title: "농어촌민박사업이란",
+    source: "농어촌정비법",
+    url: null,
+    body: "연면적 230㎡ 미만 단독주택",
+    tags: ["민박"],
+    reviewed: false,
+    updatedBy: uid,
+    updatedByName: null,
+    updatedAt: serverTimestamp(),
+    ...extra,
+  });
+  const wonil = () =>
+    env
+      .authenticatedContext("wonil", {
+        role: "staff",
+        perms: ["canEditAssumptions"],
+      })
+      .firestore();
+
+  it("가정값·콘텐츠 권한자가 쓰고, 운영팀만 읽는다", async () => {
+    await assertSucceeds(
+      setDoc(doc(wonil(), "permitKnowledge/K01"), kdoc("wonil")),
+    );
+    await assertSucceeds(getDoc(doc(staff(), "permitKnowledge/K01")));
+    await assertFails(getDoc(doc(member(), "permitKnowledge/K01")));
+    await assertFails(getDoc(doc(anonymous(), "permitKnowledge/K01")));
+    // 콘텐츠·가정값 권한이 없는 운영팀은 못 쓴다
+    await assertFails(
+      setDoc(doc(staff(), "permitKnowledge/K02"), kdoc("juyeon")),
+    );
+    await assertFails(
+      setDoc(doc(member(), "permitKnowledge/K02"), kdoc("alice")),
+    );
+    await assertSucceeds(deleteDoc(doc(wonil(), "permitKnowledge/K01")));
+  });
+
+  it("형식이 틀리면 거부", async () => {
+    await assertFails(
+      setDoc(doc(wonil(), "permitKnowledge/K03"), kdoc("wonil", { body: "" })),
+    );
+    await assertFails(
+      setDoc(doc(wonil(), "permitKnowledge/K03"), kdoc("wonil", { extra: 1 })),
+    );
+    await assertFails(setDoc(doc(wonil(), "permitKnowledge/K03"), kdoc("pm")));
+    await assertFails(
+      setDoc(doc(wonil(), "permitKnowledge/bad id"), kdoc("wonil")),
+    );
+  });
+});
+
+describe("feedback (사용자 피드백, 10/26)", () => {
+  const fb = (uid: string | null, extra: Record<string, unknown> = {}) => ({
+    testerType: "owner",
+    rating: 4,
+    trust: null,
+    good: "사진만으로 금액이 나와 좋았다",
+    improve: "",
+    page: "/diagnose",
+    uid,
+    status: "new",
+    createdAt: serverTimestamp(),
+    ...extra,
+  });
+
+  it("비로그인·회원 누구나 보내고, 운영팀만 읽는다", async () => {
+    await assertSucceeds(setDoc(doc(anonymous(), "feedback/f1"), fb(null)));
+    await assertSucceeds(setDoc(doc(member(), "feedback/f2"), fb("alice")));
+    await assertSucceeds(getDoc(doc(staff(), "feedback/f1")));
+    await assertFails(getDoc(doc(member(), "feedback/f2")));
+    await assertFails(getDoc(doc(anonymous(), "feedback/f1")));
+  });
+
+  it("다른 사람 uid·개인정보 필드·범위 밖 점수·처리 상태 지정은 거부", async () => {
+    await assertFails(setDoc(doc(anonymous(), "feedback/f3"), fb("alice")));
+    await assertFails(setDoc(doc(member(), "feedback/f3"), fb(null)));
+    await assertFails(
+      setDoc(doc(anonymous(), "feedback/f3"), fb(null, { phone: "010" })),
+    );
+    await assertFails(
+      setDoc(doc(anonymous(), "feedback/f3"), fb(null, { rating: 6 })),
+    );
+    await assertFails(
+      setDoc(doc(anonymous(), "feedback/f3"), fb(null, { status: "done" })),
+    );
+  });
+
+  it("운영팀은 처리 상태·메모만 바꾸고, 회원은 못 바꾼다", async () => {
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), "feedback/f9"), fb(null)),
+    );
+    await assertSucceeds(
+      updateDoc(doc(staff(), "feedback/f9"), {
+        status: "done",
+        note: "글씨 크기 키움",
+        handledBy: "juyeon",
+        handledByName: "주연",
+        handledAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(staff(), "feedback/f9"), {
+        rating: 5,
+        handledBy: "juyeon",
+        handledAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(member(), "feedback/f9"), {
+        status: "done",
+        handledBy: "alice",
+        handledAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(deleteDoc(doc(staff(), "feedback/f9")));
+    await assertSucceeds(deleteDoc(doc(admin(), "feedback/f9")));
+  });
+});
+
 describe("나머지 경로", () => {
   it("규칙이 없는 컬렉션은 관리자도 막힌다", async () => {
     await assertFails(getDoc(doc(admin(), "unknownCollection/x1")));

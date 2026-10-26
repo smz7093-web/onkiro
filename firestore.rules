@@ -370,6 +370,58 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // 인허가 자료 (AI 인허가 안내 RAG의 근거, 10/26). 운영팀이 읽고, 인허가 문구와 같은 권한(가정값·콘텐츠)이 쓴다.
+    // 회원 화면은 함수(askPermitGuide)가 찾아 준 자료의 제목·출처만 본다
+    match /permitKnowledge/{kid} {
+      allow read: if isStaff();
+      allow create, update: if (hasPerm('canEditAssumptions') || hasPerm('canEditContent'))
+        && kid.matches('^[A-Za-z0-9_-]{1,40}$')
+        && request.resource.data.keys().hasOnly(['title', 'source', 'url', 'body', 'tags', 'reviewed',
+                                                 'updatedBy', 'updatedByName', 'updatedAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 80
+        && request.resource.data.source is string && request.resource.data.source.size() <= 120
+        && (request.resource.data.url == null
+          || (request.resource.data.url is string && request.resource.data.url.size() <= 300))
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0 && request.resource.data.body.size() <= 2000
+        && request.resource.data.tags is list && request.resource.data.tags.size() <= 10
+        && request.resource.data.reviewed is bool
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if hasPerm('canEditAssumptions') || hasPerm('canEditContent');
+    }
+
+    // 사용자 피드백 (10/26, 실사용자 테스트). 누구나(비로그인 포함) 보내기만 하고, 이름·연락처 필드는 받지 않는다.
+    // 운영팀이 읽고 처리 상태·반영 메모만 바꾼다. 지우기는 관리자만
+    match /feedback/{fid} {
+      allow read: if isStaff();
+      allow create: if request.resource.data.keys().hasOnly(['testerType', 'rating', 'trust', 'good', 'improve',
+                                                            'page', 'uid', 'status', 'createdAt'])
+        && request.resource.data.testerType in ['owner', 'returnee', 'industry', 'other']
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+        && (request.resource.data.trust == null
+          || (request.resource.data.trust is int
+            && request.resource.data.trust >= 1 && request.resource.data.trust <= 5))
+        && request.resource.data.good is string && request.resource.data.good.size() <= 1000
+        && request.resource.data.improve is string && request.resource.data.improve.size() <= 1000
+        && (request.resource.data.page == null
+          || (request.resource.data.page is string && request.resource.data.page.size() <= 200))
+        && request.resource.data.uid == (signedIn() ? request.auth.uid : null)
+        && request.resource.data.status == 'new'
+        && request.resource.data.createdAt == request.time;
+      allow update: if isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'note', 'handledBy', 'handledByName', 'handledAt'])
+        && request.resource.data.status in ['new', 'planned', 'done', 'wontfix']
+        && (request.resource.data.get('note', null) == null
+          || (request.resource.data.note is string && request.resource.data.note.size() <= 500))
+        && request.resource.data.handledBy == request.auth.uid
+        && request.resource.data.handledAt == request.time;
+      allow delete: if isAdmin();
+    }
+
     // 변경 이력: 서버 함수만 쓰고 관리자만 읽는다.
     match /auditLogs/{logId} {
       allow read: if isAdmin();

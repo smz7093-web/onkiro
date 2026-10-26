@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 import { NumberField } from "@/components/admin/number-field";
 import type {
@@ -16,7 +17,7 @@ import { useDiagnosis } from "./diagnosis-context";
 import { Disclaimer } from "./disclaimer";
 import { manwon } from "./estimate-step";
 import { NextActions } from "./next-actions";
-import { btnSecondary, card, notice } from "./styles";
+import { btnSecondary, card, info, notice } from "./styles";
 import {
   buildPayload,
   isChecklistComplete,
@@ -248,6 +249,19 @@ export function RevenueStep() {
           actions={["inspection", "turnkey", "pdf", "save"]}
           primary={computation.expertRequired ? "inspection" : "turnkey"}
         />
+      </section>
+
+      {/* 실사용자 테스트 (10/26): 결과까지 본 사람에게 의견을 묻는다 */}
+      <section className={info}>
+        <p className="text-base">
+          결과까지 보셨다면, 써 보신 의견을 1분만 알려 주세요.{" "}
+          <Link
+            href="/feedback?from=/diagnose"
+            className="font-semibold underline underline-offset-4"
+          >
+            의견 보내기
+          </Link>
+        </p>
       </section>
 
       <div>

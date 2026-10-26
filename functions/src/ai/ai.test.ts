@@ -234,10 +234,11 @@ describe("Claude 호출", () => {
     expect(body.model).toBe("claude-sonnet-5-5");
   });
 
-  it("등급 설명은 Sonnet, 사진 분석은 Opus", () => {
+  it("등급 설명·인허가 안내는 Sonnet, 사진 분석은 Opus", () => {
     expect(AI_MODELS).toEqual({
       grades: "claude-sonnet-5-5",
       photos: "claude-opus-5-5",
+      permits: "claude-sonnet-5-5",
     });
   });
 });

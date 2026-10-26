@@ -7,6 +7,8 @@ import { logger } from "firebase-functions";
 export const AI_MODELS = {
   grades: "claude-sonnet-5-5",
   photos: "claude-opus-5-5",
+  // 10/26 인허가 안내(RAG): 찾은 자료를 근거로 글만 쓰므로 Sonnet
+  permits: "claude-sonnet-5-5",
 } as const;
 export type AiKind = keyof typeof AI_MODELS;
 const ENDPOINT = "https://api.anthropic.com/v1/messages";

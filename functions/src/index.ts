@@ -37,7 +37,7 @@ import {
   todayKst,
   type ReservationStatus,
 } from "./reservation.js";
-import { AI_MODELS, claudeCaller, hasKey } from "./ai/claude.js";
+import { AI_MODELS, claudeCaller, hasKey, type AiKind } from "./ai/claude.js";
 import {
   explainGrades as explainGradesService,
   parseGradeInput,
@@ -46,6 +46,14 @@ import {
   analyzePhotos as analyzePhotosService,
   PHOTO_PART_LABELS,
 } from "./ai/photos.js";
+import {
+  DEFAULT_PERMIT_KNOWLEDGE,
+  guidePermits,
+  parseKnowledgeDoc,
+  parsePermitQuery,
+  retrieve,
+  type KnowledgeDoc,
+} from "./ai/permits.js";
 import {
   isRenderTarget,
   metadataToken,
@@ -507,7 +515,7 @@ async function countAiUse(uid: string) {
 
 async function cachedAi<T>(
   aRef: FirebaseFirestore.DocumentReference,
-  kind: "grades" | "photos",
+  kind: AiKind,
   key: string,
   uid: string,
   run: () => Promise<T>,
@@ -629,6 +637,62 @@ export const analyzeDiagnosisPhotos = onCall(
     );
   },
 );
+
+// 인허가 자료 (관리 화면 /admin/permits). 저장된 자료가 없으면 기본 자료(원일 검토 전 초안)로 검색한다
+async function loadPermitKnowledge(): Promise<KnowledgeDoc[]> {
+  const snap = await getFirestore().collection("permitKnowledge").get();
+  const docs = snap.docs
+    .map((d) => parseKnowledgeDoc(d.id, d.data()))
+    .filter((d): d is KnowledgeDoc => d !== null);
+  return docs.length > 0 ? docs : DEFAULT_PERMIT_KNOWLEDGE;
+}
+
+// AI 인허가 안내 (RAG, 10/26): 집 정보·묻는 말로 인허가 자료를 찾아 Claude가 그 자료만 근거로 안내한다.
+// 같은 입력·같은 자료면 저장된 안내를 돌려준다(자료를 고치면 새로 만든다)
+export const askPermitGuide = onCall(
+  { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 120 },
+  async (request) => {
+    if (!request.auth)
+      throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+    const data = (request.data ?? {}) as Record<string, unknown>;
+    const aRef = await ownedAssessment(
+      data.assessmentId,
+      request.auth.uid,
+      request.auth.token.role === "admin",
+    );
+    const query = parsePermitQuery(data.query);
+    if (!query)
+      throw new HttpsError("invalid-argument", "집 정보 형식이 올바르지 않습니다");
+    const found = retrieve(await loadPermitKnowledge(), query).map(
+      (x) => x.doc,
+    );
+    if (found.length === 0)
+      throw new HttpsError(
+        "failed-precondition",
+        "이 집에 맞는 인허가 자료를 찾지 못했습니다. 관할 시·군청에 문의해 주세요",
+      );
+    return cachedAi(
+      aRef,
+      "permits",
+      sha({ query, found }),
+      request.auth.uid,
+      () =>
+        guidePermits(
+          query,
+          found,
+          claudeCaller(ANTHROPIC_API_KEY.value(), AI_MODELS.permits),
+        ),
+    );
+  },
+);
+
+// 관리 화면 '기본 자료 불러오기'용 (운영팀만)
+export const permitKnowledgeDefaults = onCall((request) => {
+  const role = request.auth?.token.role;
+  if (role !== "admin" && role !== "staff")
+    throw new HttpsError("permission-denied", "운영팀만 볼 수 있습니다");
+  return { docs: DEFAULT_PERMIT_KNOWLEDGE };
+});
 
 // 리모델링 후 모습 AI 가상 이미지 (외관 정면 사진 → 등급별, Vertex AI Gemini, 10/15).
 // 키 없이 함수 서비스 계정으로 호출한다. 결과는 Storage users/{주인}/assessments/{id}/renders/에 저장하고,

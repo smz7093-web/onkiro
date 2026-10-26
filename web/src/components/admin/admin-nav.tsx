@@ -37,6 +37,12 @@ const MENU: Item[] = [
     show: (p) => can(p, "canEditContent"),
   },
   {
+    group: "운영",
+    href: "/admin/feedback",
+    label: "사용자 피드백",
+    show: () => true,
+  },
+  {
     group: "기준값",
     href: "/admin/prices",
     label: "단가 DB",
@@ -61,6 +67,13 @@ const MENU: Item[] = [
     group: "기준값",
     href: "/admin/permits",
     label: "인허가 항목",
+    d: ["D7"],
+    show: (p) => can(p, "canEditAssumptions") || can(p, "canEditContent"),
+  },
+  {
+    group: "기준값",
+    href: "/admin/permit-knowledge",
+    label: "인허가 자료(AI)",
     d: ["D7"],
     show: (p) => can(p, "canEditAssumptions") || can(p, "canEditContent"),
   },

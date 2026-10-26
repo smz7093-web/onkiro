@@ -33,6 +33,7 @@ import { useDiagnosis } from "./diagnosis-context";
 import { Disclaimer } from "./disclaimer";
 import { FinishTiers } from "./finish-tiers";
 import { NextActions } from "./next-actions";
+import { PermitGuide } from "./permit-guide";
 import { btnPrimary, btnSecondary, card, notice } from "./styles";
 import {
   buildPayload,
@@ -380,6 +381,12 @@ export function EstimateStep() {
             </li>
           ))}
         </ul>
+        <PermitGuide
+          assessmentId={assessment.id}
+          facts={property.facts}
+          floorArea={estimateInput.floorArea}
+          noRegistry={estimateInput.noRegistry}
+        />
       </section>
 
       <Disclaimer

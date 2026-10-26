@@ -21,8 +21,14 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="border-t border-line bg-surface">
-      <div className="mx-auto w-full max-w-5xl px-4 py-6 text-sm text-ink-2">
-        온기로 · 충남 홍성 빈집 재생 스테이
+      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-6 text-sm text-ink-2">
+        <span>온기로 · 충남 홍성 빈집 재생 스테이</span>
+        <Link
+          href="/feedback"
+          className="inline-flex h-12 items-center underline underline-offset-4"
+        >
+          의견 보내기
+        </Link>
       </div>
     </footer>
   );
