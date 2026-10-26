@@ -134,6 +134,7 @@ export function StayDetail({ id }: { id: string }) {
 }
 
 // 사진: 첫 장은 크게, 다음 4장은 작게. 사진이 더 있으면 '사진 모두 보기'로 펼친다
+// 휴대폰은 첫 장 + 옆으로 밀기이고, 사진이 2장 이상이면 '사진 모두 보기'로 한 줄씩 크게 본다 (10/26)
 function Gallery({ photos, label }: { photos: BranchPhoto[]; label: string }) {
   const [all, setAll] = useState(false);
   if (photos.length === 0)
@@ -161,8 +162,8 @@ function Gallery({ photos, label }: { photos: BranchPhoto[]; label: string }) {
           />
         ))}
       </div>
-      {/* 휴대폰: 나머지 사진은 옆으로 밀어 본다 */}
-      {rest.length > 0 && (
+      {/* 휴대폰: 나머지 사진은 옆으로 밀어 본다 (모두 보기를 펼치면 숨김) */}
+      {rest.length > 0 && !all && (
         <ul className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 md:hidden">
           {rest.map((p, i) => (
             <li key={`${p.url}-m-${i}`} className="w-3/5 flex-none snap-start">
@@ -171,8 +172,8 @@ function Gallery({ photos, label }: { photos: BranchPhoto[]; label: string }) {
           ))}
         </ul>
       )}
-      {photos.length > 5 && (
-        <div className="hidden md:block">
+      {photos.length > 1 && (
+        <div className={photos.length > 5 ? "" : "md:hidden"}>
           <button
             type="button"
             className="h-12 text-base text-accent underline"
@@ -184,7 +185,7 @@ function Gallery({ photos, label }: { photos: BranchPhoto[]; label: string }) {
         </div>
       )}
       {all && (
-        <ul className="hidden gap-3 md:grid md:grid-cols-3">
+        <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           {photos.map((p, i) => (
             <li key={`${p.url}-all-${i}`}>
               <Photo photo={p} label={label} className="aspect-[4/3]" />
