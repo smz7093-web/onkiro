@@ -29,9 +29,9 @@ export const ACCESS_LABEL: Record<AccessLevel, string> = {
 
 export const FLAG_LABEL: Record<FlagKey, string> = {
   canEditPrices: "단가 DB 수정",
-  canEditAssumptions: "가정값 수정",
+  canEditAssumptions: "가정값·인허가(항목·AI 자료) 수정",
   canApproveVersions: "단가·가정값 적용",
-  canEditContent: "숙소·홈 콘텐츠 수정",
+  canEditContent: "콘텐츠 수정(숙소·홈·예약·촬영 가이드·인허가)",
   canReviewDiagnosis: "진단 보정",
   canReviewCosts: "공사비 검수",
   canEnterBranchRecords: "지점 실적 입력",

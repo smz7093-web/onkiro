@@ -9,6 +9,8 @@
 
 ## 진행 현황 (2026-10-28 기준)
 
+**10/28 권한 표시**: 회원·권한 화면의 권한 이름이 인허가 자료(AI)를 안 보여 줘 고침 — 인허가 자료(AI)·인허가 항목은 원래 `가정값 수정` 또는 `콘텐츠 수정` 권한으로 열린다(새 권한 아님). 원일 권장 설정(가정값 수정)이면 이미 편집 가능.
+
 **10/27~28 발표 준비·저장소 공개**: ① **Final-Project 발표일은 11/12~13 중 하루로 결정 예정**(PM). 위 목표의 11/3 시연·11/2 리허설 일정은 발표일이 정해지면 다시 잡는다. 강사 요청으로 **테스터를 모집해 의견을 남기게** 한다(`/feedback`). **피드백 슬라이드는 피드백이 들어온 뒤 결정**. ② **저장소 public 전환(PM 결정: 그대로 공개)** — Codyssey 평가 제출용, PM이 GitHub Settings → Danger Zone → Make public으로 바꾼다. 공개 전 점검: 비밀 키(Claude·공공데이터·카카오·브이월드)는 Secret Manager에만 있고 이력에도 없음, `AIzaSy…`는 Firebase 웹 설정값(공개 전제), 전화번호는 홈에 공개된 상담 번호뿐. 내부 문서(팀원결정권장안·팀원작업내용·검토 문서 등)도 함께 공개된다. GitHub는 파일 단위 비공개가 없다(숨기려면 이력 재작성 + 별도 비공개 저장소). **공개 후 할 일(PM)**: Firebase 웹 API 키에 웹사이트 제한(`onkiro.kr`·검토 도메인·`localhost`), `main` 브랜치 보호 규칙 켜기. ③ **발표 덱 RAG 반영**(덱은 PM이 공유 폴더로 옮김, 팀원이 열려면 Share 권한 확인): 6번 AI 카드 3개 → 4개(인허가 안내 RAG 추가, 원칙 '근거 없으면 버림 — 자료 id 검증·법적 판정 아님' 추가, 노트 50초), 5번 시연 타임라인에 1:45 'AI 인허가 안내(RAG) → 근거 번호'(20초) 추가, 8번 서버 함수 15 → 17개(테스트 수는 10/25 기준 그대로), 10번 '다음 단계'의 'RAG 안내' → '인허가 자료 확충(전문가 검토)'. `시연대본.md` 장면 7-1 ★(운영 방식 '맡겨 운영' + "지하수를 쓰는데 민박 신고 때 필요한 게 있나요?"), D-1 미리 돌리기에 인허가 안내 추가. 인허가 안내도 주소를 AI에 보내지 않음 확인. **남은 일**: 관리 화면 '기본 자료 불러오기'·원일 자료 검토(시연 전), 테스터 모집·안내, 덱 테스트 수 갱신 여부.
 
 **10/26 모바일 첫 접속 실패 원인 해결**: Gabia DNS에 인증서용 CNAME이 `_acme-challenge_oaytejnhnnnaofjj` 외에 **호스트 `@`에도 중복 등록**돼 있어, A 외의 질의(AAAA·HTTPS·TXT)가 CNAME → NXDOMAIN으로 답했다(아이폰은 A·AAAA·HTTPS를 함께 물어 "서버를 찾을 수 없음"). PM이 `@` CNAME 삭제 → Gabia 3곳·Google·Cloudflare·KT·SK·LG DNS 모두 AAAA "레코드 없음(정상)" 확인. TTL은 원인이 아니었다.
@@ -306,8 +308,8 @@ task 검토(task검토.md)에서 정한 규칙으로, prd.md 6.7절(공통 동�
 | --- | --- | --- | --- |
 | `photoAccess` | all / assigned / none | 진단 사진 보기 (assigned는 `assessments.assigneeUid == uid`일 때만) | SIM-06, ADM-03 |
 | `canEditPrices` | bool | 단가 DB draft 생성·수정 | ADM-01 |
-| `canEditAssumptions` | bool | 가정값 draft 생성·수정 | ADM-02 |
-| `canEditContent` | bool | 숙소·홈 콘텐츠 수정 | STY-01, COM-01 |
+| `canEditAssumptions` | bool | 가정값 draft 생성·수정, 인허가 항목·인허가 자료(AI) 수정 | ADM-02 |
+| `canEditContent` | bool | 숙소·홈·예약·촬영 가이드 콘텐츠, 인허가 항목·인허가 자료(AI) 수정 | STY-01, COM-01 |
 | `consultAccess` | all / assigned / none | 상담 목록 보기·상태 변경·메모·대리 입력 (assigned는 `assigneeUid == uid`일 때만) | CON-01·02 |
 | `canReviewDiagnosis` | bool | 진단 보정(보정 사유 필수) | ADM-03 |
 | `canReviewCosts` | bool | 실제 공사비 검수(approved 처리) | CON-03·07 |
