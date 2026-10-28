@@ -239,7 +239,7 @@ function Reserve({ branch }: { branch: Branch }) {
     {
       channel: "airbnb" as const,
       url: branch.airbnbUrl,
-      label: "에어비앤비에서 예약",
+      label: "에어비앤비에서 예약 신청",
     },
     {
       channel: "naver" as const,
@@ -285,20 +285,7 @@ function Reserve({ branch }: { branch: Branch }) {
           </>
         )}
       </dl>
-      {direct && (
-        <div className="flex flex-col gap-2">
-          <ButtonLink
-            href={`/stay/${branch.id}/reserve`}
-            variant="primary"
-            block
-          >
-            온기로에서 예약 신청
-          </ButtonLink>
-          <p className="text-sm text-ink-2">
-            날짜를 골라 신청하면 운영팀이 확인 후 확정·입금 안내를 드립니다.
-          </p>
-        </div>
-      )}
+      {/* 외부 예약(에어비앤비 등)을 위에, 온기로 예약 신청을 아래에 둔다 (10/28 PM 요청) */}
       {links.length > 0 ? (
         <div className="flex flex-col gap-2">
           {links.map((l, i) => (
@@ -318,8 +305,23 @@ function Reserve({ branch }: { branch: Branch }) {
             예약은 외부 사이트에서 진행됩니다. 체험은 예약 후 문의해 주세요.
           </p>
         </div>
-      ) : (
-        !direct && <Notice tone="neutral">예약 링크를 준비 중입니다.</Notice>
+      ) : null}
+      {direct && (
+        <div className="flex flex-col gap-2">
+          <ButtonLink
+            href={`/stay/${branch.id}/reserve`}
+            variant="primary"
+            block
+          >
+            온기로에서 예약 신청
+          </ButtonLink>
+          <p className="text-sm text-ink-2">
+            날짜를 골라 신청하면 운영팀이 확인 후 확정·입금 안내를 드립니다.
+          </p>
+        </div>
+      )}
+      {links.length === 0 && !direct && (
+        <Notice tone="neutral">예약 링크를 준비 중입니다.</Notice>
       )}
     </Card>
   );

@@ -527,7 +527,7 @@ export function BranchEditor({ id }: { id: string }) {
           <Field label="에어비앤비 링크 (없으면 비우기)">
             <input
               className={field}
-              placeholder="https://"
+              placeholder="https://www.airbnb.co.kr/rooms/..."
               value={draft.airbnbUrl ?? ""}
               onChange={(e) =>
                 setDraft({ ...draft, airbnbUrl: e.target.value })
