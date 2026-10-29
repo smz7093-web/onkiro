@@ -73,7 +73,7 @@ export function FeedbackForm({ from }: { from: string | null }) {
             홈으로
           </Link>
           <Link href="/me" className="text-base underline underline-offset-4">
-            내 진단·상담
+            마이페이지
           </Link>
         </div>
       </Card>

@@ -11,7 +11,7 @@ export function SiteHeader() {
           href="/me"
           className="inline-flex h-12 items-center px-2 text-base text-ink-2 underline-offset-4 hover:underline"
         >
-          내 진단·상담
+          마이페이지
         </Link>
       </div>
     </header>
