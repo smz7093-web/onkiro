@@ -20,6 +20,7 @@ import { manwon } from "@/components/diagnose/estimate-step";
 import { card } from "@/components/diagnose/styles";
 import { buttonClass, Pill } from "../ui";
 import { usePermissions } from "@/lib/auth/use-permissions";
+import { signOutUser } from "@/lib/firebase/kakao";
 
 const STATUS_LABEL: Record<AssessmentStatus, string> = {
   draft: "입력 중",
@@ -105,9 +106,25 @@ export function MyPage() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">마이페이지</h1>
-        <Link href="/diagnose" className={linkBtn}>
-          새 진단 시작
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/diagnose" className={linkBtn}>
+            새 진단 시작
+          </Link>
+          {/* 로그아웃은 원래 /login 화면에만 있어 테스터가 찾기 어려웠다(10/29).
+              RequireLogin이 /login으로 보내기 전에 새로 불러오기로 홈에 간다. */}
+          <button
+            type="button"
+            onClick={async () => {
+              await signOutUser();
+              // 클라이언트 이동은 RequireLogin의 /login 이동과 경쟁한다.
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+              window.location.assign("/");
+            }}
+            className={buttonClass({ variant: "ghost" })}
+          >
+            로그아웃
+          </button>
+        </div>
       </div>
       {error && <p className="text-base text-crit">{error}</p>}
       {notice && (
