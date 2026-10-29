@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AccountLink } from "./account-link";
 import { Logo } from "./ui";
 
 // 공개 화면(홈·숙소)의 머리말과 바닥글
@@ -7,12 +8,7 @@ export function SiteHeader() {
     <header className="border-b border-line bg-surface">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
         <Logo />
-        <Link
-          href="/me"
-          className="inline-flex h-12 items-center px-2 text-base text-ink-2 underline-offset-4 hover:underline"
-        >
-          마이페이지
-        </Link>
+        <AccountLink className="inline-flex h-12 items-center px-2 text-base text-ink-2 underline-offset-4 hover:underline" />
       </div>
     </header>
   );
