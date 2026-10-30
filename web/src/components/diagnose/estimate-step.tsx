@@ -33,6 +33,7 @@ import { useDiagnosis } from "./diagnosis-context";
 import { Disclaimer } from "./disclaimer";
 import { FinishTiers } from "./finish-tiers";
 import { NextActions } from "./next-actions";
+import { LawChangeNote } from "./law-change-note";
 import { PermitGuide } from "./permit-guide";
 import { btnPrimary, btnSecondary, card, notice } from "./styles";
 import {
@@ -381,6 +382,7 @@ export function EstimateStep() {
             </li>
           ))}
         </ul>
+        <LawChangeNote />
         <PermitGuide
           assessmentId={assessment.id}
           facts={property.facts}

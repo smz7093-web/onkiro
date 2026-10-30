@@ -343,7 +343,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // 관리 화면에서 고치는 화면 문구 (10/15): permits = 인허가 간이 확인(D7), photoGuides = 촬영 가이드(D9), home = 홈 첫 화면 사진(10/23).
+    // 관리 화면에서 고치는 화면 문구 (10/15): permits = 인허가 간이 확인(D7), photoGuides = 촬영 가이드(D9), home = 홈 첫 화면 사진(10/23), lawChange = 시행 예정 법 개정 참고(10/31).
     // 누구나 읽는다(진단·리포트 화면). 인허가는 가정값 또는 콘텐츠 편집 권한, 촬영 가이드는 콘텐츠 편집 권한. 삭제하지 않는다
     match /siteContent/{docId} {
       allow read: if true;
@@ -358,6 +358,17 @@ service cloud.firestore {
             && hasPerm('canEditContent')
             && request.resource.data.keys().hasOnly(['guides', 'updatedBy', 'updatedByName', 'updatedAt'])
             && request.resource.data.guides is map)
+          // lawChange = 시행 예정 법 개정 참고 (10/31, 견적 화면 접힌 상자). 인허가 문구와 같은 권한
+          || (docId == 'lawChange'
+            && (hasPerm('canEditAssumptions') || hasPerm('canEditContent'))
+            && request.resource.data.keys().hasOnly(['enabled', 'title', 'note', 'items', 'updatedBy', 'updatedByName', 'updatedAt'])
+            && request.resource.data.enabled is bool
+            && request.resource.data.title is string
+            && request.resource.data.title.size() <= 80
+            && request.resource.data.note is string
+            && request.resource.data.note.size() <= 300
+            && request.resource.data.items is list
+            && request.resource.data.items.size() <= 8)
           // home = 홈 첫 화면 큰 사진 (10/23, 숙소 편집에서 고름)
           || (docId == 'home'
             && hasPerm('canEditContent')

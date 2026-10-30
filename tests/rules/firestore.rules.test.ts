@@ -552,6 +552,40 @@ describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => 
     );
   });
 
+  it("시행 예정 법 개정 참고(lawChange)는 인허가 문구와 같은 권한, 형식을 지킨다", async () => {
+    const law = (uid: string) => ({
+      enabled: true,
+      title: "2027년 10월 시행 예정",
+      note: "참고",
+      items: [{ title: "빈집재생민박", body: "요약" }],
+      updatedBy: uid,
+      updatedByName: null,
+      updatedAt: serverTimestamp(),
+    });
+    await assertSucceeds(getDoc(doc(anonymous(), "siteContent/lawChange")));
+    await assertSucceeds(
+      setDoc(doc(wonil(), "siteContent/lawChange"), law("wonil")),
+    );
+    await assertSucceeds(
+      setDoc(doc(haesoon(), "siteContent/lawChange"), law("haesoon")),
+    );
+    await assertFails(
+      setDoc(doc(member(), "siteContent/lawChange"), law("alice")),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/lawChange"), {
+        ...law("pm"),
+        title: "가".repeat(81),
+      }),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/lawChange"), {
+        ...law("pm"),
+        items: Array.from({ length: 9 }, () => ({ title: "t", body: "b" })),
+      }),
+    );
+  });
+
   it("정해진 문서·필드만, 작성자 위장·삭제 금지", async () => {
     await assertFails(setDoc(doc(admin(), "siteContent/home"), guides("pm")));
     await assertFails(

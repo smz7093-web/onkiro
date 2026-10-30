@@ -14,6 +14,11 @@ import {
 } from "../diagnosis/permits";
 import type { PhotoGuides } from "../diagnosis/photos";
 import { readPermitContent, readPhotoGuides } from "./content";
+import {
+  DEFAULT_LAW_CHANGE,
+  readLawChange,
+  type LawChange,
+} from "./law-change";
 
 // 관리 화면에서 고치는 화면 문구 (siteContent, firestore.rules). 누구나 읽고, 권한자만 고친다.
 // permits = 인허가 간이 확인(D7, 가정값 또는 콘텐츠 편집 권한), photoGuides = 촬영 가이드(D9, 콘텐츠 편집 권한)
@@ -25,7 +30,7 @@ export interface Edited<T> {
 }
 
 async function read<T>(
-  id: "permits" | "photoGuides",
+  id: "permits" | "photoGuides" | "lawChange",
   parse: (raw: unknown) => T,
 ): Promise<Edited<T>> {
   const snap = await getDoc(doc(db, "siteContent", id));
@@ -40,6 +45,7 @@ async function read<T>(
 
 export const loadPermitContent = () => read("permits", readPermitContent);
 export const loadPhotoGuides = () => read("photoGuides", readPhotoGuides);
+export const loadLawChange = () => read("lawChange", readLawChange);
 
 const stamp = (user: User, userName: string | null) => ({
   updatedBy: user.uid,
@@ -66,6 +72,21 @@ export async function savePhotoGuides(
 ) {
   await setDoc(doc(db, "siteContent", "photoGuides"), {
     guides,
+    ...stamp(user, userName),
+  });
+}
+
+// 시행 예정 법 개정 참고 (siteContent/lawChange, 10/31). 인허가 문구와 같은 권한
+export async function saveLawChange(
+  content: LawChange,
+  user: User,
+  userName: string | null,
+) {
+  await setDoc(doc(db, "siteContent", "lawChange"), {
+    enabled: content.enabled,
+    title: content.title,
+    note: content.note,
+    items: content.items,
     ...stamp(user, userName),
   });
 }
@@ -137,6 +158,7 @@ export function useHomeHero(): HomeHero | null {
 // 진단·리포트 화면용: 읽기 전에는 기본 문구, 읽기에 실패해도 기본 문구로 계속 보인다
 let permitsOnce: Promise<PermitContent> | null = null;
 let guidesOnce: Promise<PhotoGuides> | null = null;
+let lawOnce: Promise<LawChange> | null = null;
 
 export function usePermitContent(): PermitContent {
   const [c, setC] = useState(DEFAULT_PERMIT_CONTENT);
@@ -176,8 +198,28 @@ export function usePhotoGuides(): PhotoGuides {
   return g;
 }
 
+export function useLawChange(): LawChange {
+  const [c, setC] = useState(DEFAULT_LAW_CHANGE);
+  useEffect(() => {
+    let cancelled = false;
+    lawOnce ??= loadLawChange().then(
+      (r) => r.value,
+      () => {
+        lawOnce = null;
+        return DEFAULT_LAW_CHANGE;
+      },
+    );
+    lawOnce.then((v) => !cancelled && setC(v));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return c;
+}
+
 // 관리 화면에서 저장하면 다음 화면부터 새 문구를 읽게 한다
 export function forgetSiteContent() {
   permitsOnce = null;
   guidesOnce = null;
+  lawOnce = null;
 }
