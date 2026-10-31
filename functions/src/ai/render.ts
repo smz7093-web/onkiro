@@ -7,6 +7,13 @@ export const RENDER_MODEL = "gemini-2.5-flash-image";
 // r3(10/31): 외관 중급형이 원본과 거의 같다는 PM 지적 — '주변 조경 유지'가 마당 정리와, '기와 스타일 유지'가 새 지붕과
 // 부딪혀 모델이 거의 안 바꿨다. 형태(각도·면적·층수·지붕 윤곽)만 지키고 마감·색·창호·마당은 눈에 띄게 바꾸도록 고침
 export const RENDER_PROMPT_VERSION = "r3";
+// r4(10/31, 실내만): 욕실 그림에서 창문 위치가 바뀐다는 PM 지적 — 창·문을 '그대로 두라'는 지시를 구체화하고,
+// 욕실·주방은 변기·세면대·싱크대 자리(배관)도 지키게 함. 외관은 PM이 r3 결과를 확인해 그대로 둔다(다시 그리지 않게)
+export const RENDER_INTERIOR_PROMPT_VERSION = "r4";
+export const renderPromptVersion = (target: RenderTarget) =>
+  target === "exterior"
+    ? RENDER_PROMPT_VERSION
+    : RENDER_INTERIOR_PROMPT_VERSION;
 
 export type Module = "A" | "B" | "C";
 
@@ -52,12 +59,20 @@ const ROOF: Record<string, string> = {
   "금속(강판)": "Use a clean new metal roof of the same shape.",
 };
 
+// 물 쓰는 곳은 배관 자리를 지킨다 (r4)
+const FIXED: Partial<Record<RenderTarget, string>> = {
+  bathroom:
+    "Keep the toilet, washbasin and shower or bathtub in the same places as in the photo; only replace them with new fixtures.",
+  kitchen:
+    "Keep the sink and the cooking area in the same places as in the photo; only replace the cabinets and finishes.",
+};
+
 // 실내는 구조를 바꾸지 않게 하고(벽·창·문 위치 그대로), 개인 물건을 지운다
 const KEEP: Record<"exterior" | "interior", string> = {
   exterior:
     "Keep exactly the same camera angle, building footprint, number of floors and roof outline, and the same sky and neighboring buildings. Do not make the building bigger. Change the materials, colors, windows, doors and yard so the renovation is obvious at first glance: the result must look clearly different from the original photo.",
   interior:
-    "Keep exactly the same camera angle, room size and shape, ceiling height, and the positions of walls, windows and doors. Do not add or enlarge windows, do not remove walls, do not make the room bigger. Remove clutter and all personal items such as photos, documents and clothes.",
+    "Keep exactly the same camera angle, room size and shape, ceiling height, and the positions of walls, windows and doors. Every existing window and door must stay exactly where it is in the photo, with the same size, shape and number of panes; do not move, add, remove, enlarge, shrink or cover any window or door, and keep the window frame visible; do not remove walls, do not make the room bigger. Remove clutter and all personal items such as photos, documents and clothes.",
 };
 
 export function renderPrompt(
@@ -73,6 +88,7 @@ export function renderPrompt(
     KEEP[exterior ? "exterior" : "interior"],
     LEVEL[target][module],
     exterior && house.roofStructure ? (ROOF[house.roofStructure] ?? "") : "",
+    FIXED[target] ?? "",
     "Photorealistic, natural daylight. No people, no reflections of people in mirrors, no cars, no text, no logos, no signs.",
   ]
     .filter(Boolean)

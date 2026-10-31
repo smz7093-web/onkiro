@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   parseImageResponse,
   renderPrompt,
+  renderPromptVersion,
   vertexImageCaller,
 } from "./render.js";
 
@@ -17,6 +18,21 @@ describe("AI 리모델링 가상 이미지", () => {
       expect(p).toContain("Do not make the building bigger");
       expect(p).toContain("No people");
     }
+  });
+
+  it("실내는 창·문을 옮기지 않고, 욕실·주방은 배관 자리를 지킨다. 외관 버전은 그대로 (r4, 10/31)", () => {
+    const bath = renderPrompt("B", { roofStructure: null }, "bathroom");
+    expect(bath).toContain("must stay exactly where it is");
+    expect(bath).toContain("number of panes");
+    expect(bath).toContain("toilet, washbasin");
+    expect(renderPrompt("B", { roofStructure: null }, "kitchen")).toContain(
+      "Keep the sink",
+    );
+    expect(renderPrompt("B", { roofStructure: null }, "room")).not.toContain(
+      "toilet",
+    );
+    expect(renderPromptVersion("exterior")).toBe("r3");
+    expect(renderPromptVersion("bathroom")).toBe("r4");
   });
 
   it("외관은 형태만 지키고 바뀐 모습이 눈에 띄게 한다 (r3, 10/31 중급형이 원본과 거의 같던 문제)", () => {

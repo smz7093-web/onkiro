@@ -59,7 +59,7 @@ import {
   metadataToken,
   RENDER_MODEL,
   RENDER_TARGETS,
-  RENDER_PROMPT_VERSION,
+  renderPromptVersion,
   renderPrompt,
   vertexImageCaller,
 } from "./ai/render.js";
@@ -738,7 +738,7 @@ export const renderRemodel = onCall(
     const cRef = aRef
       .collection("ai")
       .doc(`render-${target}-${module}-${front.id}`);
-    const key = `${target}:${front.id}:${module}:${RENDER_PROMPT_VERSION}:${RENDER_MODEL}`;
+    const key = `${target}:${front.id}:${module}:${renderPromptVersion(target)}:${RENDER_MODEL}`;
     const hit = await cRef.get();
     if (hit.exists && hit.get("key") === key)
       return {
