@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { RequireConsent } from "@/components/require-consent";
+import { Logo } from "@/components/ui";
 
 export const metadata = { title: "빈집 진단 · 온기로" };
 
@@ -9,11 +10,19 @@ export default function DiagnoseLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-1 flex-col bg-paper text-ink">
       <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex w-full max-w-4xl items-center gap-4 px-4 py-3">
-          <Link href="/diagnose" className="text-lg font-semibold">
-            온기로 빈집 진단
+        {/* 왼쪽 로고는 사이트 홈으로 (10/31 PM: 진단 중에도 홈으로 갈 수 있게) */}
+        <div className="mx-auto flex h-16 w-full max-w-4xl items-center gap-3 px-4">
+          <Logo />
+          <Link
+            href="/diagnose"
+            className="inline-flex h-12 items-center border-l border-line pl-3 text-base font-semibold text-ink-2"
+          >
+            빈집 진단
           </Link>
-          <Link href="/me" className="ml-auto text-base text-ink-2 underline">
+          <Link
+            href="/me"
+            className="ml-auto inline-flex h-12 items-center text-base text-ink-2 underline"
+          >
             마이페이지
           </Link>
         </div>
