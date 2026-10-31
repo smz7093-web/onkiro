@@ -4,7 +4,9 @@
 
 export const RENDER_MODEL = "gemini-2.5-flash-image";
 // 프롬프트를 바꾸면 올린다 (저장된 이미지를 다시 만든다). r2(10/19): 대상 4가지(외관·대표 방·욕실·주방)
-export const RENDER_PROMPT_VERSION = "r2";
+// r3(10/31): 외관 중급형이 원본과 거의 같다는 PM 지적 — '주변 조경 유지'가 마당 정리와, '기와 스타일 유지'가 새 지붕과
+// 부딪혀 모델이 거의 안 바꿨다. 형태(각도·면적·층수·지붕 윤곽)만 지키고 마감·색·창호·마당은 눈에 띄게 바꾸도록 고침
+export const RENDER_PROMPT_VERSION = "r3";
 
 export type Module = "A" | "B" | "C";
 
@@ -22,9 +24,9 @@ export const isRenderTarget = (v: unknown): v is RenderTarget =>
 // 등급 수준 (web lib/diagnosis/compute.ts FINISH_TIERS의 하·중·상 대표 마감과 맞춘다)
 const LEVEL: Record<RenderTarget, Record<Module, string>> = {
   exterior: {
-    A: "Basic renovation: remove all junk and debris, repair and repaint the existing walls in a clean light color, repair the existing roof so it looks sound, fix broken doors, tidy the yard with simple gravel.",
-    B: "Standard renovation: remove all junk and debris, clean repainted walls, a brand-new roof in good condition, new insulated windows and doors with dark frames, a small wooden deck by the entrance, tidy gravel yard with a few plants.",
-    C: "Premium renovation: remove all junk and debris, refined exterior finish with natural wood cladding accents, a brand-new high-quality roof, large new glass doors and windows, a generous wooden deck, a landscaped garden with lawn and stone path, warm exterior lighting.",
+    A: "Basic renovation: remove every piece of junk, pots, debris and weeds; clean the walls and repaint them in a fresh light color; repair and clean the roof so it looks sound and uniform; replace broken windows and doors with simple new ones in white frames; a tidy yard covered with simple gravel.",
+    B: "Standard renovation: remove every piece of junk, pots, debris and overgrown plants; refinish all exterior walls with smooth warm-white stucco; replace the whole roof covering with brand-new, clean, uniform roofing of the same shape; replace all windows and the front door with new modern ones in dark grey frames; add a small natural wooden deck with two steps at the entrance; a neat gravel yard with a few trimmed shrubs; simple wall lights beside the door.",
+    C: "Premium renovation: remove every piece of junk, pots, debris and overgrown plants; refined walls in warm-white stucco with natural wood cladding accents; replace the whole roof covering with brand-new high-quality roofing of the same shape; large new glass doors and windows in slim dark frames; a generous wooden deck along the front; a landscaped garden with a lawn, a stone path and low plantings; warm exterior lighting.",
   },
   room: {
     A: "Basic renovation of this guest room: clean vinyl floor, plain light wallpaper, a simple ceiling light, simple tidy bedding.",
@@ -44,7 +46,7 @@ const LEVEL: Record<RenderTarget, Record<Module, string>> = {
 };
 
 const ROOF: Record<string, string> = {
-  기와: "Keep a traditional Korean clay tile roof style.",
+  기와: "Use brand-new traditional Korean clay roof tiles in a clean, uniform color, keeping the same roof shape.",
   슬레이트:
     "Replace the old slate roof with a new metal roof (no asbestos slate).",
   "금속(강판)": "Use a clean new metal roof of the same shape.",
@@ -53,7 +55,7 @@ const ROOF: Record<string, string> = {
 // 실내는 구조를 바꾸지 않게 하고(벽·창·문 위치 그대로), 개인 물건을 지운다
 const KEEP: Record<"exterior" | "interior", string> = {
   exterior:
-    "Keep exactly the same camera angle, building footprint, number of floors, roof shape and surrounding landscape. Do not make the building bigger.",
+    "Keep exactly the same camera angle, building footprint, number of floors and roof outline, and the same sky and neighboring buildings. Do not make the building bigger. Change the materials, colors, windows, doors and yard so the renovation is obvious at first glance: the result must look clearly different from the original photo.",
   interior:
     "Keep exactly the same camera angle, room size and shape, ceiling height, and the positions of walls, windows and doors. Do not add or enlarge windows, do not remove walls, do not make the room bigger. Remove clutter and all personal items such as photos, documents and clothes.",
 };

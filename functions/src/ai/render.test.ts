@@ -11,12 +11,21 @@ describe("AI 리모델링 가상 이미지", () => {
     const c = renderPrompt("C", { roofStructure: "기와" });
     expect(a).toContain("Basic renovation");
     expect(c).toContain("Premium renovation");
-    expect(c).toContain("clay tile");
+    expect(c).toContain("brand-new traditional Korean clay roof tiles");
     for (const p of [a, c]) {
       expect(p).toContain("same camera angle");
       expect(p).toContain("Do not make the building bigger");
       expect(p).toContain("No people");
     }
+  });
+
+  it("외관은 형태만 지키고 바뀐 모습이 눈에 띄게 한다 (r3, 10/31 중급형이 원본과 거의 같던 문제)", () => {
+    const b = renderPrompt("B", { roofStructure: "기와" });
+    expect(b).toContain("clearly different from the original photo");
+    expect(b).toContain("warm-white stucco");
+    // 마당 정리와 부딪히던 '주변 조경 유지', 새 지붕과 부딪히던 '기와 스타일 유지'를 뺐다
+    expect(b).not.toContain("surrounding landscape");
+    expect(b).not.toContain("Keep a traditional");
   });
 
   it("실내(대표 방·욕실·주방)는 구조를 바꾸지 않고 개인 물건을 지우게 한다 (10/19)", () => {
