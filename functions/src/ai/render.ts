@@ -9,7 +9,9 @@ export const RENDER_MODEL = "gemini-2.5-flash-image";
 export const RENDER_PROMPT_VERSION = "r3";
 // r4(10/31, 실내만): 욕실 그림에서 창문 위치가 바뀐다는 PM 지적 — 창·문을 '그대로 두라'는 지시를 구체화하고,
 // 욕실·주방은 변기·세면대·싱크대 자리(배관)도 지키게 함. 외관은 PM이 r3 결과를 확인해 그대로 둔다(다시 그리지 않게)
-export const RENDER_INTERIOR_PROMPT_VERSION = "r4";
+// r5(10/31): r4의 'Keep the toilet, washbasin…'을 모델이 옛 설비를 그대로 두라는 뜻으로 읽어 욕실 개수대가 남음(PM 지적)
+// → 옛 설비·개수대·물통·노출 배관은 모두 없애고 비슷한 자리에 새것을 설치하라고 바꿈
+export const RENDER_INTERIOR_PROMPT_VERSION = "r5";
 export const renderPromptVersion = (target: RenderTarget) =>
   target === "exterior"
     ? RENDER_PROMPT_VERSION
@@ -62,9 +64,9 @@ const ROOF: Record<string, string> = {
 // 물 쓰는 곳은 배관 자리를 지킨다 (r4)
 const FIXED: Partial<Record<RenderTarget, string>> = {
   bathroom:
-    "Keep the toilet, washbasin and shower or bathtub in the same places as in the photo; only replace them with new fixtures.",
+    "Completely remove every old fixture: the old washbasin or sink, any old concrete or tiled utility basin, water tanks, buckets, hoses and exposed pipes. Install brand-new fixtures (toilet, vanity, shower) at roughly the same spots as the old ones. No old fixture may remain in the image.",
   kitchen:
-    "Keep the sink and the cooking area in the same places as in the photo; only replace the cabinets and finishes.",
+    "Completely remove the old sink, cabinets, appliances and clutter. Install a brand-new sink and cooking area at roughly the same spots as the old ones. No old fixture may remain in the image.",
 };
 
 // 실내는 구조를 바꾸지 않게 하고(벽·창·문 위치 그대로), 개인 물건을 지운다
