@@ -586,6 +586,70 @@ describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => 
     );
   });
 
+  it("약관·처리방침·사업자 정보(terms·privacy·company)는 누구나 읽고, 인허가 문구와 같은 권한이 형식대로 고친다", async () => {
+    const legal = (uid: string) => ({
+      effectiveDate: "2026년 11월 4일",
+      body: "# 제1조\n본문",
+      updatedBy: uid,
+      updatedByName: null,
+      updatedAt: serverTimestamp(),
+    });
+    const company = (uid: string) => ({
+      operator: "온기로 팀",
+      ceo: "장상민",
+      bizNumber: "",
+      mailOrderNumber: "",
+      address: "",
+      phone: "010-0000-0000",
+      email: "",
+      privacyOfficer: "장상민",
+      privacyContact: "010-0000-0000",
+      copyright: "© 2026 온기로",
+      updatedBy: uid,
+      updatedByName: null,
+      updatedAt: serverTimestamp(),
+    });
+    await assertSucceeds(getDoc(doc(anonymous(), "siteContent/privacy")));
+    await assertSucceeds(getDoc(doc(anonymous(), "siteContent/company")));
+    await assertSucceeds(
+      setDoc(doc(wonil(), "siteContent/privacy"), legal("wonil")),
+    );
+    await assertSucceeds(
+      setDoc(doc(haesoon(), "siteContent/terms"), legal("haesoon")),
+    );
+    await assertSucceeds(
+      setDoc(doc(admin(), "siteContent/company"), company("pm")),
+    );
+    await assertFails(
+      setDoc(doc(member(), "siteContent/terms"), legal("alice")),
+    );
+    await assertFails(
+      setDoc(doc(member(), "siteContent/company"), company("alice")),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/terms"), { ...legal("pm"), body: "" }),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/privacy"), {
+        ...legal("pm"),
+        body: "가".repeat(20001),
+      }),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/company"), {
+        ...company("pm"),
+        extra: "x",
+      }),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/company"), {
+        ...company("pm"),
+        phone: 1,
+      }),
+    );
+    await assertFails(deleteDoc(doc(admin(), "siteContent/privacy")));
+  });
+
   it("정해진 문서·필드만, 작성자 위장·삭제 금지", async () => {
     await assertFails(setDoc(doc(admin(), "siteContent/home"), guides("pm")));
     await assertFails(

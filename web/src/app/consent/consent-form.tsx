@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthUser } from "@/lib/auth/use-auth-user";
@@ -8,6 +9,15 @@ import type { ConsentStatus } from "@/lib/consent/evaluate";
 import { loadConsentStatus, saveConsents } from "@/lib/consent/store";
 
 type Choices = Partial<Record<ConsentType, boolean>>;
+
+// 항목별 '전문 보기' (D8 5절: 요약문 옆에 1~4절 본문 연결, 11/4)
+const FULL_TEXT: Partial<Record<ConsentType, string>> = {
+  terms: "/terms",
+  privacy: "/privacy",
+  photoReview: "/privacy",
+  photoModel: "/privacy",
+  aiProcessing: "/privacy",
+};
 
 // 가입·약관 개정 시 동의 화면 (COM-04). 필수 4개를 모두 체크해야 진행한다.
 export function ConsentForm({ next }: { next: string }) {
@@ -102,6 +112,15 @@ export function ConsentForm({ next }: { next: string }) {
               </span>
             </label>
             <p className="pl-8 text-sm text-zinc-600">{item.detail}</p>
+            {FULL_TEXT[item.type] && (
+              <Link
+                href={FULL_TEXT[item.type]!}
+                target="_blank"
+                className="inline-flex h-10 items-center pl-8 text-sm underline underline-offset-4"
+              >
+                전문 보기 (새 창)
+              </Link>
+            )}
           </li>
         ))}
       </ul>

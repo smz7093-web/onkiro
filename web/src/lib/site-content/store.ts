@@ -19,6 +19,15 @@ import {
   readLawChange,
   type LawChange,
 } from "./law-change";
+import {
+  DEFAULT_COMPANY,
+  DEFAULT_LEGAL,
+  readCompany,
+  readLegalDoc,
+  type CompanyInfo,
+  type LegalDoc,
+  type LegalKind,
+} from "./legal";
 
 // 관리 화면에서 고치는 화면 문구 (siteContent, firestore.rules). 누구나 읽고, 권한자만 고친다.
 // permits = 인허가 간이 확인(D7, 가정값 또는 콘텐츠 편집 권한), photoGuides = 촬영 가이드(D9, 콘텐츠 편집 권한)
@@ -30,7 +39,7 @@ export interface Edited<T> {
 }
 
 async function read<T>(
-  id: "permits" | "photoGuides" | "lawChange",
+  id: "permits" | "photoGuides" | "lawChange" | LegalKind | "company",
   parse: (raw: unknown) => T,
 ): Promise<Edited<T>> {
   const snap = await getDoc(doc(db, "siteContent", id));
@@ -46,6 +55,9 @@ async function read<T>(
 export const loadPermitContent = () => read("permits", readPermitContent);
 export const loadPhotoGuides = () => read("photoGuides", readPhotoGuides);
 export const loadLawChange = () => read("lawChange", readLawChange);
+export const loadLegalDoc = (kind: LegalKind) =>
+  read(kind, (raw) => readLegalDoc(kind, raw));
+export const loadCompany = () => read("company", readCompany);
 
 const stamp = (user: User, userName: string | null) => ({
   updatedBy: user.uid,
@@ -89,6 +101,80 @@ export async function saveLawChange(
     items: content.items,
     ...stamp(user, userName),
   });
+}
+
+// 이용약관·개인정보 처리방침 (siteContent/terms·privacy, 11/4). 인허가 문구와 같은 권한
+export async function saveLegalDoc(
+  kind: LegalKind,
+  content: LegalDoc,
+  user: User,
+  userName: string | null,
+) {
+  await setDoc(doc(db, "siteContent", kind), {
+    effectiveDate: content.effectiveDate,
+    body: content.body,
+    ...stamp(user, userName),
+  });
+  legalOnce[kind] = null;
+}
+
+// 사업자 정보 (siteContent/company, 11/4). 바닥글과 약관 빈칸에 쓴다
+export async function saveCompany(
+  info: CompanyInfo,
+  user: User,
+  userName: string | null,
+) {
+  await setDoc(doc(db, "siteContent", "company"), {
+    ...info,
+    ...stamp(user, userName),
+  });
+  companyOnce = null;
+}
+
+const legalOnce: Record<LegalKind, Promise<LegalDoc> | null> = {
+  terms: null,
+  privacy: null,
+};
+let companyOnce: Promise<CompanyInfo> | null = null;
+
+// 약관 화면용: 읽기 전에는 null(자리만), 실패하면 기본 문구
+export function useLegalDoc(kind: LegalKind): LegalDoc | null {
+  const [d, setD] = useState<LegalDoc | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    legalOnce[kind] ??= loadLegalDoc(kind).then(
+      (r) => r.value,
+      () => {
+        legalOnce[kind] = null;
+        return DEFAULT_LEGAL[kind];
+      },
+    );
+    legalOnce[kind].then((v) => !cancelled && setD(v));
+    return () => {
+      cancelled = true;
+    };
+  }, [kind]);
+  return d;
+}
+
+// 바닥글·약관 화면용: 읽기 전에는 null, 실패하면 기본값
+export function useCompany(): CompanyInfo | null {
+  const [c, setC] = useState<CompanyInfo | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    companyOnce ??= loadCompany().then(
+      (r) => r.value,
+      () => {
+        companyOnce = null;
+        return DEFAULT_COMPANY;
+      },
+    );
+    companyOnce.then((v) => !cancelled && setC(v));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return c;
 }
 
 // 홈 첫 화면 큰 사진 (siteContent/home, 10/23). 숙소 편집의 사진에서 고르고, 콘텐츠 편집 권한자만 바꾼다.

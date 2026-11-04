@@ -85,6 +85,13 @@ const MENU: Item[] = [
     show: (p) => can(p, "canEditContent"),
   },
   {
+    group: "콘텐츠",
+    href: "/admin/legal",
+    label: "약관·사업자 정보",
+    d: ["D8"],
+    show: (p) => can(p, "canEditAssumptions") || can(p, "canEditContent"),
+  },
+  {
     group: "계정",
     href: "/admin/users",
     label: "회원·권한",

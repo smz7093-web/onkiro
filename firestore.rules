@@ -369,6 +369,32 @@ service cloud.firestore {
             && request.resource.data.note.size() <= 300
             && request.resource.data.items is list
             && request.resource.data.items.size() <= 8)
+          // terms·privacy = 이용약관·개인정보 처리방침 본문 (11/4, D8). 인허가 문구와 같은 권한
+          || ((docId == 'terms' || docId == 'privacy')
+            && (hasPerm('canEditAssumptions') || hasPerm('canEditContent'))
+            && request.resource.data.keys().hasOnly(['effectiveDate', 'body', 'updatedBy', 'updatedByName', 'updatedAt'])
+            && request.resource.data.effectiveDate is string
+            && request.resource.data.effectiveDate.size() > 0
+            && request.resource.data.effectiveDate.size() <= 30
+            && request.resource.data.body is string
+            && request.resource.data.body.size() > 0
+            && request.resource.data.body.size() <= 20000)
+          // company = 바닥글 사업자 정보 (11/4). 모든 칸은 120자 이하 글자
+          || (docId == 'company'
+            && (hasPerm('canEditAssumptions') || hasPerm('canEditContent'))
+            && request.resource.data.keys().hasOnly(['operator', 'ceo', 'bizNumber', 'mailOrderNumber', 'address',
+                                                     'phone', 'email', 'privacyOfficer', 'privacyContact', 'copyright',
+                                                     'updatedBy', 'updatedByName', 'updatedAt'])
+            && request.resource.data.operator is string && request.resource.data.operator.size() <= 120
+            && request.resource.data.ceo is string && request.resource.data.ceo.size() <= 120
+            && request.resource.data.bizNumber is string && request.resource.data.bizNumber.size() <= 120
+            && request.resource.data.mailOrderNumber is string && request.resource.data.mailOrderNumber.size() <= 120
+            && request.resource.data.address is string && request.resource.data.address.size() <= 120
+            && request.resource.data.phone is string && request.resource.data.phone.size() <= 120
+            && request.resource.data.email is string && request.resource.data.email.size() <= 120
+            && request.resource.data.privacyOfficer is string && request.resource.data.privacyOfficer.size() <= 120
+            && request.resource.data.privacyContact is string && request.resource.data.privacyContact.size() <= 120
+            && request.resource.data.copyright is string && request.resource.data.copyright.size() <= 120)
           // home = 홈 첫 화면 큰 사진 (10/23, 숙소 편집에서 고름)
           || (docId == 'home'
             && hasPerm('canEditContent')

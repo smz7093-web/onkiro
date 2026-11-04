@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { RequireConsent } from "@/components/require-consent";
+import { SiteFooter } from "@/components/site-chrome";
 import { Logo } from "@/components/ui";
 
 export const metadata = { title: "빈집 진단 · 온기로" };
@@ -30,6 +31,7 @@ export default function DiagnoseLayout({ children }: { children: ReactNode }) {
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6">
         <RequireConsent>{children}</RequireConsent>
       </main>
+      <SiteFooter />
     </div>
   );
 }

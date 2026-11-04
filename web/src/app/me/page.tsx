@@ -1,6 +1,6 @@
 import { MyPage } from "@/components/me/my-page";
 import { RequireLogin } from "@/components/require-login";
-import { SiteHeader } from "@/components/site-chrome";
+import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 
 export const metadata = { title: "마이페이지 · 온기로" };
 
@@ -13,6 +13,7 @@ export default function Page() {
           <MyPage />
         </RequireLogin>
       </main>
+      <SiteFooter />
     </div>
   );
 }
