@@ -164,9 +164,7 @@ export function PermitGuide({
                     <span className="text-base font-medium">{it.title}</span>
                     <span className="text-sm text-ink-2">
                       근거{" "}
-                      {it.sourceIds
-                        .map((id) => `[${sourceNo(id)}]`)
-                        .join("")}
+                      {it.sourceIds.map((id) => `[${sourceNo(id)}]`).join("")}
                     </span>
                   </div>
                   {it.explanation && (
@@ -211,8 +209,8 @@ export function PermitGuide({
               </ol>
             </div>
             <p className="text-sm text-ink-2">
-              AI가 온기로 인허가 자료를 근거로 정리한 참고 안내입니다. 법적 판정이
-              아니며, 영업 가능 여부는 관할 기관에서 확정됩니다.
+              AI가 온기로 인허가 자료를 근거로 정리한 참고 안내입니다. 법적
+              판정이 아니며, 영업 가능 여부는 관할 기관에서 확정됩니다.
             </p>
             <div>
               <button

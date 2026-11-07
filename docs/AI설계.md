@@ -40,7 +40,7 @@
 4. **서버에서 응답을 다시 검사**: `parseGradeExplanation`, `parsePhotoSuggestions`, `parsePermitGuide`가 형식·길이·허용값을 확인한다. 틀리면 실패로 처리하고 화면에는 "AI가 응답하지 않습니다"를 보여준다.
 5. **팀이 정한 기준을 프롬프트에 넣어 어긋남 방지**: 등급 설명에는 팀이 확정한 등급 콘셉트·대표 마감(10/19)을 넣어, AI 자재 예시가 카드 내용과 다르지 않게 한다.
 
-가상 이미지 프롬프트는 영어로 쓰고(이미지 모델 정확도), 버전(`RENDER_PROMPT_VERSION`)을 붙여 바꾸면 저장된 이미지를 다시 만든다.
+가상 이미지 프롬프트는 영어로 쓰고(이미지 모델 정확도), 대상별 버전(외관 `RENDER_PROMPT_VERSION` r3, 실내 `RENDER_INTERIOR_PROMPT_VERSION` r5)을 붙여 바꾸면 그 대상의 저장된 이미지만 다시 만든다.
 
 ## 4. 인허가 RAG (검색 증강 생성)
 

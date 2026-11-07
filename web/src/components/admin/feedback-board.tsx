@@ -58,7 +58,8 @@ export function FeedbackBoard() {
   if (!list) return <p className="text-base">불러오는 중…</p>;
 
   const s = summarize(list);
-  const shown = filter === "all" ? list : list.filter((f) => f.status === filter);
+  const shown =
+    filter === "all" ? list : list.filter((f) => f.status === filter);
   const replace = (f: Feedback) =>
     setList(list.map((x) => (x.id === f.id ? f : x)));
 
@@ -161,9 +162,7 @@ function FeedbackCard({
           {FEEDBACK_STATUS_LABELS[f.status]}
         </Pill>
         <b className="text-base">만족도 {f.rating}</b>
-        <span className="text-base">
-          · 신뢰도 {f.trust ?? "결과 안 봄"}
-        </span>
+        <span className="text-base">· 신뢰도 {f.trust ?? "결과 안 봄"}</span>
         <span className="text-sm text-ink-2">
           {TESTER_LABELS[f.testerType]} · {when(f.createdAt)}
           {f.page && ` · ${f.page}에서`}

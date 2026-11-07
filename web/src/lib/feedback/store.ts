@@ -104,8 +104,7 @@ export async function listFeedback(): Promise<Feedback[]> {
       status: (x.status as FeedbackStatus) ?? "new",
       note: (x.note as string | null) ?? null,
       handledByName: (x.handledByName as string | null) ?? null,
-      createdAt:
-        x.createdAt instanceof Timestamp ? x.createdAt.toDate() : null,
+      createdAt: x.createdAt instanceof Timestamp ? x.createdAt.toDate() : null,
     };
   });
 }
@@ -130,16 +129,24 @@ export async function updateFeedback(
 // 관리 화면 요약: 건수, 평균 만족도·신뢰도, 상태별 건수
 export function summarize(list: Feedback[]) {
   const avg = (ns: number[]) =>
-    ns.length ? Math.round((ns.reduce((a, b) => a + b, 0) / ns.length) * 10) / 10 : null;
+    ns.length
+      ? Math.round((ns.reduce((a, b) => a + b, 0) / ns.length) * 10) / 10
+      : null;
   return {
     count: list.length,
     rating: avg(list.map((f) => f.rating)),
     trust: avg(list.flatMap((f) => (f.trust === null ? [] : [f.trust]))),
     byStatus: Object.fromEntries(
-      FEEDBACK_STATUSES.map((s) => [s, list.filter((f) => f.status === s).length]),
+      FEEDBACK_STATUSES.map((s) => [
+        s,
+        list.filter((f) => f.status === s).length,
+      ]),
     ) as Record<FeedbackStatus, number>,
     byTester: Object.fromEntries(
-      TESTER_TYPES.map((t) => [t, list.filter((f) => f.testerType === t).length]),
+      TESTER_TYPES.map((t) => [
+        t,
+        list.filter((f) => f.testerType === t).length,
+      ]),
     ) as Record<TesterType, number>,
   };
 }

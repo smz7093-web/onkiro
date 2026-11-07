@@ -91,7 +91,9 @@ export function FeedbackForm({ from }: { from: string | null }) {
 
       <Card>
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-base font-semibold">어떤 분이세요?</legend>
+          <legend className="mb-1 text-base font-semibold">
+            어떤 분이세요?
+          </legend>
           <div className="flex flex-wrap gap-2">
             {TESTER_TYPES.map((t) => (
               <label key={t} className={choice(testerType === t)}>
@@ -157,7 +159,9 @@ export function FeedbackForm({ from }: { from: string | null }) {
               결과까지 안 봄
             </label>
           </div>
-          <span className="text-sm text-ink-2">1 전혀 아님 · 5 매우 그렇다</span>
+          <span className="text-sm text-ink-2">
+            1 전혀 아님 · 5 매우 그렇다
+          </span>
         </fieldset>
 
         <label className="flex flex-col gap-1 text-base font-semibold">

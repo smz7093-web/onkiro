@@ -101,8 +101,8 @@ export function PermitKnowledgeEditor() {
           맞는 자료를 최대 6개 찾고, 그 자료에 적힌 내용만 근거로 안내합니다.
         </p>
         <Notice tone="info">
-          본문에는 확인한 사실만 쓰고, 바뀔 수 있는 숫자·기간은 &lsquo;관할
-          기관 확인&rsquo;을 함께 적어 주세요. 검토를 마친 자료는 &lsquo;검토
+          본문에는 확인한 사실만 쓰고, 바뀔 수 있는 숫자·기간은 &lsquo;관할 기관
+          확인&rsquo;을 함께 적어 주세요. 검토를 마친 자료는 &lsquo;검토
           완료&rsquo;를 켜면 회원 화면의 &lsquo;담당자 검토 전 자료&rsquo;
           표시가 사라집니다.
         </Notice>
@@ -208,7 +208,9 @@ export function PermitKnowledgeEditor() {
                       type="checkbox"
                       className="size-5"
                       checked={on}
-                      disabled={!on && editing.tags.length >= KNOWLEDGE_LIMITS.tags}
+                      disabled={
+                        !on && editing.tags.length >= KNOWLEDGE_LIMITS.tags
+                      }
                       onChange={() =>
                         setEditing({
                           ...editing,
@@ -314,7 +316,9 @@ export function PermitKnowledgeEditor() {
                   variant="danger"
                   disabled={busy || editing !== null}
                   onClick={() => {
-                    if (!window.confirm(`${d.id} '${d.title}' 자료를 지울까요?`))
+                    if (
+                      !window.confirm(`${d.id} '${d.title}' 자료를 지울까요?`)
+                    )
                       return;
                     run(async () => {
                       await deleteKnowledge(d.id);
