@@ -149,6 +149,7 @@ npm run test:rules
 | [prd.md](./prd.md) | 제품 요구사항 (기능·비기능·데이터 모델·권한) |
 | [MVP_기능명세서.md](./MVP_기능명세서.md) | 기능 요구 명세 |
 | [시나리오.md](./시나리오.md) | 사용자 시나리오 |
+| [docs/온기로_Final-Project_발표.pdf](./docs/온기로_Final-Project_발표.pdf) | Final-Project 최종 발표 자료 (12장) |
 | [docs/AI설계.md](./docs/AI설계.md) | AI 활용 설계 (프롬프트·RAG·모델 선택·윤리) |
 | [task.md](./task.md) | 작업 목록·진행 기록 |
 | [시연대본.md](./시연대본.md) | 시연 순서 |
