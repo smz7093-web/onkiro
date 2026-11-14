@@ -201,6 +201,11 @@ export function parseLandCharacteristics(raw: unknown): LandFacts {
     : undefined;
   if (!isObj(root)) throw new Error("브이월드 응답 형식이 다릅니다");
   const rows = asList(root.field);
+  // 키 오류 등은 field 없이 resultCode로 온다 (11/14: INVALID_KEY를 '빈 응답'으로 잘못 읽었다)
+  if (rows.length === 0 && str(root.resultCode))
+    throw new Error(
+      `브이월드 오류 ${str(root.resultCode)}: ${str(root.resultMsg)}`,
+    );
   const empty: LandFacts = {
     landCategory: null,
     zoning: null,

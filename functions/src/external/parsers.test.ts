@@ -158,6 +158,17 @@ describe("건축물대장 표제부", () => {
 });
 
 describe("브이월드 토지특성", () => {
+  it("키 오류(resultCode)는 빈 응답이 아니라 오류로 알린다 (11/14)", () => {
+    expect(() =>
+      parseLandCharacteristics({
+        landCharacteristicss: {
+          resultCode: "INVALID_KEY",
+          resultMsg: "등록되지 않은 인증키입니다.",
+        },
+      }),
+    ).toThrow("브이월드 오류 INVALID_KEY: 등록되지 않은 인증키입니다.");
+  });
+
   it("가장 최근 기준연도의 지목·용도지역·공시지가", () => {
     const r = parseLandCharacteristics({
       landCharacteristicss: {
