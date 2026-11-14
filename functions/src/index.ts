@@ -367,6 +367,7 @@ const DATA_GO_KR_KEY = defineSecret("DATA_GO_KR_KEY");
 const VWORLD_API_KEY = defineSecret("VWORLD_API_KEY");
 const KAKAO_REST_API_KEY = defineSecret("KAKAO_REST_API_KEY");
 
+// 키는 앞뒤 공백·줄바꿈을 지우고 쓴다 (11/14: 키에 공백이 섞이면 브이월드가 INVALID_KEY)
 async function externalDeps(): Promise<Deps> {
   const db = getFirestore();
   return {
@@ -394,7 +395,10 @@ export const searchAddress = onCall(
     }
     return searchAddressService(
       keyword.trim(),
-      { juso: JUSO_API_KEY.value(), kakao: KAKAO_REST_API_KEY.value() },
+      {
+        juso: JUSO_API_KEY.value().trim(),
+        kakao: KAKAO_REST_API_KEY.value().trim(),
+      },
       await externalDeps(),
     );
   },
@@ -425,7 +429,10 @@ export const lookupProperty = onCall(
         lat: lat as number | null,
         lng: lng as number | null,
       },
-      { dataGoKr: DATA_GO_KR_KEY.value(), vworld: VWORLD_API_KEY.value() },
+      {
+        dataGoKr: DATA_GO_KR_KEY.value().trim(),
+        vworld: VWORLD_API_KEY.value().trim(),
+      },
       await externalDeps(),
     );
   },
@@ -657,7 +664,10 @@ export const askPermitGuide = onCall(
     );
     const query = parsePermitQuery(data.query);
     if (!query)
-      throw new HttpsError("invalid-argument", "집 정보 형식이 올바르지 않습니다");
+      throw new HttpsError(
+        "invalid-argument",
+        "집 정보 형식이 올바르지 않습니다",
+      );
     const found = retrieve(await loadPermitKnowledge(), query).map(
       (x) => x.doc,
     );
