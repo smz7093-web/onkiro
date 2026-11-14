@@ -64,7 +64,6 @@ import {
   vertexImageCaller,
 } from "./ai/render.js";
 import { readCache, writeCache } from "./external/cache.js";
-import { DEMO_FIXTURES } from "./external/demo-fixtures.js";
 import { fetchJson } from "./external/http.js";
 import {
   lookupProperty as lookupPropertyService,
@@ -370,14 +369,10 @@ const KAKAO_REST_API_KEY = defineSecret("KAKAO_REST_API_KEY");
 
 async function externalDeps(): Promise<Deps> {
   const db = getFirestore();
-  // 시연 스위치: config/demo.useFixtures (콘솔에서 바꾼다)
-  const demo = await db.collection("config").doc("demo").get();
   return {
     fetchJson: (url, opts) => fetchJson(url, opts),
     readCache: (api, key, days) => readCache(db, api, key, days),
     writeCache: (api, key, value) => writeCache(db, api, key, value),
-    fixtures: DEMO_FIXTURES,
-    useFixtures: demo.get("useFixtures") === true,
     now: () => new Date(),
   };
 }

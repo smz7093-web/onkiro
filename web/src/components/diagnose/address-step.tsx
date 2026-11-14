@@ -9,14 +9,12 @@ import {
 import { saveAddress } from "@/lib/diagnosis/store";
 import { useDiagnosis } from "./diagnosis-context";
 import { btnPrimary, btnSecondary, card, info, input, notice } from "./styles";
-import { Pill } from "../ui";
 
 // 1단계 주소 입력 (SIM-01, task.md 6.2). 검색이 안 되면 직접 입력으로 계속 진행한다 (prd.md 1.2 원칙 4).
 export function AddressStep() {
   const { assessment, property, reload, go } = useDiagnosis();
   const [keyword, setKeyword] = useState("");
   const [candidates, setCandidates] = useState<AddressCandidate[] | null>(null);
-  const [fromDemo, setFromDemo] = useState(false);
   const [searchFailed, setSearchFailed] = useState(false);
   const [picked, setPicked] = useState<AddressCandidate | null>(null);
   const [road, setRoad] = useState(property?.addressRoad ?? "");
@@ -30,7 +28,6 @@ export function AddressStep() {
     try {
       const r = await searchAddress(keyword);
       setCandidates(r.candidates);
-      setFromDemo(r.source === "demoFixture");
     } catch (e) {
       setSearchFailed(true);
       if (!(e instanceof AddressSearchUnavailable)) console.error(e);
@@ -112,9 +109,6 @@ export function AddressStep() {
         <p className="text-base text-muted">
           검색 결과가 없습니다. 아래에 직접 입력해 주세요.
         </p>
-      )}
-      {candidates && candidates.length > 0 && fromDemo && (
-        <Pill tone="warn">시연용 저장 데이터</Pill>
       )}
       {candidates && candidates.length > 0 && (
         <ul className={card}>

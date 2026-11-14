@@ -1,6 +1,5 @@
-// 주소 검색·빈집 정보 조회 (task.md 4.1~4.6). 외부 API → 캐시 → 시연용 저장 데이터 순서를 정한다.
-// - 시연 스위치(config/demo.useFixtures)가 켜져 있으면 저장 데이터가 있는 주소는 외부를 부르지 않는다.
-// - 외부 호출이 실패해도 저장 데이터가 있으면 그것으로 대신한다. 저장 데이터는 출처를 demoFixture로 표시한다.
+// 주소 검색·빈집 정보 조회 (task.md 4.1~4.6). 캐시 → 외부 API 순서로 조회한다.
+// - 시연용 저장 데이터(config/demo 스위치·실패 시 대체)는 11/14 시연이 끝나 뺐다. 실패하면 화면이 직접 입력으로 안내한다.
 // - 출처별(대장·토지·관광)로 따로 실패할 수 있다. 하나가 실패해도 나머지는 돌려준다(화면은 실패한 값만 직접 입력).
 
 import {
@@ -27,8 +26,7 @@ export const ENDPOINTS = {
 // https://를 붙이면 400 Bad Request가 난다(10/14 확인) — 호스트 이름만 보낸다
 export const VWORLD_DOMAIN = "onkiro-web--onkiro-2fe12.asia-east1.hosted.app";
 
-export type Source =
-  "buildingRegistry" | "vworld" | "tourApi" | "juso" | "demoFixture";
+export type Source = "buildingRegistry" | "vworld" | "tourApi" | "juso";
 
 export interface Sourced<T> {
   ok: true;
@@ -41,18 +39,6 @@ export interface Failed {
   error: string;
 }
 export type Outcome<T> = Sourced<T> | Failed;
-
-export interface DemoFixture {
-  // 이 주소로 판단한다: PNU가 같거나, 검색어가 keywords 중 하나를 포함
-  pnu: string;
-  keywords: string[];
-  candidate: AddressCandidate;
-  building: { found: boolean; facts: BuildingFacts };
-  land: LandFacts;
-  tour: TourSpot[];
-  // 실제 저장한 날짜 (화면 '조회 시점'에 그대로 쓴다)
-  savedAt: string;
-}
 
 export interface Keys {
   juso?: string;
@@ -72,8 +58,6 @@ export interface Deps {
     maxAgeDays: number,
   ) => Promise<{ value: T; fetchedAt: string } | null>;
   writeCache: (api: string, key: string, value: unknown) => Promise<void>;
-  fixtures: DemoFixture[];
-  useFixtures: boolean;
   now: () => Date;
 }
 
@@ -94,33 +78,6 @@ const fail = (e: unknown): Failed => ({
   ok: false,
   error: e instanceof Error ? e.message : String(e),
 });
-
-function fixtureFor(
-  fixtures: DemoFixture[],
-  by: { pnu?: string | null; keyword?: string },
-) {
-  return fixtures.find(
-    (f) =>
-      (by.pnu && f.pnu === by.pnu) ||
-      (by.keyword &&
-        f.keywords.some((k) =>
-          containsAddress(by.keyword!.replace(/\s/g, ""), k.replace(/\s/g, "")),
-        )),
-  );
-}
-
-// 검색어에 주소가 들어 있는지. 번지 뒤에 숫자가 더 붙으면 다른 필지다 ('오관리595-1' ≠ '오관리595-10', 10/19)
-function containsAddress(text: string, address: string) {
-  for (
-    let i = text.indexOf(address);
-    i !== -1;
-    i = text.indexOf(address, i + 1)
-  ) {
-    const next = text[i + address.length];
-    if (next === undefined || !/[0-9-]/.test(next)) return true;
-  }
-  return false;
-}
 
 // 캐시 → 외부 호출 → 캐시 저장
 async function cached<T>(
@@ -149,14 +106,6 @@ export async function searchAddress(
   keys: Keys,
   deps: Deps,
 ): Promise<Outcome<AddressCandidate[]>> {
-  const fixture = fixtureFor(deps.fixtures, { keyword });
-  const fromFixture = (): Sourced<AddressCandidate[]> => ({
-    ok: true,
-    value: [fixture!.candidate],
-    source: "demoFixture",
-    fetchedAt: fixture!.savedAt,
-  });
-  if (fixture && deps.useFixtures) return fromFixture();
   try {
     if (!keys.juso) throw new Error("도로명주소 API 키가 없습니다");
     return await cached(
@@ -195,7 +144,7 @@ export async function searchAddress(
       },
     );
   } catch (e) {
-    return fixture ? fromFixture() : fail(e);
+    return fail(e);
   }
 }
 
@@ -223,22 +172,6 @@ export async function lookupProperty(
   keys: Keys,
   deps: Deps,
 ): Promise<PropertyLookup> {
-  const fixture = fixtureFor(deps.fixtures, { pnu: input.pnu });
-  const fx = <T>(value: T): Sourced<T> => ({
-    ok: true,
-    value,
-    source: "demoFixture",
-    fetchedAt: fixture!.savedAt,
-  });
-  if (fixture && deps.useFixtures) {
-    return {
-      building: fx(fixture.building),
-      land: fx(fixture.land),
-      tour: fx(fixture.tour),
-    };
-  }
-  const orFixture = <T>(e: unknown, pick: (f: DemoFixture) => T): Outcome<T> =>
-    fixture ? fx(pick(fixture)) : fail(e);
   const pnu = input.pnu;
 
   const building = (async (): Promise<PropertyLookup["building"]> => {
@@ -261,7 +194,7 @@ export async function lookupProperty(
           ),
       );
     } catch (e) {
-      return orFixture(e, (f) => f.building);
+      return fail(e);
     }
   })();
 
@@ -289,7 +222,7 @@ export async function lookupProperty(
         (v) => Object.values(v).every((x) => x === null),
       );
     } catch (e) {
-      return orFixture(e, (f) => f.land);
+      return fail(e);
     }
   })();
 
@@ -329,7 +262,7 @@ export async function lookupProperty(
           ),
       );
     } catch (e) {
-      return orFixture(e, (f) => f.tour);
+      return fail(e);
     }
   })();
 
