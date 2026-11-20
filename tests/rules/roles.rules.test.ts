@@ -7,6 +7,7 @@ import {
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
+import { MFA } from "./mfa";
 
 // 역할별 권한표 점검 (task.md 10.1, prd.md 4절, 10/19). 팀원 4명의 권장 권한(lib/members/form.ts PRESETS)으로
 // 사진 권한(all/assigned/none)·상담 권한(all/assigned/none)과, 아직 기능이 없는 권한 키가 다른 쓰기를 열지 않는지 본다.
@@ -60,6 +61,7 @@ const seokwon = () =>
   env
     .authenticatedContext("seokwon", {
       role: "staff",
+      ...MFA,
       photoAccess: "all",
       consultAccess: "assigned",
       perms: ["canEditPrices", "canReviewDiagnosis", "canReviewCosts"],
@@ -69,6 +71,7 @@ const wonil = () =>
   env
     .authenticatedContext("wonil", {
       role: "staff",
+      ...MFA,
       photoAccess: "assigned",
       consultAccess: "all",
       perms: ["canEditAssumptions", "canEnterBranchRecords"],
@@ -78,6 +81,7 @@ const haesoon = () =>
   env
     .authenticatedContext("haesoon", {
       role: "staff",
+      ...MFA,
       photoAccess: "none",
       consultAccess: "none",
       perms: ["canEditContent"],
@@ -87,6 +91,7 @@ const approver = () =>
   env
     .authenticatedContext("x", {
       role: "staff",
+      ...MFA,
       photoAccess: "none",
       consultAccess: "none",
       perms: ["canApproveVersions"],

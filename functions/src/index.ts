@@ -8,7 +8,12 @@ import {
   onDocumentDeleted,
   onDocumentWritten,
 } from "firebase-functions/v2/firestore";
-import { HttpsError, onCall } from "firebase-functions/v2/https";
+import {
+  type CallableOptions,
+  type CallableRequest,
+  HttpsError,
+  onCall as baseOnCall,
+} from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions";
 import {
@@ -17,6 +22,7 @@ import {
   permissionsFromDoc,
   sameClaims,
 } from "./permissions.js";
+import { effectiveToken, hasStaffMfa, isStaffRole } from "./mfa.js";
 import {
   canHandle,
   canManageAll,
@@ -82,6 +88,32 @@ initializeApp();
 
 // 모든 함수는 서울 리전에서 실행한다 (prd.md 10절 데이터 위치).
 setGlobalOptions({ region: "asia-northeast3", maxInstances: 10 });
+
+// 모든 callable은 이 감싸개를 쓴다: 2단계 인증 없이 로그인한 운영팀 토큰은 일반 회원으로 바꿔 넘긴다
+// (task.md 11.3, 보안 규칙 role()과 같은 규칙). 2단계 인증 등록 준비(prepareStaffMfa)만 원래 토큰을 본다.
+function gate<T>(request: CallableRequest<T>): CallableRequest<T> {
+  if (request.auth)
+    request.auth.token = effectiveToken(
+      request.auth.token as unknown as Record<string, unknown>,
+    ) as unknown as typeof request.auth.token;
+  return request;
+}
+
+function onCall<T = unknown, R = unknown>(
+  handler: (request: CallableRequest<T>) => R,
+): ReturnType<typeof baseOnCall<T, R>>;
+function onCall<T = unknown, R = unknown>(
+  opts: CallableOptions<T>,
+  handler: (request: CallableRequest<T>) => R,
+): ReturnType<typeof baseOnCall<T, R>>;
+function onCall<T, R>(
+  a: CallableOptions<T> | ((request: CallableRequest<T>) => R),
+  b?: (request: CallableRequest<T>) => R,
+) {
+  if (typeof a === "function")
+    return baseOnCall<T, R>((request) => a(gate(request)));
+  return baseOnCall<T, R>(a, (request) => b!(gate(request)));
+}
 
 // 배포·에뮬레이터 연결 확인용. 외부 API 프록시(Phase 4)가 생기면 지운다.
 export const ping = onCall(() => ({ ok: true, at: new Date().toISOString() }));
@@ -171,6 +203,92 @@ export const setUserPermissions = onCall(async (request) => {
     });
   });
   return { ok: true };
+});
+
+// 2단계 인증(TOTP) 등록 준비 (task.md 11.3). Firebase는 이메일이 인증된 계정에만 2단계 인증을 붙인다.
+// 카카오 로그인(OIDC)은 이메일 인증 여부를 넘겨주지 않아 emailVerified가 false로 남으므로,
+// 운영팀 계정에 한해 카카오가 준 이메일을 인증된 것으로 표시한다(카카오계정 이메일은 카카오가 인증한 주소).
+// 2단계 인증 전 토큰으로 부르는 함수라 감싸개(gate)를 거치지 않고 원래 역할을 본다.
+export const prepareStaffMfa = baseOnCall(async (request) => {
+  if (!request.auth)
+    throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+  const token = request.auth.token as unknown as Record<string, unknown>;
+  if (!isStaffRole(token))
+    throw new HttpsError(
+      "permission-denied",
+      "운영팀 계정만 2단계 인증을 등록합니다",
+    );
+  const auth = getAuth();
+  const user = await auth.getUser(request.auth.uid);
+  if (!user.email)
+    throw new HttpsError(
+      "failed-precondition",
+      "카카오 계정 이메일이 없어 2단계 인증을 등록할 수 없습니다. 로그아웃 후 다시 로그인하면서 카카오 이메일 제공에 동의해 주세요",
+    );
+  const changed = !user.emailVerified;
+  if (changed) {
+    await auth.updateUser(user.uid, { emailVerified: true });
+    logger.info("prepareStaffMfa: 이메일 인증 표시", { uid: user.uid });
+  }
+  return {
+    ok: true,
+    changed,
+    enrolled: (user.multiFactor?.enrolledFactors.length ?? 0) > 0,
+    mfaSession: hasStaffMfa(token),
+  };
+});
+
+// 운영팀 계정의 2단계 인증 등록 여부 (관리자 회원·권한 화면, task.md 11.3)
+export const staffMfaStatus = onCall(async (request) => {
+  if (request.auth?.token.role !== "admin")
+    throw new HttpsError("permission-denied", "관리자만 볼 수 있습니다");
+  const uids = (request.data as Record<string, unknown> | null)?.uids;
+  if (
+    !Array.isArray(uids) ||
+    uids.length > 100 ||
+    !uids.every((u) => typeof u === "string" && u.length > 0)
+  )
+    throw new HttpsError(
+      "invalid-argument",
+      "uid 목록(100개 이하)이 필요합니다",
+    );
+  const result = await getAuth().getUsers(
+    (uids as string[]).map((uid) => ({ uid })),
+  );
+  const status: Record<string, boolean> = {};
+  for (const u of result.users)
+    status[u.uid] = (u.multiFactor?.enrolledFactors.length ?? 0) > 0;
+  return { status };
+});
+
+// 인증 앱 분실 시 2단계 인증 초기화 (관리자, prd.md ADM-05). 그 사람은 다음 관리 화면 진입 때 다시 등록한다.
+export const resetStaffMfa = onCall(async (request) => {
+  if (request.auth?.token.role !== "admin")
+    throw new HttpsError(
+      "permission-denied",
+      "관리자만 2단계 인증을 초기화할 수 있습니다",
+    );
+  const uid = (request.data as Record<string, unknown> | null)?.uid;
+  if (typeof uid !== "string" || uid.length === 0)
+    throw new HttpsError("invalid-argument", "uid가 필요합니다");
+  const auth = getAuth();
+  const user = await auth.getUser(uid);
+  const removed = user.multiFactor?.enrolledFactors.length ?? 0;
+  if (removed > 0) {
+    await auth.updateUser(uid, { multiFactor: { enrolledFactors: null } });
+    await getFirestore()
+      .collection("auditLogs")
+      .doc()
+      .create({
+        path: `users/${uid}`,
+        actorUid: request.auth.uid,
+        action: "resetStaffMfa",
+        before: { mfaFactors: removed },
+        after: { mfaFactors: 0 },
+        at: FieldValue.serverTimestamp(),
+      });
+  }
+  return { ok: true, removed };
 });
 
 // 단가 DB·가정값 초안을 적용한다 (ADM-01·02, task.md 5.1~5.3).

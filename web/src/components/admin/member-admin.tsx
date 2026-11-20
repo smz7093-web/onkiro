@@ -11,7 +11,13 @@ import {
   sameForm,
   type PermissionForm,
 } from "@/lib/members/form";
-import { listMembers, savePermissions, type Member } from "@/lib/members/store";
+import {
+  listMembers,
+  loadMfaStatus,
+  resetMfa,
+  savePermissions,
+  type Member,
+} from "@/lib/members/store";
 import { dateTime } from "./format";
 import { useStaff } from "./staff-context";
 import { buttonClass } from "../ui";
@@ -32,6 +38,8 @@ export function MemberAdmin() {
   const [filter, setFilter] = useState<Filter>("staff");
   const [editing, setEditing] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
+  // 운영팀 2단계 인증 등록 여부 (task.md 11.3). 못 불러오면 null로 두고 칸에 '–'
+  const [mfa, setMfa] = useState<Record<string, boolean> | null>(null);
   const isAdmin = permissions.role === "admin";
 
   useEffect(() => {
@@ -44,6 +52,21 @@ export function MemberAdmin() {
       cancelled = true;
     };
   }, [isAdmin, reload]);
+
+  const staffUids = (members ?? [])
+    .filter((m) => m.form.role !== "member")
+    .map((m) => m.uid)
+    .join(",");
+  useEffect(() => {
+    if (!staffUids) return;
+    let cancelled = false;
+    loadMfaStatus(staffUids.split(","))
+      .then((s) => !cancelled && setMfa(s))
+      .catch(() => !cancelled && setMfa(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [staffUids, reload]);
 
   if (!isAdmin) {
     return (
@@ -121,6 +144,7 @@ export function MemberAdmin() {
                 <th className="py-2 pr-4">진단 사진</th>
                 <th className="py-2 pr-4">상담</th>
                 <th className="py-2 pr-4">권한</th>
+                <th className="py-2 pr-4">2단계 인증</th>
                 <th className="py-2 pr-4">가입</th>
                 <th className="py-2" />
               </tr>
@@ -160,6 +184,17 @@ export function MemberAdmin() {
                           : flags.map((k) => FLAG_LABEL[k]).join(", ") || "–"}
                       </td>
                       <td className="py-2 pr-4 text-sm">
+                        {eff.role === "member" ? (
+                          "–"
+                        ) : (
+                          <MfaCell
+                            enrolled={mfa?.[m.uid]}
+                            uid={m.uid}
+                            onReset={() => setReload((n) => n + 1)}
+                          />
+                        )}
+                      </td>
+                      <td className="py-2 pr-4 text-sm">
                         {dateTime(m.createdAt)}
                       </td>
                       <td className="py-2 text-right">
@@ -176,7 +211,7 @@ export function MemberAdmin() {
                     </tr>
                     {editing === m.uid && (
                       <tr className="border-b border-line">
-                        <td colSpan={7} className="bg-surface-2 p-4">
+                        <td colSpan={8} className="bg-surface-2 p-4">
                           <PermissionEditor
                             member={m}
                             isSelf={m.uid === user.uid}
@@ -194,6 +229,77 @@ export function MemberAdmin() {
             </tbody>
           </table>
         </div>
+      )}
+    </div>
+  );
+}
+
+// 2단계 인증 칸: 등록 여부 + 인증 앱 분실 시 초기화 (한 번 더 눌러 확인)
+function MfaCell({
+  enrolled,
+  uid,
+  onReset,
+}: {
+  enrolled: boolean | undefined;
+  uid: string;
+  onReset: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (enrolled === undefined) return <span className="text-muted">–</span>;
+  if (!enrolled) return <span className="text-warn">미등록</span>;
+
+  async function reset() {
+    setBusy(true);
+    setError(null);
+    try {
+      await resetMfa(uid);
+      setConfirming(false);
+      onReset();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <span className="text-good">등록</span>
+      {confirming ? (
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={reset}
+            disabled={busy}
+            className={buttonClass({ variant: "danger", size: "sm" })}
+          >
+            {busy ? "초기화 중…" : "초기화 확인"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            className={buttonClass({ size: "sm" })}
+          >
+            취소
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="text-sm text-accent underline"
+          title="인증 앱을 잃어버렸을 때. 그 사람은 다음 관리 화면 진입 때 다시 등록합니다"
+        >
+          초기화
+        </button>
+      )}
+      {error && (
+        <span role="alert" className="break-all text-xs text-crit">
+          {error}
+        </span>
       )}
     </div>
   );

@@ -17,6 +17,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
+import { MFA } from "./mfa";
 
 // firestore.rules 테스트 (task.md 2.4, 10.1). `npm run test:rules`로 에뮬레이터 위에서 실행한다.
 let env: RulesTestEnvironment;
@@ -63,11 +64,12 @@ beforeEach(async () => {
 const member = () => env.authenticatedContext("alice").firestore();
 const newcomer = () => env.authenticatedContext("bob").firestore();
 const admin = () =>
-  env.authenticatedContext("pm", { role: "admin" }).firestore();
+  env.authenticatedContext("pm", { role: "admin", ...MFA }).firestore();
 const staff = () =>
   env
     .authenticatedContext("juyeon", {
       role: "staff",
+      ...MFA,
       photoAccess: "none",
       consultAccess: "all",
       perms: ["canEnterBranchRecords"],
@@ -492,6 +494,7 @@ describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => 
     env
       .authenticatedContext("wonil", {
         role: "staff",
+        ...MFA,
         perms: ["canEditAssumptions"],
       })
       .firestore();
@@ -499,6 +502,7 @@ describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => 
     env
       .authenticatedContext("haesoon", {
         role: "staff",
+        ...MFA,
         perms: ["canEditContent"],
       })
       .firestore();
@@ -684,6 +688,7 @@ describe("branches", () => {
     const editor = env
       .authenticatedContext("haesoon", {
         role: "staff",
+        ...MFA,
         perms: ["canEditContent"],
       })
       .firestore();
@@ -720,6 +725,7 @@ describe("reservations·bookingCalendars (예약 신청, STY-06)", () => {
     env
       .authenticatedContext("haesoon", {
         role: "staff",
+        ...MFA,
         perms: ["canEditContent"],
       })
       .firestore();
@@ -821,6 +827,7 @@ describe("permitKnowledge (AI 인허가 안내 자료, 10/26)", () => {
     env
       .authenticatedContext("wonil", {
         role: "staff",
+        ...MFA,
         perms: ["canEditAssumptions"],
       })
       .firestore();

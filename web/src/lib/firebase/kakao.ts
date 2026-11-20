@@ -21,7 +21,7 @@ function kakaoProvider() {
   return provider;
 }
 
-function fromCredential(result: UserCredential) {
+export function fromCredential(result: UserCredential) {
   // 카카오 ID 토큰은 이름을 name이 아니라 nickname 클레임에 담아 보내므로 직접 꺼낸다.
   const nickname = getAdditionalUserInfo(result)?.profile?.["nickname"];
   return {

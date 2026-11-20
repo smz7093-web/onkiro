@@ -18,6 +18,7 @@ import {
   where,
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
+import { MFA } from "./mfa";
 
 // 단가 DB·가정값 버전 규칙 (task.md 5.3). `npm run test:rules`로 실행한다.
 let env: RulesTestEnvironment;
@@ -55,6 +56,7 @@ const seokwon = () =>
   env
     .authenticatedContext("seokwon", {
       role: "staff",
+      ...MFA,
       photoAccess: "all",
       consultAccess: "assigned",
       perms: ["canEditPrices", "canReviewDiagnosis", "canReviewCosts"],
@@ -64,6 +66,7 @@ const wonil = () =>
   env
     .authenticatedContext("wonil", {
       role: "staff",
+      ...MFA,
       photoAccess: "assigned",
       consultAccess: "assigned",
       perms: ["canEditAssumptions"],

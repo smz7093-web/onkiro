@@ -22,7 +22,8 @@ export const DEMO_ACCOUNTS = [
     email: "pm@onkiro.test",
     name: "PM(시연)",
     role: "admin",
-    claims: { role: "admin" },
+    // 에뮬레이터에는 인증 앱 2단계 인증이 없어 시드 관리자만 예외 클레임을 단다 (보안 규칙 staffMfaOk, task.md 11.3)
+    claims: { role: "admin", devMfaBypass: true },
   },
   { email: "member@onkiro.test", name: "김빈집", role: "member", claims: {} },
 ] as const;

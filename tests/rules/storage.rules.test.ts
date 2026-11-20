@@ -7,6 +7,7 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
+import { MFA } from "./mfa";
 
 // storage.rules 테스트 (task.md 10.1, 10/19). 진단 사진·AI 가상 이미지·숙소 사진·기본 거부.
 // 담당 건(assigned) 사진 권한은 Firestore 진단 문서의 assigneeUid를 읽으므로(교차 서비스 규칙) Firestore도 함께 띄운다.
@@ -54,12 +55,14 @@ const ctx = {
   anonymous: () => env.unauthenticatedContext().storage(),
   owner: () => env.authenticatedContext("alice").storage(),
   other: () => env.authenticatedContext("bob").storage(),
-  admin: () => env.authenticatedContext("pm", { role: "admin" }).storage(),
+  admin: () =>
+    env.authenticatedContext("pm", { role: "admin", ...MFA }).storage(),
   // 석원: 사진 전체
   seokwon: () =>
     env
       .authenticatedContext("seokwon", {
         role: "staff",
+        ...MFA,
         photoAccess: "all",
         consultAccess: "assigned",
         perms: ["canEditPrices", "canReviewDiagnosis", "canReviewCosts"],
@@ -70,6 +73,7 @@ const ctx = {
     env
       .authenticatedContext("wonil", {
         role: "staff",
+        ...MFA,
         photoAccess: "assigned",
         consultAccess: "all",
         perms: ["canEditAssumptions", "canEnterBranchRecords"],
@@ -80,6 +84,7 @@ const ctx = {
     env
       .authenticatedContext("haesoon", {
         role: "staff",
+        ...MFA,
         photoAccess: "none",
         consultAccess: "none",
         perms: ["canEditContent"],

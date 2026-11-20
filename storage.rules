@@ -9,8 +9,20 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // 운영팀 역할은 2단계 인증(TOTP)으로 로그인한 토큰에서만 인정한다 (task.md 11.3, prd.md 2절).
+    // 2단계 인증 없이 들어온 staff·admin 토큰은 일반 회원으로 본다.
+    // 로컬 에뮬레이터 시드 계정만 예외: 비밀번호 로그인 + devMfaBypass 클레임 (운영에는 비밀번호 로그인이 없다)
+    function staffMfaOk() {
+      return request.auth.token.get('firebase', {}).get('sign_in_second_factor', '') == 'totp'
+        || (request.auth.token.get('firebase', {}).get('sign_in_provider', '') == 'password'
+          && request.auth.token.get('devMfaBypass', false) == true);
+    }
+
+    // 클레임이 없으면 일반 회원
     function role() {
-      return signedIn() ? request.auth.token.get('role', 'member') : 'anonymous';
+      return !signedIn() ? 'anonymous'
+        : (request.auth.token.get('role', 'member') in ['staff', 'admin'] && !staffMfaOk()) ? 'member'
+        : request.auth.token.get('role', 'member');
     }
 
     function isAdmin() {

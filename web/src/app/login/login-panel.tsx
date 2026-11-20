@@ -1,13 +1,21 @@
 "use client";
 
 import { FirebaseError } from "firebase/app";
+import type { MultiFactorResolver } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { TotpCodeForm } from "@/components/auth/totp-code-form";
+import {
+  mfaErrorMessage,
+  resolveTotpSignIn,
+  totpResolverFrom,
+} from "@/lib/auth/mfa";
 import { useAuthUser } from "@/lib/auth/use-auth-user";
 import { usePermissions } from "@/lib/auth/use-permissions";
 import { loadConsentStatus } from "@/lib/consent/store";
 import {
   completeKakaoRedirect,
+  fromCredential,
   signInWithKakao,
   signOutUser,
 } from "@/lib/firebase/kakao";
@@ -21,6 +29,8 @@ export function LoginPanel({ next }: { next: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [consentDone, setConsentDone] = useState(false);
+  // 2단계 인증을 등록한 운영팀 계정: 카카오 로그인 뒤 인증 앱 숫자를 받는다 (task.md 11.3)
+  const [resolver, setResolver] = useState<MultiFactorResolver | null>(null);
 
   // 리다이렉트 로그인에서 돌아왔으면 카카오 닉네임으로 회원 문서를 채운다
   useEffect(() => {
@@ -28,7 +38,10 @@ export function LoginPanel({ next }: { next: string | null }) {
     completeKakaoRedirect()
       .then((r) => (r ? ensureMemberDoc(r.user, r.nickname) : undefined))
       .catch((e) => {
-        if (!cancelled)
+        if (cancelled) return;
+        const r = totpResolverFrom(e);
+        if (r) setResolver(r);
+        else
           setError(
             e instanceof FirebaseError ? `${e.code}: ${e.message}` : String(e),
           );
@@ -73,9 +86,27 @@ export function LoginPanel({ next }: { next: string | null }) {
       // 리다이렉트 방식이면 카카오로 이동하고, 돌아온 뒤 위 효과가 마무리한다
       if (result) await ensureMemberDoc(result.user, result.nickname);
     } catch (e) {
-      setError(
-        e instanceof FirebaseError ? `${e.code}: ${e.message}` : String(e),
-      );
+      const r = totpResolverFrom(e);
+      if (r) setResolver(r);
+      else
+        setError(
+          e instanceof FirebaseError ? `${e.code}: ${e.message}` : String(e),
+        );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleTotp(code: string) {
+    if (!resolver) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const r = fromCredential(await resolveTotpSignIn(resolver, code));
+      setResolver(null);
+      await ensureMemberDoc(r.user, r.nickname);
+    } catch (e) {
+      setError(mfaErrorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -128,6 +159,32 @@ export function LoginPanel({ next }: { next: string | null }) {
       </div>
     );
   }
+
+  if (resolver)
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-base">
+          운영팀 계정은 2단계 인증을 거칩니다. 휴대폰 인증 앱(온기로)에 보이는
+          6자리 숫자를 넣어 주세요.
+        </p>
+        <TotpCodeForm busy={busy} onSubmit={handleTotp} />
+        {error && (
+          <p role="alert" className="break-all text-sm text-red-700">
+            {error}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setResolver(null);
+            setError(null);
+          }}
+          className="self-start text-sm text-zinc-600 underline"
+        >
+          처음으로
+        </button>
+      </div>
+    );
 
   return (
     <div className="flex flex-col gap-4">

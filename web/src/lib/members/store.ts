@@ -50,3 +50,26 @@ export async function savePermissions(uid: string, form: PermissionForm) {
   >(functions, "setUserPermissions");
   await call(toCallableInput(uid, form));
 }
+
+// 운영팀의 2단계 인증 등록 여부 (task.md 11.3). uid → 등록했으면 true
+export async function loadMfaStatus(
+  uids: string[],
+): Promise<Record<string, boolean>> {
+  if (uids.length === 0) return {};
+  const call = httpsCallable<
+    { uids: string[] },
+    { status: Record<string, boolean> }
+  >(functions, "staffMfaStatus");
+  const { data } = await call({ uids: uids.slice(0, 100) });
+  return data.status;
+}
+
+// 인증 앱 분실 시 2단계 인증 초기화 (관리자). 지운 인증 수단 수를 돌려준다
+export async function resetMfa(uid: string): Promise<number> {
+  const call = httpsCallable<{ uid: string }, { removed: number }>(
+    functions,
+    "resetStaffMfa",
+  );
+  const { data } = await call({ uid });
+  return data.removed;
+}
