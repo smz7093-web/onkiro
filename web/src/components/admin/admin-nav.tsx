@@ -38,6 +38,13 @@ const MENU: Item[] = [
   },
   {
     group: "운영",
+    href: "/admin/photo-requests",
+    label: "사진 삭제 요청",
+    d: ["D8"],
+    show: (p) => p.role === "admin",
+  },
+  {
+    group: "운영",
     href: "/admin/feedback",
     label: "사용자 피드백",
     show: () => true,

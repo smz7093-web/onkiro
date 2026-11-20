@@ -1,13 +1,15 @@
 import { createHash } from "node:crypto";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { FieldValue, getFirestore, Timestamp } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { setGlobalOptions } from "firebase-functions/v2";
 import {
+  onDocumentCreated,
   onDocumentDeleted,
   onDocumentWritten,
 } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import {
   type CallableOptions,
   type CallableRequest,
@@ -23,6 +25,7 @@ import {
   sameClaims,
 } from "./permissions.js";
 import { effectiveToken, hasStaffMfa, isStaffRole } from "./mfa.js";
+import { isExpired, photoRetention, type PhotoRetention } from "./retention.js";
 import {
   canHandle,
   canManageAll,
@@ -982,6 +985,240 @@ export const deleteAssessmentAdmin = onCall(
     });
     logger.info("관리자 진단 삭제", { aid, consults: consultIds.length });
     return { ok: true, deletedConsults: consultIds.length };
+  },
+);
+
+// ── 진단 사진 보관 기간·삭제 (task.md 11.2) ─────────────────────────────────
+// 사진 파일·기록, AI 가상 이미지, 사진에서 나온 AI 결과(사진 분석·가상 이미지 기록)를 지운다.
+// 진단·스냅샷·견적·AI 등급 설명·인허가 안내는 남긴다(사진이 아님).
+
+const tsDate = (v: unknown) =>
+  v instanceof Timestamp ? v.toDate() : v instanceof Date ? v : null;
+
+async function hasConsultFor(
+  aSnap: FirebaseFirestore.DocumentSnapshot,
+): Promise<boolean> {
+  if (aSnap.get("lastConsultId")) return true;
+  const cs = await getFirestore()
+    .collection("consultations")
+    .where("assessmentId", "==", aSnap.id)
+    .limit(1)
+    .get();
+  return !cs.empty;
+}
+
+async function retentionOf(
+  aSnap: FirebaseFirestore.DocumentSnapshot,
+): Promise<PhotoRetention | null> {
+  return photoRetention({
+    lastUsedAt: tsDate(aSnap.get("lastUsedAt")),
+    updatedAt: tsDate(aSnap.get("updatedAt")),
+    createdAt: tsDate(aSnap.get("createdAt")),
+    hasConsult: await hasConsultFor(aSnap),
+  });
+}
+
+async function purgeAssessmentPhotos(
+  aSnap: FirebaseFirestore.DocumentSnapshot,
+): Promise<number> {
+  const db = getFirestore();
+  const owner = aSnap.get("uid") as string;
+  const photos = await aSnap.ref.collection("photos").get();
+  if (typeof owner === "string" && owner) {
+    const bucket = getStorage().bucket();
+    const base = `users/${owner}/assessments/${aSnap.id}`;
+    await bucket.deleteFiles({ prefix: `${base}/photos/` });
+    await bucket.deleteFiles({ prefix: `${base}/renders/` });
+  }
+  const ai = await aSnap.ref.collection("ai").get();
+  const batch = db.batch();
+  for (const p of photos.docs) batch.delete(p.ref);
+  for (const a of ai.docs)
+    if (a.id === "photos" || a.id.startsWith("render-")) batch.delete(a.ref);
+  batch.update(aSnap.ref, { photosPurgedAt: FieldValue.serverTimestamp() });
+  await batch.commit();
+  return photos.size;
+}
+
+// 사진 기록의 삭제 예정일(deleteAfter)을 보관 규칙에 맞춘다 (바뀐 것만 쓴다)
+async function syncDeleteAfter(
+  photos: FirebaseFirestore.QuerySnapshot,
+  r: PhotoRetention | null,
+) {
+  const want = r?.kind === "expires" ? Timestamp.fromDate(r.at) : null;
+  const batch = getFirestore().batch();
+  let n = 0;
+  for (const p of photos.docs) {
+    const cur = p.get("deleteAfter");
+    const same =
+      want === null
+        ? cur == null
+        : cur instanceof Timestamp && cur.isEqual(want);
+    if (!same) {
+      batch.update(p.ref, { deleteAfter: want });
+      n++;
+    }
+  }
+  if (n > 0) await batch.commit();
+  return n;
+}
+
+// 매일 새벽 4시(한국)에 보관 기간이 지난 진단 사진을 지운다
+export const purgeExpiredPhotos = onSchedule(
+  {
+    schedule: "0 4 * * *",
+    timeZone: "Asia/Seoul",
+    timeoutSeconds: 540,
+    memory: "512MiB",
+  },
+  async () => {
+    const db = getFirestore();
+    const now = new Date();
+    let checked = 0;
+    let purged = 0;
+    let photosDeleted = 0;
+    let dated = 0;
+    const all = await db
+      .collection("assessments")
+      .select("uid", "lastUsedAt", "updatedAt", "createdAt", "lastConsultId")
+      .get();
+    for (const aSnap of all.docs) {
+      const photos = await aSnap.ref.collection("photos").get();
+      if (photos.empty) continue;
+      checked++;
+      const r = await retentionOf(aSnap);
+      if (isExpired(r, now)) {
+        photosDeleted += await purgeAssessmentPhotos(aSnap);
+        purged++;
+        await db.collection("auditLogs").add({
+          path: aSnap.ref.path,
+          actorUid: "system",
+          action: "purgeExpiredPhotos",
+          before: {
+            photos: photos.size,
+            basis: r?.kind === "expires" ? r.basis.toISOString() : null,
+          },
+          after: { photos: 0 },
+          at: FieldValue.serverTimestamp(),
+        });
+      } else {
+        dated += await syncDeleteAfter(photos, r);
+      }
+    }
+    logger.info("진단 사진 보관 기간 점검", {
+      checked,
+      purged,
+      photosDeleted,
+      dated,
+    });
+  },
+);
+
+// 관리 화면 '사진 삭제 요청' (task.md 11.2, 처리방침: 삭제 요청 10일 내 처리).
+// action=inspect: 진단 코드(DX-XXXXXXXX)나 id로 찾아 사진 수·보관 기한을 보여 준다.
+// action=delete: 사진만 지우고 처리 기록(auditLogs, 사유 포함)을 남긴다.
+export const assessmentPhotosAdmin = onCall(
+  { timeoutSeconds: 120 },
+  async (request) => {
+    if (request.auth?.token.role !== "admin")
+      throw new HttpsError("permission-denied", "관리자만 쓸 수 있습니다");
+    const data = (request.data ?? {}) as Record<string, unknown>;
+    const raw = typeof data.code === "string" ? data.code.trim() : "";
+    const db = getFirestore();
+    let aSnap: FirebaseFirestore.DocumentSnapshot | null = null;
+    if (/^[A-Za-z0-9]{9,40}$/.test(raw)) {
+      const s = await db.collection("assessments").doc(raw).get();
+      if (s.exists) aSnap = s;
+    }
+    if (!aSnap) {
+      const code = raw.toUpperCase().replace(/^DX-?/, "");
+      if (!/^[A-Z0-9]{8}$/.test(code))
+        throw new HttpsError(
+          "invalid-argument",
+          "진단 코드(DX-로 시작하는 8자리)를 넣어 주세요",
+        );
+      // 코드는 id 앞 8자리를 대문자로 바꾼 것이라 색인으로 찾을 수 없다 → 목록에서 찾는다(베타 규모)
+      const all = await db.collection("assessments").select().get();
+      const hits = all.docs.filter(
+        (d) => d.id.slice(0, 8).toUpperCase() === code,
+      );
+      if (hits.length > 1)
+        throw new HttpsError(
+          "failed-precondition",
+          "같은 코드의 진단이 여러 개입니다. 진단 id 전체를 넣어 주세요",
+        );
+      if (hits.length === 1) aSnap = await hits[0].ref.get();
+    }
+    if (!aSnap) throw new HttpsError("not-found", "진단을 찾을 수 없습니다");
+
+    const photos = await aSnap.ref.collection("photos").get();
+    const r = await retentionOf(aSnap);
+    const info = {
+      assessmentId: aSnap.id,
+      address: (aSnap.get("address") as string | null) ?? null,
+      photos: photos.size,
+      retention:
+        r?.kind === "expires"
+          ? { kind: "expires", at: r.at.toISOString() }
+          : r?.kind === "consult"
+            ? { kind: "consult" }
+            : null,
+      purgedAt: tsDate(aSnap.get("photosPurgedAt"))?.toISOString() ?? null,
+    };
+    if (data.action !== "delete") return { ...info, deleted: 0 };
+
+    const reason = typeof data.reason === "string" ? data.reason.trim() : "";
+    if (reason.length < 2 || reason.length > 500)
+      throw new HttpsError(
+        "invalid-argument",
+        "처리 사유를 적어 주세요 (예: 회원 전화 요청 11/20)",
+      );
+    const deleted = await purgeAssessmentPhotos(aSnap);
+    await db.collection("auditLogs").add({
+      path: aSnap.ref.path,
+      actorUid: request.auth.uid,
+      action: "deleteAssessmentPhotos",
+      before: { photos: photos.size },
+      after: { photos: 0 },
+      reason,
+      at: FieldValue.serverTimestamp(),
+    });
+    logger.info("관리자 사진 삭제", { aid: aSnap.id, deleted });
+    return {
+      ...info,
+      photos: 0,
+      deleted,
+      purgedAt: new Date().toISOString(),
+    };
+  },
+);
+
+// 사진 모델 개선 동의(photoModel)를 철회하면 그 회원의 기존 사진도 모델 개선에 쓰지 않게 표시한다 (task.md 11.2)
+export const applyPhotoModelWithdrawal = onDocumentCreated(
+  "users/{uid}/consents/{consentId}",
+  async (event) => {
+    const c = event.data;
+    if (!c || c.get("type") !== "photoModel" || c.get("agreed") !== false)
+      return;
+    const uid = event.params.uid;
+    const db = getFirestore();
+    const mine = await db
+      .collection("assessments")
+      .where("uid", "==", uid)
+      .get();
+    let n = 0;
+    for (const a of mine.docs) {
+      const ps = await a.ref
+        .collection("photos")
+        .where("consentModelUse", "==", true)
+        .get();
+      if (ps.empty) continue;
+      const batch = db.batch();
+      for (const p of ps.docs) batch.update(p.ref, { consentModelUse: false });
+      await batch.commit();
+      n += ps.size;
+    }
+    logger.info("사진 모델 개선 동의 철회 반영", { uid, photos: n });
   },
 );
 

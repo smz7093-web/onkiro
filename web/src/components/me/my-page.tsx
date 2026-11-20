@@ -9,6 +9,7 @@ import {
 } from "@/lib/consult/status";
 import { listMyConsultations, type Consultation } from "@/lib/consult/store";
 import { MyReservations } from "./my-reservations";
+import { PhotoRetentionLine } from "./photo-retention-line";
 import {
   deleteAssessmentAsAdmin,
   diagnosisCode,
@@ -165,6 +166,12 @@ export function MyPage() {
                     {manwon(a.latestSummary.baseNet)}
                   </span>
                 )}
+                <PhotoRetentionLine
+                  assessment={a}
+                  hasConsult={
+                    consults?.some((c) => c.assessmentId === a.id) ?? false
+                  }
+                />
                 <div className="flex flex-wrap gap-2">
                   {a.latestSnapshotId && (
                     <Link

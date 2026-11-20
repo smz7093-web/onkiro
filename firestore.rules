@@ -205,6 +205,11 @@ service cloud.firestore {
         && statusChangeAllowed()
         && snapshotLinkValid(aid)
         && request.resource.data.updatedAt == request.time;
+      // 마지막 이용 기록 (사진 보관 기간 기준, task.md 11.2): 본인이 진단을 열 때 이 칸만 지금 시각으로 바꾼다
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastUsedAt'])
+        && request.resource.data.lastUsedAt == request.time;
       // 완료 전(draft, 스냅샷·상담 연결 없음) 진단만 본인이 지운다. 견적이 나온 진단은 개인정보 삭제 요청으로
       allow delete: if signedIn()
         && resource.data.uid == request.auth.uid

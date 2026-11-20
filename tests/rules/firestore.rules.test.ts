@@ -260,6 +260,27 @@ describe("assessments·properties (진단)", () => {
     );
   });
 
+  it("마지막 이용 시각(lastUsedAt)은 본인이 지금 시각으로만 바꾼다 (11.2 사진 보관 기간)", async () => {
+    const ref = doc(member(), "assessments/a1");
+    await assertSucceeds(updateDoc(ref, { lastUsedAt: serverTimestamp() }));
+    // 과거 시각으로 바꿔 보관 기간을 줄이거나 늘릴 수 없다
+    await assertFails(
+      updateDoc(ref, { lastUsedAt: new Date("2030-01-01T00:00:00Z") }),
+    );
+    // 다른 칸과 함께 바꾸는 것은 이 규칙으로 열리지 않는다
+    await assertFails(
+      updateDoc(ref, { lastUsedAt: serverTimestamp(), status: "saved" }),
+    );
+    // 남의 진단은 안 된다
+    await assertFails(
+      updateDoc(doc(newcomer(), "assessments/a1"), {
+        lastUsedAt: serverTimestamp(),
+      }),
+    );
+    // 사진 삭제 기록(photosPurgedAt)은 서버만 쓴다
+    await assertFails(updateDoc(ref, { photosPurgedAt: serverTimestamp() }));
+  });
+
   it("빈집 문서를 만들며 진단에 연결할 수 있고, 남의 빈집은 연결하지 못한다", async () => {
     const db = member();
     const batch = writeBatch(db);

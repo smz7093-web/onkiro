@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import type { ChecklistAnswers } from "../engine/checklist";
 import type { RevenueInput } from "../engine/types";
-import { db, functions } from "../firebase/client";
+import { auth, db, functions } from "../firebase/client";
 import type { EstimateOptions } from "./compute";
 import { initialFacts, type Facts } from "./facts";
 import type { Nearby } from "./lookup";
@@ -44,6 +44,10 @@ export interface Assessment {
   latestSummary: LatestSummary | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+  // 사진 보관 기간 (task.md 11.2): 본인이 마지막으로 연 시각, 상담 연결, 사진 자동 삭제 시각
+  lastUsedAt: Date | null;
+  lastConsultId: string | null;
+  photosPurgedAt: Date | null;
 }
 
 export interface LatestSummary {
@@ -91,7 +95,22 @@ function toAssessment(id: string, d: Record<string, unknown>): Assessment {
     latestSummary: (d.latestSummary as LatestSummary) ?? null,
     createdAt: toDate(d.createdAt),
     updatedAt: toDate(d.updatedAt),
+    lastUsedAt: toDate(d.lastUsedAt),
+    lastConsultId: (d.lastConsultId as string) ?? null,
+    photosPurgedAt: toDate(d.photosPurgedAt),
   };
+}
+
+// 본인이 진단을 열면 마지막 이용 시각을 남긴다 (사진 보관 기간 '마지막 이용 후 1년', task.md 11.2).
+// 쓰기를 줄이려고 12시간에 한 번만. 실패해도 화면은 그대로 둔다(다음에 열 때 다시 남긴다).
+const TOUCH_INTERVAL_MS = 12 * 60 * 60 * 1000;
+export function touchAssessmentUse(a: Assessment) {
+  if (auth.currentUser?.uid !== a.uid) return;
+  if (a.lastUsedAt && Date.now() - a.lastUsedAt.getTime() < TOUCH_INTERVAL_MS)
+    return;
+  updateDoc(doc(db, "assessments", a.id), {
+    lastUsedAt: serverTimestamp(),
+  }).catch(() => {});
 }
 
 export async function createAssessment(uid: string): Promise<string> {
@@ -129,6 +148,7 @@ export async function loadDiagnosis(
   const snap = await getDoc(doc(db, "assessments", id));
   if (!snap.exists()) return null;
   const assessment = toAssessment(snap.id, snap.data());
+  touchAssessmentUse(assessment);
   if (!assessment.propertyId) return { assessment, property: null };
   const p = await getDoc(doc(db, "properties", assessment.propertyId));
   if (!p.exists()) return { assessment, property: null };
@@ -270,7 +290,10 @@ export async function deleteAssessment(a: Assessment): Promise<void> {
 // 진단 문서만 읽는다 (리포트·상담 화면. 운영팀은 빈집 문서를 읽지 못한다)
 export async function getAssessment(id: string): Promise<Assessment | null> {
   const snap = await getDoc(doc(db, "assessments", id));
-  return snap.exists() ? toAssessment(snap.id, snap.data()) : null;
+  if (!snap.exists()) return null;
+  const a = toAssessment(snap.id, snap.data());
+  touchAssessmentUse(a);
+  return a;
 }
 
 // 화면·리포트에 보이는 진단 번호 (예: DX-3F2A9C1E)

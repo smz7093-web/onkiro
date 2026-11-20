@@ -30,9 +30,9 @@ import {
 import { usePhotoGuides } from "@/lib/site-content/store";
 
 // 3단계 사진 업로드 (SIM-06, task.md 6.4). 사진 없이도 다음으로 갈 수 있다(누락 부위만큼 불확실도 가산).
-// 사진 정책(D8) 확정 전까지는 운영팀 계정에만 업로드를 연다 (시연은 팀 계정으로 진행, task.md 11.2).
+// 11/20 보관 기간 자동 삭제(purgeExpiredPhotos)·삭제 요청 처리가 생겨 모든 회원에게 연다 (task.md 11.2).
 export function PhotosStep() {
-  const { user, isTeam, assessment, reload, go } = useDiagnosis();
+  const { user, assessment, reload, go } = useDiagnosis();
   const guides = usePhotoGuides();
   const [photos, setPhotos] = useState<DiagnosisPhoto[] | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -41,7 +41,6 @@ export function PhotosStep() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!isTeam) return;
     let cancelled = false;
     listPhotos(assessment.id)
       .then((list) => !cancelled && setPhotos(list))
@@ -49,7 +48,7 @@ export function PhotosStep() {
     return () => {
       cancelled = true;
     };
-  }, [isTeam, assessment.id]);
+  }, [assessment.id]);
 
   // 미리보기 주소는 사진마다 한 번만 받는다
   const requested = useRef(new Set<string>());
@@ -141,20 +140,6 @@ export function PhotosStep() {
     </div>
   );
 
-  if (!isTeam) {
-    return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold">사진 업로드</h1>
-        <p className={info}>
-          사진 업로드는 사진 보관 정책이 확정된 뒤에 열립니다. 지금은 건너뛰고
-          진행해 주세요. 사진이 없는 부위는 견적에서 &lsquo;현장 확인
-          필요&rsquo;로 표시되고 비용 범위가 넓어집니다.
-        </p>
-        {footer("")}
-      </div>
-    );
-  }
-
   const parts = (photos ?? []).map((p) => p.part);
   const doneParts = REQUIRED_PHOTO_PARTS.length - missingPhotoParts(parts);
 
@@ -244,8 +229,10 @@ export function PhotosStep() {
       <p className={info}>
         사진은 권한 있는 담당자가 견적을 검수할 때만 봅니다. 위치정보(EXIF)는
         올리기 전에 지우고, 상담을 신청하지 않으면 마지막 이용 후 1년 뒤
-        삭제합니다. 사진만으로 구조 안전을 판단하지 않습니다. 사람 얼굴·차량
-        번호판·문패가 찍히지 않게 해 주세요.
+        자동으로 삭제합니다(마이페이지에서 보관 기한 확인). 더 일찍 지우고
+        싶으면 여기서 바로 지우거나, 견적이 나온 뒤에는 &lsquo;의견
+        보내기&rsquo;나 상담 전화로 삭제를 요청해 주세요. 사진만으로 구조 안전을
+        판단하지 않습니다. 사람 얼굴·차량 번호판·문패가 찍히지 않게 해 주세요.
       </p>
       <p className={notice}>
         사진이 없는 부위는 견적에서 &lsquo;현장 확인 필요&rsquo;로 표시되고 비용
