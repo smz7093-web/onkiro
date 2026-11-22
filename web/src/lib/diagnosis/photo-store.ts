@@ -20,7 +20,7 @@ import { preparePhoto } from "./photo-file";
 import type { PhotoPartId } from "./photos";
 
 // 진단 사진 (SIM-06, task.md 6.4). 기록은 assessments/{id}/photos, 파일은 Storage users/{uid}/assessments/{id}/photos.
-// 보관 기간(task.md 11.2): deleteAfter는 서버(purgeExpiredPhotos)가 매일 맞추고, 기한이 지나면 지운다.
+// 보관 기간(task.md 11.2): deleteAfter는 서버(purgeExpiredPhotos)가 매일 맞추고, 기한이 지나면 관리자에게 알려 관리자가 지운다(11/22).
 
 export interface DiagnosisPhoto {
   id: string;

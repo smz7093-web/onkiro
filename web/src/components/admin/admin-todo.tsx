@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { buildTodo, splitDrafts, type TodoItem } from "@/lib/admin/todo";
 import { listBranches } from "@/lib/branches/store";
+import { countExpiredPhotos } from "@/lib/admin/photo-requests";
 import { countReceived } from "@/lib/consult/store";
 import { countRequested } from "@/lib/reservations/store";
 import { can } from "@/lib/permissions";
@@ -14,7 +15,7 @@ import { Card, Pill } from "../ui";
 import { DTag } from "./d-tag";
 import { useStaff } from "./staff-context";
 
-// 관리자 첫 화면 '시연 전 준비 현황': 끝난 일·남은 일을 한 카드에 (UX기준 21·22). 남은 일을 위로 올린다
+// 관리자 첫 화면 '할 일·준비 현황': 끝난 일·남은 일을 한 카드에 (UX기준 21·22). 남은 일을 위로 올린다
 export function AdminTodo() {
   const { permissions } = useStaff();
   const [items, setItems] = useState<TodoItem[] | null>(null);
@@ -23,6 +24,7 @@ export function AdminTodo() {
     permissions.role === "admin" || permissions.consultAccess === "all";
 
   const seesReservations = can(permissions, "canEditContent");
+  const isAdmin = permissions.role === "admin";
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +38,7 @@ export function AdminTodo() {
       seesReservations
         ? countRequested().catch(() => null)
         : Promise.resolve(null),
+      isAdmin ? countExpiredPhotos().catch(() => null) : Promise.resolve(null),
     ])
       .then(
         ([
@@ -46,6 +49,7 @@ export function AdminTodo() {
           branches,
           received,
           requested,
+          expiredPhotos,
         ]) => {
           if (cancelled) return;
           const active = prices.find((v) => v.status === "active");
@@ -77,6 +81,8 @@ export function AdminTodo() {
               branchCount: branches.length,
               receivedConsults: received,
               requestedReservations: requested,
+              expiredPhotos,
+              today: isAdmin ? new Date() : null,
             }),
           );
         },
@@ -85,7 +91,7 @@ export function AdminTodo() {
     return () => {
       cancelled = true;
     };
-  }, [seesConsults, seesReservations]);
+  }, [seesConsults, seesReservations, isAdmin]);
 
   if (failed)
     return (
@@ -102,7 +108,7 @@ export function AdminTodo() {
   return (
     <Card>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-semibold">시연 전 준비 현황</h2>
+        <h2 className="text-lg font-semibold">할 일·준비 현황</h2>
         <span className="text-base text-ink-2">
           {items.length}개 중 <b className="text-ink">{done}개</b> 완료
         </span>

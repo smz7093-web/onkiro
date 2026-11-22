@@ -118,3 +118,40 @@ describe("적용 대기 초안 vs 남겨진 초안 (10/19)", () => {
     expect(a.text).toContain("v0.4, v0.5은 지워도 됩니다");
   });
 });
+
+describe("관리자 알림: 보관 기한 지난 사진·결제 계정 (11/22)", () => {
+  const base = {
+    activePrice: null,
+    priceDrafts: [],
+    assumptionDrafts: [],
+    permitsSaved: true,
+    photoGuidesSaved: true,
+    branchCount: 2,
+    receivedConsults: null,
+  };
+  it("기한 지난 사진이 있으면 할 일, 권한이 없으면(null) 항목이 없다", () => {
+    const on = buildTodo({ ...base, expiredPhotos: 3 });
+    const item = on.find((i) => i.id === "expiredPhotos")!;
+    expect(item.done).toBe(false);
+    expect(item.text).toContain("3건");
+    expect(item.href).toBe("/admin/photo-requests");
+    expect(
+      buildTodo({ ...base, expiredPhotos: 0 }).find(
+        (i) => i.id === "expiredPhotos",
+      )!.done,
+    ).toBe(true);
+    expect(
+      buildTodo({ ...base, expiredPhotos: null }).some(
+        (i) => i.id === "expiredPhotos",
+      ),
+    ).toBe(false);
+  });
+  it("결제 계정 알림은 체험판 종료 1주일 전(12/30)부터 나온다", () => {
+    const has = (today: Date | null) =>
+      buildTodo({ ...base, today }).some((i) => i.id === "billing");
+    expect(has(new Date("2026-12-29T23:59:00+09:00"))).toBe(false);
+    expect(has(new Date("2026-12-30T00:00:00+09:00"))).toBe(true);
+    expect(has(new Date("2027-01-10T09:00:00+09:00"))).toBe(true);
+    expect(has(null)).toBe(false);
+  });
+});

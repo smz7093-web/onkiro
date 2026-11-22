@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthUser } from "@/lib/auth/use-auth-user";
 import { usePermissions } from "@/lib/auth/use-permissions";
+import { countExpiredPhotos } from "@/lib/admin/photo-requests";
 import { countReceived } from "@/lib/consult/store";
 import { countRequested } from "@/lib/reservations/store";
 import { can, type Permissions } from "@/lib/permissions";
@@ -114,6 +115,8 @@ export function AdminNav() {
   const pathname = usePathname();
   const [received, setReceived] = useState(0);
   const [requested, setRequested] = useState(0);
+  const [expiredPhotos, setExpiredPhotos] = useState(0);
+  const isAdmin = permissions?.role === "admin";
   const watchesReservations =
     !!permissions && can(permissions, "canEditContent");
   const watchesAll =
@@ -142,6 +145,19 @@ export function AdminNav() {
       cancelled = true;
     };
   }, [watchesReservations, pathname]);
+
+  // 보관 기한이 지난 진단 사진 (task.md 11.2, 11/22부터 자동 삭제 대신 관리자에게 알림)
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    countExpiredPhotos().then(
+      (n) => !cancelled && setExpiredPhotos(n),
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, pathname]);
 
   if (!permissions || permissions.role === "member") return null;
   const visible = MENU.filter((m) => m.show(permissions));
@@ -176,6 +192,14 @@ export function AdminNav() {
                     aria-label={`새 접수 ${received}건`}
                   >
                     {received}
+                  </span>
+                )}
+                {m.href === "/admin/photo-requests" && expiredPhotos > 0 && (
+                  <span
+                    className="rounded-full bg-crit px-2 text-xs font-semibold text-white"
+                    aria-label={`보관 기한 지난 사진 ${expiredPhotos}건`}
+                  >
+                    {expiredPhotos}
                   </span>
                 )}
                 {m.href === "/admin/reservations" && requested > 0 && (

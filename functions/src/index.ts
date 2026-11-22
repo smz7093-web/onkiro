@@ -1035,7 +1035,10 @@ async function purgeAssessmentPhotos(
   for (const p of photos.docs) batch.delete(p.ref);
   for (const a of ai.docs)
     if (a.id === "photos" || a.id.startsWith("render-")) batch.delete(a.ref);
-  batch.update(aSnap.ref, { photosPurgedAt: FieldValue.serverTimestamp() });
+  batch.update(aSnap.ref, {
+    photosPurgedAt: FieldValue.serverTimestamp(),
+    photosExpiredAt: null,
+  });
   await batch.commit();
   return photos.size;
 }
@@ -1063,7 +1066,10 @@ async function syncDeleteAfter(
   return n;
 }
 
-// 매일 새벽 4시(한국)에 보관 기간이 지난 진단 사진을 지운다
+// 매일 새벽 4시(한국)에 진단 사진 보관 기간을 점검한다.
+// 11/22 PM 결정: 자동으로 지우지 않는다. 기한이 지난 진단에 photosExpiredAt(기한)을 표시해
+// 관리자에게 알리고(관리 메뉴 배지·첫 화면 할 일·'사진 삭제 요청' 화면 목록), 관리자가 확인 후 지운다.
+// 회원이 다시 열어 기한이 늘었거나 사진이 지워졌으면 표시를 거둔다. (함수 이름은 배포 이력 때문에 그대로 둔다)
 export const purgeExpiredPhotos = onSchedule(
   {
     schedule: "0 4 * * *",
@@ -1075,42 +1081,37 @@ export const purgeExpiredPhotos = onSchedule(
     const db = getFirestore();
     const now = new Date();
     let checked = 0;
-    let purged = 0;
-    let photosDeleted = 0;
+    let expired = 0;
     let dated = 0;
     const all = await db
       .collection("assessments")
-      .select("uid", "lastUsedAt", "updatedAt", "createdAt", "lastConsultId")
+      .select(
+        "uid",
+        "lastUsedAt",
+        "updatedAt",
+        "createdAt",
+        "lastConsultId",
+        "photosExpiredAt",
+      )
       .get();
     for (const aSnap of all.docs) {
       const photos = await aSnap.ref.collection("photos").get();
-      if (photos.empty) continue;
-      checked++;
-      const r = await retentionOf(aSnap);
-      if (isExpired(r, now)) {
-        photosDeleted += await purgeAssessmentPhotos(aSnap);
-        purged++;
-        await db.collection("auditLogs").add({
-          path: aSnap.ref.path,
-          actorUid: "system",
-          action: "purgeExpiredPhotos",
-          before: {
-            photos: photos.size,
-            basis: r?.kind === "expires" ? r.basis.toISOString() : null,
-          },
-          after: { photos: 0 },
-          at: FieldValue.serverTimestamp(),
-        });
-      } else {
-        dated += await syncDeleteAfter(photos, r);
-      }
+      const r = photos.empty ? null : await retentionOf(aSnap);
+      if (!photos.empty) checked++;
+      const want =
+        r && isExpired(r, now) && r.kind === "expires"
+          ? Timestamp.fromDate(r.at)
+          : null;
+      if (want) expired++;
+      const cur = aSnap.get("photosExpiredAt");
+      const same =
+        want === null
+          ? cur == null
+          : cur instanceof Timestamp && cur.isEqual(want);
+      if (!same) await aSnap.ref.update({ photosExpiredAt: want });
+      if (!photos.empty) dated += await syncDeleteAfter(photos, r);
     }
-    logger.info("진단 사진 보관 기간 점검", {
-      checked,
-      purged,
-      photosDeleted,
-      dated,
-    });
+    logger.info("진단 사진 보관 기간 점검", { checked, expired, dated });
   },
 );
 

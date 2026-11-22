@@ -3,6 +3,7 @@ import {
   getDocs,
   limit,
   query,
+  orderBy,
   Timestamp,
   where,
 } from "firebase/firestore";
@@ -43,7 +44,7 @@ export interface PhotoLog {
   at: Date | null;
 }
 
-// 최근 사진 삭제 기록 (관리자 요청 처리 + 자동 삭제). 색인 없이 쓰려고 정렬은 화면에서 한다
+// 최근 사진 삭제 기록 (관리자 요청·기한 경과 처리 + 11/22 전 자동 삭제). 색인 없이 쓰려고 정렬은 화면에서 한다
 export async function listPhotoLogs(): Promise<PhotoLog[]> {
   const snap = await getDocs(
     query(
@@ -67,4 +68,44 @@ export async function listPhotoLogs(): Promise<PhotoLog[]> {
     })
     .sort((a, b) => (b.at?.getTime() ?? 0) - (a.at?.getTime() ?? 0))
     .slice(0, 30);
+}
+
+// 보관 기한이 지나 삭제를 기다리는 진단 (서버 purgeExpiredPhotos가 매일 04:00 photosExpiredAt을 표시, 11/22부터 자동 삭제 안 함)
+export interface ExpiredPhotoItem {
+  assessmentId: string;
+  address: string | null;
+  expiredAt: Date | null;
+}
+
+export async function listExpiredPhotos(): Promise<ExpiredPhotoItem[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, "assessments"),
+      where("photosExpiredAt", "!=", null),
+      orderBy("photosExpiredAt"),
+      limit(200),
+    ),
+  );
+  return snap.docs.map((d) => {
+    const x = d.data();
+    return {
+      assessmentId: d.id,
+      address: typeof x.address === "string" ? x.address : null,
+      expiredAt:
+        x.photosExpiredAt instanceof Timestamp
+          ? x.photosExpiredAt.toDate()
+          : null,
+    };
+  });
+}
+
+export async function countExpiredPhotos(): Promise<number> {
+  const snap = await getDocs(
+    query(
+      collection(db, "assessments"),
+      where("photosExpiredAt", "!=", null),
+      limit(200),
+    ),
+  );
+  return snap.size;
 }

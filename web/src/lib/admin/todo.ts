@@ -100,7 +100,15 @@ export interface TodoState {
   receivedConsults: number | null;
   // 확인 중인 예약 신청 (STY-06). 볼 권한이 없으면 null
   requestedReservations?: number | null;
+  // 보관 기한이 지나 관리자 삭제를 기다리는 진단 사진 (task.md 11.2, 관리자만). 볼 권한이 없으면 null
+  expiredPhotos?: number | null;
+  // 결제 계정 알림 기준 날짜 (관리자만). 없으면 알리지 않는다
+  today?: Date | null;
 }
+
+// Google Cloud 무료 체험판(2026-10-08 가입, 90일) 종료 무렵. 1주일 전부터 관리자 첫 화면에 알린다 (11/22 PM 요청)
+export const TRIAL_ENDS = new Date("2027-01-06T00:00:00+09:00");
+export const BILLING_NOTICE_FROM = new Date("2026-12-30T00:00:00+09:00");
 
 export interface TodoItem {
   id: string;
@@ -157,6 +165,25 @@ export function buildTodo(s: TodoState): TodoItem[] {
           : `예약 신청 ${s.requestedReservations}건 — 날짜 확인 후 확정 또는 예약 불가`,
       href: "/admin/reservations",
       d: [],
+    });
+  if (s.today && s.today >= BILLING_NOTICE_FROM)
+    items.push({
+      id: "billing",
+      done: false,
+      text: `Google Cloud 무료 체험판이 ${TRIAL_ENDS.getMonth() + 1}/${TRIAL_ENDS.getDate()} 무렵 끝납니다 — 결제 계정을 유료로 업그레이드하지 않으면 서버 함수·사진 저장소가 멈춥니다 (콘솔 > 결제)`,
+      href: "https://console.cloud.google.com/billing",
+      d: [],
+    });
+  if (s.expiredPhotos != null)
+    items.push({
+      id: "expiredPhotos",
+      done: s.expiredPhotos === 0,
+      text:
+        s.expiredPhotos === 0
+          ? "보관 기한이 지난 진단 사진 없음"
+          : `보관 기한이 지난 진단 사진 ${s.expiredPhotos}건 — 확인 후 삭제`,
+      href: "/admin/photo-requests",
+      d: ["D8"],
     });
   items.push(
     {
