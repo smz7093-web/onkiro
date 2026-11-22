@@ -39,6 +39,12 @@ const MENU: Item[] = [
   },
   {
     group: "운영",
+    href: "/admin/reviews",
+    label: "진단 검수",
+    show: (p) => can(p, "canReviewDiagnosis"),
+  },
+  {
+    group: "운영",
     href: "/admin/photo-requests",
     label: "사진 삭제 요청",
     d: ["D8"],

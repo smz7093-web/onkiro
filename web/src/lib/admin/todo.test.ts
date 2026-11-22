@@ -155,3 +155,27 @@ describe("관리자 알림: 보관 기한 지난 사진·결제 계정 (11/22)",
     expect(has(null)).toBe(false);
   });
 });
+
+describe("관리자 알림: 검수 대기 진단 (11.4)", () => {
+  it("검수 대기가 있으면 할 일, 권한이 없으면 항목이 없다", () => {
+    const base = {
+      activePrice: null,
+      priceDrafts: [],
+      assumptionDrafts: [],
+      permitsSaved: true,
+      photoGuidesSaved: true,
+      branchCount: 2,
+      receivedConsults: null,
+    };
+    const item = buildTodo({ ...base, pendingReviews: 2 }).find(
+      (i) => i.id === "reviews",
+    )!;
+    expect(item.done).toBe(false);
+    expect(item.href).toBe("/admin/reviews");
+    expect(
+      buildTodo({ ...base, pendingReviews: null }).some(
+        (i) => i.id === "reviews",
+      ),
+    ).toBe(false);
+  });
+});

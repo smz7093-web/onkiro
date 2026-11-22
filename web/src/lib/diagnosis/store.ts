@@ -12,7 +12,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import type { ChecklistAnswers } from "../engine/checklist";
-import type { RevenueInput } from "../engine/types";
+import type { ConditionGrade, ProcessId, RevenueInput } from "../engine/types";
 import { auth, db, functions } from "../firebase/client";
 import type { EstimateOptions } from "./compute";
 import { initialFacts, type Facts } from "./facts";
@@ -48,6 +48,38 @@ export interface Assessment {
   lastUsedAt: Date | null;
   lastConsultId: string | null;
   photosPurgedAt: Date | null;
+  // 담당자 검수 (ADM-03, task.md 11.4). 서버 함수 reviewDiagnosis만 쓴다
+  review: AssessmentReview | null;
+}
+
+export interface ReviewChangeRecord {
+  process: ProcessId;
+  fromGrade: ConditionGrade | null;
+  toGrade: ConditionGrade | null;
+  fromCost: number;
+  toCost: number;
+}
+
+export interface AssessmentReview {
+  // corrected: 보정해 새 스냅샷을 만듦 / confirmed: 자동 견적 그대로 확인
+  status: "corrected" | "confirmed";
+  snapshotId: string | null;
+  baseSnapshotId: string;
+  // 검수할 때의 입력 지문. 회원이 그 뒤 입력을 바꾸면 latestInputsKey와 달라진다
+  baseInputsKey: string | null;
+  summary: LatestSummary | null;
+  note: string;
+  changes: ReviewChangeRecord[];
+  reviewedAt: Date | null;
+}
+
+// 검수 결과가 지금 입력 기준인지 (회원이 검수 뒤 진단을 고치면 false)
+export function reviewIsCurrent(a: Assessment) {
+  return (
+    !!a.review &&
+    a.review.baseSnapshotId === a.latestSnapshotId &&
+    a.review.baseInputsKey === a.latestInputsKey
+  );
 }
 
 export interface LatestSummary {
@@ -79,7 +111,28 @@ export interface Property extends AddressInput {
 
 const toDate = (v: unknown) => (v instanceof Timestamp ? v.toDate() : null);
 
-function toAssessment(id: string, d: Record<string, unknown>): Assessment {
+function toReview(v: unknown): AssessmentReview | null {
+  if (!v || typeof v !== "object") return null;
+  const r = v as Record<string, unknown>;
+  if (r.status !== "corrected" && r.status !== "confirmed") return null;
+  return {
+    status: r.status,
+    snapshotId: (r.snapshotId as string) ?? null,
+    baseSnapshotId: String(r.baseSnapshotId ?? ""),
+    baseInputsKey: (r.baseInputsKey as string) ?? null,
+    summary: (r.summary as LatestSummary) ?? null,
+    note: typeof r.note === "string" ? r.note : "",
+    changes: Array.isArray(r.changes)
+      ? (r.changes as ReviewChangeRecord[])
+      : [],
+    reviewedAt: toDate(r.reviewedAt),
+  };
+}
+
+export function toAssessment(
+  id: string,
+  d: Record<string, unknown>,
+): Assessment {
   return {
     id,
     uid: d.uid as string,
@@ -98,6 +151,7 @@ function toAssessment(id: string, d: Record<string, unknown>): Assessment {
     lastUsedAt: toDate(d.lastUsedAt),
     lastConsultId: (d.lastConsultId as string) ?? null,
     photosPurgedAt: toDate(d.photosPurgedAt),
+    review: toReview(d.review),
   };
 }
 

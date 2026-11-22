@@ -19,7 +19,7 @@ const LABEL: Record<Action, string> = {
   save: "저장",
 };
 
-const REASON: Record<Action, SnapshotReason> = {
+const REASON: Record<Action, Exclude<SnapshotReason, "review">> = {
   inspection: "consult",
   turnkey: "consult",
   pdf: "pdf",

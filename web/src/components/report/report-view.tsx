@@ -132,6 +132,43 @@ export function ReportView({
         </dl>
       </header>
 
+      {s.reason === "review" && s.review && (
+        <section className="report-section flex flex-col gap-2 rounded-lg border-2 border-accent p-4">
+          <h2 className="text-lg font-semibold">담당자 검수 반영 견적</h2>
+          <p className="text-base">
+            온기로 담당자가 사진·체크리스트를 보고 아래 공정을 고친 견적입니다.
+            원래 자동 견적은{" "}
+            {s.parentSnapshotId ? (
+              <Link
+                href={`/report/${a.id}/${s.parentSnapshotId}`}
+                className="underline print:no-underline"
+              >
+                따로 보관
+              </Link>
+            ) : (
+              "따로 보관"
+            )}
+            합니다. 현장 확인 전 추정이라 실제 공사비와 다를 수 있습니다.
+          </p>
+          <ul className="list-disc pl-5 text-base">
+            {s.review.changes.map((c) => (
+              <li key={c.process}>
+                {PROCESS_LABELS[c.process]}:{" "}
+                {c.fromGrade !== c.toGrade &&
+                  `${c.fromGrade ? GRADE_LABEL[c.fromGrade] : "–"} → ${c.toGrade ? GRADE_LABEL[c.toGrade] : "–"}, `}
+                {manwon(c.fromCost)} → {manwon(c.toCost)}
+              </li>
+            ))}
+          </ul>
+          {s.review.note && (
+            <p className="text-base">
+              <span className="text-ink-2">사유: </span>
+              {s.review.note}
+            </p>
+          )}
+        </section>
+      )}
+
       {risks.length > 0 && (
         <section className="report-section rounded-lg border-2 border-crit p-4">
           <h2 className="text-lg font-semibold text-crit">전문가 진단 필수</h2>

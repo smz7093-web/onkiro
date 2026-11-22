@@ -6,6 +6,7 @@ import { buildTodo, splitDrafts, type TodoItem } from "@/lib/admin/todo";
 import { listBranches } from "@/lib/branches/store";
 import { countExpiredPhotos } from "@/lib/admin/photo-requests";
 import { countReceived } from "@/lib/consult/store";
+import { countPendingReviews, listReviewQueue } from "@/lib/review/store";
 import { countRequested } from "@/lib/reservations/store";
 import { can } from "@/lib/permissions";
 import type { AssumptionSet, PriceTable } from "@/lib/engine/types";
@@ -25,6 +26,7 @@ export function AdminTodo() {
 
   const seesReservations = can(permissions, "canEditContent");
   const isAdmin = permissions.role === "admin";
+  const reviews = can(permissions, "canReviewDiagnosis");
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +41,11 @@ export function AdminTodo() {
         ? countRequested().catch(() => null)
         : Promise.resolve(null),
       isAdmin ? countExpiredPhotos().catch(() => null) : Promise.resolve(null),
+      reviews
+        ? listReviewQueue()
+            .then(countPendingReviews)
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
       .then(
         ([
@@ -50,6 +57,7 @@ export function AdminTodo() {
           received,
           requested,
           expiredPhotos,
+          pendingReviews,
         ]) => {
           if (cancelled) return;
           const active = prices.find((v) => v.status === "active");
@@ -82,6 +90,7 @@ export function AdminTodo() {
               receivedConsults: received,
               requestedReservations: requested,
               expiredPhotos,
+              pendingReviews,
               today: isAdmin ? new Date() : null,
             }),
           );
@@ -91,7 +100,7 @@ export function AdminTodo() {
     return () => {
       cancelled = true;
     };
-  }, [seesConsults, seesReservations, isAdmin]);
+  }, [seesConsults, seesReservations, isAdmin, reviews]);
 
   if (failed)
     return (

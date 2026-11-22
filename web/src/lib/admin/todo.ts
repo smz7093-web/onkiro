@@ -102,6 +102,8 @@ export interface TodoState {
   requestedReservations?: number | null;
   // 보관 기한이 지나 관리자 삭제를 기다리는 진단 사진 (task.md 11.2, 관리자만). 볼 권한이 없으면 null
   expiredPhotos?: number | null;
+  // 검수 대기 진단 (ADM-03, 진단 보정 권한자만). 볼 권한이 없으면 null
+  pendingReviews?: number | null;
   // 결제 계정 알림 기준 날짜 (관리자만). 없으면 알리지 않는다
   today?: Date | null;
 }
@@ -172,6 +174,17 @@ export function buildTodo(s: TodoState): TodoItem[] {
       done: false,
       text: `Google Cloud 무료 체험판이 ${TRIAL_ENDS.getMonth() + 1}/${TRIAL_ENDS.getDate()} 무렵 끝납니다 — 결제 계정을 유료로 업그레이드하지 않으면 서버 함수·사진 저장소가 멈춥니다 (콘솔 > 결제)`,
       href: "https://console.cloud.google.com/billing",
+      d: [],
+    });
+  if (s.pendingReviews != null)
+    items.push({
+      id: "reviews",
+      done: s.pendingReviews === 0,
+      text:
+        s.pendingReviews === 0
+          ? "검수 대기 진단 없음"
+          : `검수 대기 진단 ${s.pendingReviews}건 — 사진·체크리스트 확인 후 보정 또는 확인`,
+      href: "/admin/reviews",
       d: [],
     });
   if (s.expiredPhotos != null)

@@ -26,6 +26,7 @@ import {
 } from "./permissions.js";
 import { effectiveToken, hasStaffMfa, isStaffRole } from "./mfa.js";
 import { isExpired, photoRetention, type PhotoRetention } from "./retention.js";
+import { canReview, parseReview, ReviewInputError } from "./review.js";
 import {
   canHandle,
   canManageAll,
@@ -1114,6 +1115,111 @@ export const purgeExpiredPhotos = onSchedule(
     logger.info("진단 사진 보관 기간 점검", { checked, expired, dated });
   },
 );
+
+// 진단 검수 (ADM-03, task.md 11.4). 진단 보정 권한자가 공정별 판정·금액을 고친 결과를 새 스냅샷(reason=review,
+// parentSnapshotId=원래 스냅샷)으로 저장한다. 원래 스냅샷은 그대로 둔다. '자동 견적 그대로 확인'은 스냅샷 없이 검수 기록만 남긴다.
+// 회원도 결과를 본다(11/22 PM 결정): 진단 문서 review 칸 → 마이페이지·리포트.
+export const reviewDiagnosis = onCall(async (request) => {
+  if (!request.auth || !canReview(request.auth.token))
+    throw new HttpsError("permission-denied", "진단 보정 권한이 없습니다");
+  let input;
+  try {
+    input = parseReview(request.data);
+  } catch (e) {
+    if (e instanceof ReviewInputError)
+      throw new HttpsError("invalid-argument", e.message);
+    throw e;
+  }
+  const db = getFirestore();
+  const aRef = db.collection("assessments").doc(input.assessmentId);
+  const uid = request.auth.uid;
+  const result = await db.runTransaction(async (tx) => {
+    const aSnap = await tx.get(aRef);
+    if (!aSnap.exists)
+      throw new HttpsError("not-found", "진단을 찾을 수 없습니다");
+    if (aSnap.get("latestSnapshotId") !== input.baseSnapshotId)
+      throw new HttpsError(
+        "failed-precondition",
+        "회원이 그사이 진단을 고쳤습니다. 화면을 새로 고쳐 최신 견적으로 다시 검수해 주세요",
+      );
+    const baseRef = aRef.collection("snapshots").doc(input.baseSnapshotId);
+    const base = await tx.get(baseRef);
+    if (!base.exists)
+      throw new HttpsError("not-found", "기준 스냅샷을 찾을 수 없습니다");
+    const before = (aSnap.get("review") as Record<string, unknown>) ?? null;
+    const baseResult = base.get("result") as Record<string, unknown>;
+    let snapshotId: string | null = null;
+    let summary = aSnap.get("latestSummary") ?? null;
+    if (input.action === "correct") {
+      const inputs = base.get("inputs") as Record<string, unknown>;
+      const ei = (inputs.estimateInput ?? {}) as Record<string, unknown>;
+      const sRef = aRef.collection("snapshots").doc();
+      snapshotId = sRef.id;
+      const est = input.estimate!;
+      const scen = input.scenarios as Record<string, { net: number }>;
+      tx.set(sRef, {
+        inputs: {
+          ...inputs,
+          estimateInput: { ...ei, conditions: input.conditions },
+        },
+        options: base.get("options") ?? null,
+        result: {
+          estimate: est,
+          checklist: baseResult?.checklist ?? null,
+          scenarios: input.scenarios,
+        },
+        priceVersion: base.get("priceVersion"),
+        assumptionVersion: base.get("assumptionVersion"),
+        formulaVersion: base.get("formulaVersion"),
+        inputsKey: base.get("inputsKey") ?? null,
+        reason: "review",
+        parentSnapshotId: base.id,
+        review: { note: input.note, changes: input.changes },
+        createdBy: uid,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      summary = {
+        total: est.total,
+        rangeLow: est.rangeLow,
+        rangeHigh: est.rangeHigh,
+        baseNet: scen.base.net,
+      };
+    }
+    const review = {
+      status: input.action === "correct" ? "corrected" : "confirmed",
+      snapshotId,
+      baseSnapshotId: base.id,
+      baseInputsKey: aSnap.get("latestInputsKey") ?? null,
+      summary,
+      note: input.note,
+      changes: input.changes ?? [],
+      reviewerUid: uid,
+      reviewedAt: FieldValue.serverTimestamp(),
+    };
+    tx.update(aRef, { review });
+    tx.set(db.collection("auditLogs").doc(), {
+      path: aRef.path,
+      actorUid: uid,
+      action: "reviewDiagnosis",
+      before: before
+        ? {
+            status: before.status ?? null,
+            snapshotId: before.snapshotId ?? null,
+          }
+        : null,
+      after: {
+        status: review.status,
+        snapshotId,
+        total: summary?.total ?? null,
+      },
+      reason: input.note || null,
+      at: FieldValue.serverTimestamp(),
+    });
+    return { status: review.status, snapshotId };
+  });
+  logger.info("진단 검수", { aid: input.assessmentId, ...result });
+  return result;
+});
 
 // 관리 화면 '사진 삭제 요청' (task.md 11.2, 처리방침: 삭제 요청 10일 내 처리).
 // action=inspect: 진단 코드(DX-XXXXXXXX)나 id로 찾아 사진 수·보관 기한을 보여 준다.

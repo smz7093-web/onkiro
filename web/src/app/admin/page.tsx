@@ -11,6 +11,12 @@ const MENUS: { href: string; label: string; d: string[]; desc: string }[] = [
     desc: "상담 접수·단계·담당자·메모 관리, 전화 접수 대리 입력 (CON-02). D13(원일) 처리 기준은 PM이 단계 이동 규칙에 반영",
   },
   {
+    href: "/admin/reviews",
+    label: "진단 검수",
+    d: [],
+    desc: "견적이 나온 진단의 사진·체크리스트를 보고 공정별 판정·금액 보정, 보정 사유 필수 → 새 견적 저장, 원래 자동 견적 보관, 회원 리포트에도 반영 (ADM-03). 진단 보정 권한(석원)",
+  },
+  {
     href: "/admin/reservations",
     label: "예약",
     d: [],

@@ -440,6 +440,61 @@ describe("snapshots (계산 스냅샷)", () => {
   });
 });
 
+describe("진단 검수 (ADM-03, 11.4)", () => {
+  const reviewer = (mfa = true) =>
+    env
+      .authenticatedContext("seokwon", {
+        role: "staff",
+        ...(mfa ? MFA : {}),
+        photoAccess: "none",
+        consultAccess: "none",
+        perms: ["canReviewDiagnosis"],
+      })
+      .firestore();
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "assessments/a1/snapshots/s1"), { reason: "view" });
+      await setDoc(doc(db, "assessments/a1/photos/ph1"), { part: "roof" });
+    });
+  });
+
+  it("진단 보정 권한자는 진단·스냅샷을 읽는다 (사진은 사진 권한대로)", async () => {
+    await assertSucceeds(getDoc(doc(reviewer(), "assessments/a1")));
+    await assertSucceeds(
+      getDoc(doc(reviewer(), "assessments/a1/snapshots/s1")),
+    );
+    await assertFails(getDoc(doc(reviewer(), "assessments/a1/photos/ph1")));
+  });
+
+  it("2단계 인증 없이는 못 읽고, 권한 없는 운영팀도 못 읽는다", async () => {
+    await assertFails(getDoc(doc(reviewer(false), "assessments/a1")));
+    await assertFails(getDoc(doc(newcomer(), "assessments/a1/snapshots/s1")));
+  });
+
+  it("검수 스냅샷·검수 기록은 화면에서 직접 쓰지 못한다 (서버 함수만)", async () => {
+    await assertFails(
+      setDoc(doc(reviewer(), "assessments/a1/snapshots/r1"), {
+        reason: "review",
+        parentSnapshotId: "s1",
+        createdBy: "seokwon",
+        createdAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(reviewer(), "assessments/a1"), {
+        review: { status: "corrected" },
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(member(), "assessments/a1"), {
+        review: { status: "corrected" },
+      }),
+    );
+  });
+});
+
 describe("consultations (상담)", () => {
   const consult = (uid: string, assessmentId: string | null = null) => ({
     uid,

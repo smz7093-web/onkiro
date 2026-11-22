@@ -14,6 +14,7 @@ import {
   deleteAssessmentAsAdmin,
   diagnosisCode,
   listMyAssessments,
+  reviewIsCurrent,
   type Assessment,
   type AssessmentStatus,
 } from "@/lib/diagnosis/store";
@@ -166,6 +167,7 @@ export function MyPage() {
                     {manwon(a.latestSummary.baseNet)}
                   </span>
                 )}
+                {a.review && <ReviewLine assessment={a} />}
                 <PhotoRetentionLine
                   assessment={a}
                   hasConsult={
@@ -179,6 +181,14 @@ export function MyPage() {
                       className={linkBtn}
                     >
                       리포트 다시 보기
+                    </Link>
+                  )}
+                  {a.review?.status === "corrected" && a.review.snapshotId && (
+                    <Link
+                      href={`/report/${a.id}/${a.review.snapshotId}`}
+                      className={linkBtn}
+                    >
+                      검수 반영 리포트
                     </Link>
                   )}
                   <Link
@@ -244,5 +254,24 @@ export function MyPage() {
         )}
       </section>
     </div>
+  );
+}
+
+// 담당자 검수 결과 (ADM-03, task.md 11.4). 회원이 검수 뒤 입력을 바꾸면 이전 입력 기준이라고 알린다
+function ReviewLine({ assessment: a }: { assessment: Assessment }) {
+  const r = a.review;
+  if (!r) return null;
+  const current = reviewIsCurrent(a);
+  return (
+    <span className="text-base">
+      {r.status === "corrected" && r.summary
+        ? `담당자 검수 반영 견적 ${manwon(r.summary.total)} · 월 추정액(기본안) ${manwon(r.summary.baseNet)}`
+        : "담당자가 자동 견적을 확인했습니다"}
+      {!current && (
+        <span className="block text-sm text-ink-2">
+          검수 뒤 진단 입력이 바뀌어, 검수 결과는 이전 입력 기준입니다.
+        </span>
+      )}
+    </span>
   );
 }

@@ -19,12 +19,13 @@ import {
   type EstimateOptions,
   type SnapshotInputs,
 } from "./compute";
-import type { Assessment, AssessmentStatus } from "./store";
+import type { Assessment, AssessmentStatus, ReviewChangeRecord } from "./store";
 
 // 계산 스냅샷 (SIM-20, task.md 7.4). assessments/{id}/snapshots/{id}에 추가만 하고 고치지 않는다.
 // 생성 시점: ① 견적 화면에 처음 도달 ② 저장·PDF·상담 버튼. 입력이 마지막 스냅샷과 같으면 만들지 않는다.
 
-export type SnapshotReason = "view" | "save" | "pdf" | "consult";
+// review: 담당자 검수 스냅샷 (서버 함수 reviewDiagnosis만 만든다, task.md 11.4)
+export type SnapshotReason = "view" | "save" | "pdf" | "consult" | "review";
 
 export interface SnapshotPayload {
   inputs: SnapshotInputs;
@@ -50,7 +51,7 @@ function nextStatus(
 export async function ensureSnapshot(
   assessment: Assessment,
   payload: SnapshotPayload,
-  reason: SnapshotReason,
+  reason: Exclude<SnapshotReason, "review">,
 ): Promise<string> {
   const key = inputsKey(payload.inputs);
   if (assessment.latestSnapshotId && assessment.latestInputsKey === key) {
@@ -118,6 +119,9 @@ export interface StoredSnapshot {
   checklistResult: ChecklistResult;
   scenarios: Record<ScenarioId, RevenueResult>;
   reason: SnapshotReason;
+  // 검수 스냅샷이면 원래 스냅샷 id와 보정 내용
+  parentSnapshotId: string | null;
+  review: { note: string; changes: ReviewChangeRecord[] } | null;
   createdAt: Date | null;
 }
 
@@ -144,6 +148,14 @@ export async function getSnapshot(
     checklistResult: result.checklist,
     scenarios: result.scenarios,
     reason: d.reason as SnapshotReason,
+    parentSnapshotId: (d.parentSnapshotId as string) ?? null,
+    review:
+      d.review && typeof d.review === "object"
+        ? {
+            note: String(d.review.note ?? ""),
+            changes: Array.isArray(d.review.changes) ? d.review.changes : [],
+          }
+        : null,
     createdAt: d.createdAt instanceof Timestamp ? d.createdAt.toDate() : null,
   };
 }
