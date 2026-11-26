@@ -37,22 +37,60 @@ function removeAt<T>(list: T[], n: number) {
   return list.filter((_, k) => k !== n);
 }
 
+// n번 줄을 위(-1)·아래(+1)로 옮긴다
+function moveAt<T>(list: T[], n: number, dir: -1 | 1) {
+  const k = n + dir;
+  if (k < 0 || k >= list.length) return list;
+  const next = [...list];
+  [next[n], next[k]] = [next[k], next[n]];
+  return next;
+}
+
 function Row({
   label,
   onRemove,
+  onMove,
+  first,
+  last,
   children,
 }: {
   label: string;
   onRemove: () => void;
+  // 순서 바꾸기 (활동 기록)
+  onMove?: (dir: -1 | 1) => void;
+  first?: boolean;
+  last?: boolean;
   children: ReactNode;
 }) {
   return (
     <li className="flex flex-col gap-2 border-t border-line pt-4">
       <div className="flex items-center justify-between gap-2">
         <b className="text-base">{label}</b>
-        <Button size="sm" variant="danger" onClick={onRemove}>
-          삭제
-        </Button>
+        <div className="flex gap-1">
+          {onMove && (
+            <>
+              <Button
+                size="sm"
+                aria-label={`${label} 위로`}
+                disabled={first}
+                onClick={() => onMove(-1)}
+              >
+                ↑ 위로
+              </Button>
+              <Button
+                size="sm"
+                aria-label={`${label} 아래로`}
+                disabled={last}
+                onClick={() => onMove(1)}
+              >
+                ↓ 아래로
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="danger" onClick={onRemove}>
+            삭제
+          </Button>
+        </div>
       </div>
       {children}
     </li>
@@ -420,7 +458,10 @@ export function SocialValueEditor() {
 
       <Card>
         <div className="flex flex-col gap-3">
-          <b className="text-lg">활동 기록 (교육·협약 등, 사진 4장까지)</b>
+          <b className="text-lg">
+            활동 기록 (교육·협약 등, 사진 4장까지 · 위에 있는 활동이
+            페이지에서도 먼저 보입니다)
+          </b>
           <p className="text-sm text-ink-2">
             사진 주소는 사이트에 올려 둔 사진(/social/…)이나 https:// 주소를
             넣습니다. 새 사진은 PM에게 파일을 주면 사이트에 올려 드립니다.
@@ -431,6 +472,11 @@ export function SocialValueEditor() {
                 key={n}
                 label={`${n + 1}번 활동`}
                 onRemove={() => set({ activities: removeAt(d.activities, n) })}
+                onMove={(dir) =>
+                  set({ activities: moveAt(d.activities, n, dir) })
+                }
+                first={n === 0}
+                last={n === d.activities.length - 1}
               >
                 <div className="grid gap-2 md:grid-cols-[1fr_12rem]">
                   <input
