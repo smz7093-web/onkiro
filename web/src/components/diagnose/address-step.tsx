@@ -16,6 +16,7 @@ export function AddressStep() {
   const [keyword, setKeyword] = useState("");
   const [candidates, setCandidates] = useState<AddressCandidate[] | null>(null);
   const [searchFailed, setSearchFailed] = useState(false);
+  const [failReason, setFailReason] = useState<string | null>(null);
   const [picked, setPicked] = useState<AddressCandidate | null>(null);
   const [road, setRoad] = useState(property?.addressRoad ?? "");
   const [jibun, setJibun] = useState(property?.addressJibun ?? "");
@@ -24,12 +25,14 @@ export function AddressStep() {
 
   async function search() {
     setSearchFailed(false);
+    setFailReason(null);
     setCandidates(null);
     try {
       const r = await searchAddress(keyword);
       setCandidates(r.candidates);
     } catch (e) {
       setSearchFailed(true);
+      setFailReason(e instanceof Error ? e.message : String(e));
       if (!(e instanceof AddressSearchUnavailable)) console.error(e);
     }
   }
@@ -103,6 +106,11 @@ export function AddressStep() {
         <p className={notice} role="status">
           지금은 주소 검색을 쓸 수 없습니다. 아래에 주소를 직접 입력하면 계속
           진행할 수 있어요.
+          {failReason && (
+            <span className="mt-1 block text-sm text-ink-2">
+              사유: {failReason}
+            </span>
+          )}
         </p>
       )}
       {candidates && candidates.length === 0 && (

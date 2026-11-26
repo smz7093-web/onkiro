@@ -515,7 +515,7 @@ export const searchAddress = onCall(
     ) {
       throw new HttpsError("invalid-argument", "검색어는 2~80자여야 합니다");
     }
-    return searchAddressService(
+    const res = await searchAddressService(
       keyword.trim(),
       {
         juso: JUSO_API_KEY.value().trim(),
@@ -523,6 +523,9 @@ export const searchAddress = onCall(
       },
       await externalDeps(),
     );
+    // 실패 사유를 남긴다 (11/26 화면에 '주소 검색을 쓸 수 없습니다'만 보여 원인을 알 수 없었다)
+    if (!res.ok) logger.warn("주소 검색 실패", { error: res.error });
+    return res;
   },
 );
 
