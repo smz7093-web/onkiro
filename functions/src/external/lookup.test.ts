@@ -174,7 +174,10 @@ describe("도로명주소 장애 시 카카오 대체 검색 (11/26)", () => {
           main_address_no: "595",
           sub_address_no: "1",
         },
-        road_address: { address_name: "충남 홍성군 홍성읍 조양로14번길 54-12" },
+        road_address: {
+          address_name: "충남 홍성군 홍성읍 조양로14번길 54-12",
+          main_building_no: "54",
+        },
       },
     ],
   };
@@ -196,6 +199,26 @@ describe("도로명주소 장애 시 카카오 대체 검색 (11/26)", () => {
         },
       ],
     });
+  });
+
+  it("번지 없는 도로 이름만의 결과는 후보에서 뺀다", async () => {
+    const d = deps({
+      responses: {
+        kakaoSearch: {
+          documents: [
+            {
+              address_name: "충남 홍성군 홍성읍 조양로",
+              x: "126.66",
+              y: "36.60",
+              address: null,
+              road_address: { address_name: "충남 홍성군 홍성읍 조양로" },
+            },
+          ],
+        },
+      },
+    });
+    const r = await searchAddress("홍성군 홍성읍 조양로", KEYS, d);
+    expect(r).toMatchObject({ ok: true, source: "kakao", value: [] });
   });
 
   it("도로명주소가 정상이면(결과 0건이어도) 카카오로 대신 찾지 않는다", async () => {

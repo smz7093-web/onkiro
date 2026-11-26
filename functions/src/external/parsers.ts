@@ -80,6 +80,8 @@ export function parseKakaoCandidates(raw: unknown): AddressCandidate[] {
   for (const d of docs) {
     const jibun = isObj(d.address) ? d.address : null;
     const road = isObj(d.road_address) ? d.road_address : null;
+    // 번지가 없는 도로 이름·동 이름만의 결과는 집을 특정하지 못하므로 뺀다 (예: '조양로')
+    if (!str(jibun?.main_address_no) && !str(road?.main_building_no)) continue;
     const addressRoad = str(road?.address_name) || str(jibun?.address_name);
     if (!addressRoad) continue;
     out.push({
