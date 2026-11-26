@@ -152,12 +152,16 @@ describe("D4 권장 판정표 (10/17 권장안)", () => {
   });
 });
 
-describe("난방 방식 도시가스 (11/26)", () => {
+describe("난방 방식 도시가스·LPG가스 (11/26)", () => {
   it("선택지에 있고, 판정표 기본값으로는 손볼 공정이 없다", () => {
     const q = CHECKLIST_QUESTIONS.find((x) => x.id === "heating")!;
-    expect(q.options.map((o) => o.id)).toContain("gas");
-    const r = evaluateChecklist({ ...OK, heating: "gas" });
+    expect(q.options.map((o) => o.id)).toEqual(
+      expect.arrayContaining(["gas", "lpg"]),
+    );
     const oil = evaluateChecklist({ ...OK, heating: "oil" });
-    expect(r.conditions).toEqual(oil.conditions);
+    for (const heating of ["gas", "lpg"] as const)
+      expect(evaluateChecklist({ ...OK, heating }).conditions).toEqual(
+        oil.conditions,
+      );
   });
 });
