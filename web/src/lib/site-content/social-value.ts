@@ -136,13 +136,14 @@ export const DEFAULT_SOCIAL_VALUE: SocialValue = {
       ],
     },
     {
-      title: "홍성군 여성친화 일촌기업 협약",
+      title: "홍성군 여성친화 일촌기업 업무협약",
       date: "2026. 11. 24.",
-      body: "홍성군과 2026 여성친화 일촌기업 협약을 맺었습니다.",
+      body: "(주)온기로가 홍성군과 2026 여성친화 일촌기업 업무협약을 맺었습니다.",
       photos: [
         {
           url: "/social/hongseong-agreement.jpg",
-          caption: "2026 홍성군 여성친화 일촌기업 협약식 (홍성군청)",
+          caption:
+            "홍성군수(왼쪽)와 (주)온기로 대표(오른쪽) · 2026 홍성군 여성친화 일촌기업 협약식, 홍성군청",
         },
       ],
     },
