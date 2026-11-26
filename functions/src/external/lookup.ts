@@ -2,10 +2,12 @@
 // - 시연용 저장 데이터(config/demo 스위치·실패 시 대체)는 11/14 시연이 끝나 뺐다. 실패하면 화면이 직접 입력으로 안내한다.
 // - 출처별(대장·토지·관광)로 따로 실패할 수 있다. 하나가 실패해도 나머지는 돌려준다(화면은 실패한 값만 직접 입력).
 
+import { logger } from "firebase-functions";
 import {
   parseBuildingTitle,
   parseJuso,
   parseKakaoAddress,
+  parseKakaoCandidates,
   parseLandCharacteristics,
   parseTourList,
   type AddressCandidate,
@@ -26,7 +28,9 @@ export const ENDPOINTS = {
 // https://를 붙이면 400 Bad Request가 난다(10/14 확인) — 호스트 이름만 보낸다
 export const VWORLD_DOMAIN = "onkiro-web--onkiro-2fe12.asia-east1.hosted.app";
 
-export type Source = "buildingRegistry" | "vworld" | "tourApi" | "juso";
+// kakao: 도로명주소 API가 응답하지 않아 카카오 주소 검색으로 대신 찾은 후보 (11/26)
+export type Source =
+  "buildingRegistry" | "vworld" | "tourApi" | "juso" | "kakao";
 
 export interface Sourced<T> {
   ok: true;
@@ -106,6 +110,7 @@ export async function searchAddress(
   keys: Keys,
   deps: Deps,
 ): Promise<Outcome<AddressCandidate[]>> {
+  let jusoError: unknown;
   try {
     if (!keys.juso) throw new Error("도로명주소 API 키가 없습니다");
     return await cached(
@@ -144,7 +149,34 @@ export async function searchAddress(
       },
     );
   } catch (e) {
-    return fail(e);
+    jusoError = e;
+  }
+  // 도로명주소 API에 문제가 있을 때만 카카오 주소 검색으로 대신 찾는다 (11/26 PM 결정).
+  // 결과가 0건인 것은 문제가 아니므로 대신 찾지 않는다(위에서 정상 반환). 대체 결과는 캐시하지 않는다(다음엔 다시 도로명주소부터)
+  const jusoMsg = fail(jusoError).error;
+  if (!keys.kakao) return fail(jusoError);
+  try {
+    const raw = await deps.fetchJson(
+      `${ENDPOINTS.kakaoAddress}?${qs({ query: keyword, analyze_type: "similar", size: 10 })}`,
+      {
+        api: "kakaoSearch",
+        headers: { Authorization: `KakaoAK ${keys.kakao}` },
+      },
+    );
+    logger.warn("도로명주소 실패 → 카카오 주소 검색으로 대신 찾음", {
+      juso: jusoMsg,
+    });
+    return {
+      ok: true,
+      value: parseKakaoCandidates(raw),
+      source: "kakao",
+      fetchedAt: deps.now().toISOString(),
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: `${jusoMsg} / 카카오 대체 검색도 실패: ${fail(e).error}`,
+    };
   }
 }
 

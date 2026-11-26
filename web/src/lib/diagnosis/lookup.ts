@@ -10,8 +10,9 @@ import {
   type FactSource,
 } from "./facts";
 
+// kakao: 도로명주소 API 장애 때 카카오 주소 검색으로 대신 찾은 주소 후보 (11/26, 주소 검색에만 쓰인다)
 export type LookupSource =
-  "buildingRegistry" | "vworld" | "tourApi" | "juso" | "demoFixture";
+  "buildingRegistry" | "vworld" | "tourApi" | "juso" | "kakao" | "demoFixture";
 
 export type Outcome<T> =
   | { ok: true; value: T; source: LookupSource; fetchedAt: string }

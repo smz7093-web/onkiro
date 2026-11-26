@@ -160,6 +160,69 @@ describe("출처별로 따로 성공·실패", () => {
   });
 });
 
+describe("도로명주소 장애 시 카카오 대체 검색 (11/26)", () => {
+  const kakao = {
+    documents: [
+      {
+        address_name: "충남 홍성군 홍성읍 오관리 595-1",
+        x: "126.659",
+        y: "36.598",
+        address: {
+          address_name: "충남 홍성군 홍성읍 오관리 595-1",
+          b_code: "4480025021",
+          mountain_yn: "N",
+          main_address_no: "595",
+          sub_address_no: "1",
+        },
+        road_address: { address_name: "충남 홍성군 홍성읍 조양로14번길 54-12" },
+      },
+    ],
+  };
+
+  it("도로명주소가 실패하면 카카오 후보(PNU·좌표 포함)를 돌려준다", async () => {
+    const d = deps({ responses: { kakaoSearch: kakao } });
+    const r = await searchAddress("오관리 595-1", KEYS, d);
+    expect(d.calls).toEqual(["juso", "kakaoSearch"]);
+    expect(r).toMatchObject({
+      ok: true,
+      source: "kakao",
+      value: [
+        {
+          addressRoad: "충남 홍성군 홍성읍 조양로14번길 54-12",
+          addressJibun: "충남 홍성군 홍성읍 오관리 595-1",
+          pnu: "4480025021105950001",
+          lat: 36.598,
+          lng: 126.659,
+        },
+      ],
+    });
+  });
+
+  it("도로명주소가 정상이면(결과 0건이어도) 카카오로 대신 찾지 않는다", async () => {
+    const d = deps({
+      responses: {
+        juso: {
+          results: {
+            common: { errorCode: "0", errorMessage: "정상" },
+            juso: [],
+          },
+        },
+        kakaoSearch: kakao,
+      },
+    });
+    const r = await searchAddress("없는 주소", KEYS, d);
+    expect(d.calls).toEqual(["juso"]);
+    expect(r).toMatchObject({ ok: true, source: "juso", value: [] });
+  });
+
+  it("카카오도 실패하면 두 사유를 함께 알린다", async () => {
+    const r = await searchAddress("오관리 595-1", KEYS, deps());
+    expect(r).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("카카오 대체 검색도 실패"),
+    });
+  });
+});
 
 describe("PNU → 건축물대장 조회 값", () => {
   it("시군구·법정동·대지/산·번·지", () => {

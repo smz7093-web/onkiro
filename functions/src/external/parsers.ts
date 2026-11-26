@@ -72,6 +72,34 @@ export function parseKakaoAddress(
   return lat === null || lng === null ? null : { lat, lng };
 }
 
+// 카카오 주소 검색 → 주소 후보 (도로명주소 API가 응답하지 않을 때만 쓰는 대체 검색, 11/26)
+// address: 지번(법정동 코드 b_code·산 여부·본번·부번 → PNU), road_address: 도로명, x·y: 좌표
+export function parseKakaoCandidates(raw: unknown): AddressCandidate[] {
+  const docs = isObj(raw) ? asList(raw.documents) : [];
+  const out: AddressCandidate[] = [];
+  for (const d of docs) {
+    const jibun = isObj(d.address) ? d.address : null;
+    const road = isObj(d.road_address) ? d.road_address : null;
+    const addressRoad = str(road?.address_name) || str(jibun?.address_name);
+    if (!addressRoad) continue;
+    out.push({
+      addressRoad,
+      addressJibun: str(jibun?.address_name) || null,
+      pnu: jibun
+        ? buildPnu(
+            str(jibun.b_code),
+            str(jibun.mountain_yn) === "Y" ? "1" : "0",
+            str(jibun.main_address_no),
+            str(jibun.sub_address_no),
+          )
+        : null,
+      lat: num(d.y),
+      lng: num(d.x),
+    });
+  }
+  return out;
+}
+
 // ── 4.3 건축물대장 표제부 (국토교통부 건축HUB) ─────────────────────────────
 
 export interface BuildingFacts {
