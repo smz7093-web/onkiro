@@ -112,6 +112,8 @@ export const CHECKLIST_QUESTIONS = [
     label: "난방 방식은?",
     options: [
       { id: "oil", label: "기름보일러" },
+      // 11/26 PM 요청으로 추가. 판정표 줄이 없으면 기름보일러·전기처럼 손볼 공정 없음
+      { id: "gas", label: "도시가스" },
       { id: "briquette", label: "연탄·아궁이" },
       { id: "electric", label: "전기" },
       { id: "none", label: "없음" },
