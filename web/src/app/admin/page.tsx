@@ -53,6 +53,12 @@ const MENUS: { href: string; label: string; d: string[]; desc: string }[] = [
     desc: "숙소 상세 화면 콘텐츠·사진·예약 링크(D12, 해순). 저장 즉시 반영 (STY-01·02)",
   },
   {
+    href: "/admin/social-value",
+    label: "사회적 가치",
+    d: [],
+    desc: "예비사회적기업(2026-11-18 지정) 미션·공익 사업 소개 페이지. 켜면 머리말 메뉴·홈 소개 칸·/social-value가 보인다. 저장 즉시 반영",
+  },
+  {
     href: "/admin/users",
     label: "회원·권한",
     d: [],

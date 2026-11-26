@@ -666,6 +666,40 @@ describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => 
     );
   });
 
+  it("사회적 가치(socialValue)는 누구나 읽고, 인허가 문구와 같은 권한이 형식대로 고친다 (11/26)", async () => {
+    const sv = (uid: string) => ({
+      enabled: true,
+      designation: "2026년 11월 18일 예비사회적기업 지정",
+      mission: "빈집을 다시 머무는 집으로",
+      items: [{ title: "빈집 재생", body: "요약" }],
+      updatedBy: uid,
+      updatedByName: null,
+      updatedAt: serverTimestamp(),
+    });
+    await assertSucceeds(getDoc(doc(anonymous(), "siteContent/socialValue")));
+    await assertSucceeds(
+      setDoc(doc(wonil(), "siteContent/socialValue"), sv("wonil")),
+    );
+    await assertSucceeds(
+      setDoc(doc(haesoon(), "siteContent/socialValue"), sv("haesoon")),
+    );
+    await assertFails(
+      setDoc(doc(member(), "siteContent/socialValue"), sv("alice")),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/socialValue"), {
+        ...sv("pm"),
+        mission: "",
+      }),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/socialValue"), {
+        ...sv("pm"),
+        items: Array.from({ length: 9 }, () => ({ title: "t", body: "b" })),
+      }),
+    );
+  });
+
   it("약관·처리방침·사업자 정보(terms·privacy·company)는 누구나 읽고, 인허가 문구와 같은 권한이 형식대로 고친다", async () => {
     const legal = (uid: string) => ({
       effectiveDate: "2026년 11월 4일",

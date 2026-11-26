@@ -1,5 +1,6 @@
 import { BranchCards, HeroPhoto } from "@/components/home/branch-showcase";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { SocialValueHomeCard } from "@/components/social-value-page";
 import { ButtonLink, Card, Pill } from "@/components/ui";
 
 // 서비스 소개 홈 (COM-01, task.md 9.4). 문구는 목업 home·PRD 기준이며 주연의 홈 문구가 오면 바꾼다.
@@ -77,6 +78,9 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        {/* 예비사회적기업 소개 (11/26). 관리 화면에서 켰을 때만 보인다 */}
+        <SocialValueHomeCard />
 
         <Card aria-labelledby="entrust">
           <div className="flex flex-wrap items-center justify-between gap-2">

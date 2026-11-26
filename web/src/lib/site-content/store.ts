@@ -19,6 +19,7 @@ import {
   readLawChange,
   type LawChange,
 } from "./law-change";
+import { readSocialValue, type SocialValue } from "./social-value";
 import {
   DEFAULT_COMPANY,
   DEFAULT_LEGAL,
@@ -39,7 +40,13 @@ export interface Edited<T> {
 }
 
 async function read<T>(
-  id: "permits" | "photoGuides" | "lawChange" | LegalKind | "company",
+  id:
+    | "permits"
+    | "photoGuides"
+    | "lawChange"
+    | LegalKind
+    | "company"
+    | "socialValue",
   parse: (raw: unknown) => T,
 ): Promise<Edited<T>> {
   const snap = await getDoc(doc(db, "siteContent", id));
@@ -84,6 +91,23 @@ export async function savePhotoGuides(
 ) {
   await setDoc(doc(db, "siteContent", "photoGuides"), {
     guides,
+    ...stamp(user, userName),
+  });
+}
+
+export const loadSocialValue = () => read("socialValue", readSocialValue);
+
+// '사회적 가치' 페이지 (siteContent/socialValue, 11/26). 인허가 문구와 같은 권한
+export async function saveSocialValue(
+  content: SocialValue,
+  user: User,
+  userName: string | null,
+) {
+  await setDoc(doc(db, "siteContent", "socialValue"), {
+    enabled: content.enabled,
+    designation: content.designation,
+    mission: content.mission,
+    items: content.items,
     ...stamp(user, userName),
   });
 }
@@ -245,6 +269,27 @@ export function useHomeHero(): HomeHero | null {
 let permitsOnce: Promise<PermitContent> | null = null;
 let guidesOnce: Promise<PhotoGuides> | null = null;
 let lawOnce: Promise<LawChange> | null = null;
+let socialOnce: Promise<SocialValue | null> | null = null;
+
+// 공개 화면(머리말·홈·페이지)용. 읽는 동안·실패하면 null → 메뉴를 숨긴다
+export function useSocialValue(): SocialValue | null | undefined {
+  const [c, setC] = useState<SocialValue | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    socialOnce ??= loadSocialValue().then(
+      (r) => r.value,
+      () => {
+        socialOnce = null;
+        return null;
+      },
+    );
+    socialOnce.then((v) => !cancelled && setC(v));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return c;
+}
 
 export function usePermitContent(): PermitContent {
   const [c, setC] = useState(DEFAULT_PERMIT_CONTENT);
@@ -308,4 +353,5 @@ export function forgetSiteContent() {
   permitsOnce = null;
   guidesOnce = null;
   lawOnce = null;
+  socialOnce = null;
 }

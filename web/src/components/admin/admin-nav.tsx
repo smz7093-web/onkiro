@@ -100,6 +100,12 @@ const MENU: Item[] = [
   },
   {
     group: "콘텐츠",
+    href: "/admin/social-value",
+    label: "사회적 가치",
+    show: (p) => can(p, "canEditAssumptions") || can(p, "canEditContent"),
+  },
+  {
+    group: "콘텐츠",
     href: "/admin/legal",
     label: "약관·사업자 정보",
     d: ["D8"],
