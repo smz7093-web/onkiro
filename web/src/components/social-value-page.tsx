@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSocialValue } from "@/lib/site-content/store";
 import { SocialValueView } from "./social-value-view";
 import { ButtonLink } from "./ui";
@@ -19,17 +18,6 @@ export function SocialValuePage() {
       </div>
     );
   return <SocialValueView content={content} />;
-}
-
-// 머리말 메뉴 링크. 켜져 있을 때만 보인다
-export function SocialValueNavLink({ className }: { className: string }) {
-  const content = useSocialValue();
-  if (!content?.enabled) return null;
-  return (
-    <Link href="/social-value" className={className}>
-      사회적 가치
-    </Link>
-  );
 }
 
 // 홈 소개 칸: 예비사회적기업 지정과 미션 첫 문장, '사회적 가치' 바로가기. 켜져 있을 때만 보인다

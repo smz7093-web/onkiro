@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AccountPill } from "@/components/header-nav";
 import type { ReactNode } from "react";
 import { RequireConsent } from "@/components/require-consent";
 import { SiteFooter } from "@/components/site-chrome";
@@ -20,12 +21,9 @@ export default function DiagnoseLayout({ children }: { children: ReactNode }) {
           >
             빈집 진단
           </Link>
-          <Link
-            href="/me"
-            className="ml-auto inline-flex h-12 items-center text-base text-ink-2 underline"
-          >
-            마이페이지
-          </Link>
+          <div className="ml-auto">
+            <AccountPill />
+          </div>
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6">

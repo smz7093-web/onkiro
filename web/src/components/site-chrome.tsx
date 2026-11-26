@@ -1,11 +1,7 @@
 import Link from "next/link";
-import { AccountLink } from "./account-link";
 import { SiteFooterInfo } from "./site-footer-info";
-import { SocialValueNavLink } from "./social-value-page";
+import { HeaderNav } from "./header-nav";
 import { Logo } from "./ui";
-
-const headerLink =
-  "inline-flex h-12 items-center px-2 text-base text-ink-2 underline-offset-4 hover:underline";
 
 // 공개 화면(홈·숙소)의 머리말과 바닥글
 export function SiteHeader() {
@@ -13,11 +9,8 @@ export function SiteHeader() {
     <header className="border-b border-line bg-surface">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
         <Logo />
-        <nav aria-label="사이트 메뉴" className="flex items-center gap-1">
-          {/* 사회적 가치 (11/26, 예비사회적기업). 관리 화면에서 켰을 때만 보인다 */}
-          <SocialValueNavLink className={headerLink} />
-          <AccountLink className={headerLink} />
-        </nav>
+        {/* 사회적 가치(켰을 때만)·마이페이지/로그인 버튼 (11/26) */}
+        <HeaderNav />
       </div>
     </header>
   );
