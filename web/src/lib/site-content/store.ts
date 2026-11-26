@@ -107,7 +107,13 @@ export async function saveSocialValue(
     enabled: content.enabled,
     designation: content.designation,
     mission: content.mission,
+    vision: content.vision,
+    strategyTitle: content.strategyTitle,
+    strategy: content.strategy,
+    goalsTitle: content.goalsTitle,
+    goals: content.goals,
     items: content.items,
+    activities: content.activities,
     ...stamp(user, userName),
   });
 }

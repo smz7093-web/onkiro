@@ -392,15 +392,27 @@ service cloud.firestore {
           // socialValue = '사회적 가치' 페이지 (11/26, 예비사회적기업). 인허가 문구와 같은 권한
           || (docId == 'socialValue'
             && (hasPerm('canEditAssumptions') || hasPerm('canEditContent'))
-            && request.resource.data.keys().hasOnly(['enabled', 'designation', 'mission', 'items', 'updatedBy', 'updatedByName', 'updatedAt'])
+            && request.resource.data.keys().hasOnly(['enabled', 'designation', 'mission', 'vision', 'strategyTitle', 'strategy',
+                                                     'goalsTitle', 'goals', 'items', 'activities',
+                                                     'updatedBy', 'updatedByName', 'updatedAt'])
             && request.resource.data.enabled is bool
             && request.resource.data.designation is string
             && request.resource.data.designation.size() <= 160
             && request.resource.data.mission is string
             && request.resource.data.mission.size() > 0
             && request.resource.data.mission.size() <= 500
+            && request.resource.data.vision is string
+            && request.resource.data.vision.size() <= 200
+            && request.resource.data.strategyTitle is string
+            && request.resource.data.goalsTitle is string
+            && request.resource.data.strategy is list
+            && request.resource.data.strategy.size() <= 6
+            && request.resource.data.goals is list
+            && request.resource.data.goals.size() <= 6
             && request.resource.data.items is list
-            && request.resource.data.items.size() <= 8)
+            && request.resource.data.items.size() <= 8
+            && request.resource.data.activities is list
+            && request.resource.data.activities.size() <= 8)
           // terms·privacy = 이용약관·개인정보 처리방침 본문 (11/4, D8). 인허가 문구와 같은 권한
           || ((docId == 'terms' || docId == 'privacy')
             && (hasPerm('canEditAssumptions') || hasPerm('canEditContent'))

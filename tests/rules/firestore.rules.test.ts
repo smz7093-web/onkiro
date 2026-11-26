@@ -671,7 +671,15 @@ describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => 
       enabled: true,
       designation: "2026년 11월 18일 예비사회적기업 지정",
       mission: "빈집을 다시 머무는 집으로",
+      vision: "자립형 로컬재생 플랫폼",
+      strategyTitle: "BOT·N",
+      strategy: [{ tag: "BUILD", title: "발굴", body: "" }],
+      goalsTitle: "2035",
+      goals: [{ value: "50채", label: "빈집 재생" }],
       items: [{ title: "빈집 재생", body: "요약" }],
+      activities: [
+        { title: "교육", date: "2026. 8. 28.", body: "", photos: [] },
+      ],
       updatedBy: uid,
       updatedByName: null,
       updatedAt: serverTimestamp(),
@@ -690,6 +698,12 @@ describe("siteContent (D7 인허가·D9 촬영 가이드 문구, 10/15)", () => 
       setDoc(doc(admin(), "siteContent/socialValue"), {
         ...sv("pm"),
         mission: "",
+      }),
+    );
+    await assertFails(
+      setDoc(doc(admin(), "siteContent/socialValue"), {
+        ...sv("pm"),
+        extra: "x",
       }),
     );
     await assertFails(
